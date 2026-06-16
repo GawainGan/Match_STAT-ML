@@ -1,0 +1,1722 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第十一节 · Ch6 p57–62 + Ch7 p1–8：把 Gibbs 用在真模型上——K 组正态与多元正态/逆Wishart——再正式踏入线性回归：OLS=投影、Gauss–Markov=BLUE、正态误差 MLE、n=p 的崩溃）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly（仅用于 2D 的 SVG 轨迹；本页所有 3D 全部由内置 Canvas 引擎手绘透视投影，绝不调用 WebGL） -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F2EFE6;
+  --card:#FFFDF8;
+  --ink:#1B1A1F;
+  --ink-soft:#4C4A55;
+  --ink-faint:#86838F;
+  --line:#E2DECF;
+  --line-strong:#CFC9B6;
+  --accent:#8A2D4D;        /* 第十一节主色：石榴红 / 朱墨（最小二乘是一道把 Y 投影到列空间的影子——这是会计账本与几何投影共有的笃定红） */
+  --accent-soft:#F3DEE5;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(25,22,40,.05), 0 8px 30px rgba(25,22,40,.06);
+  --shadow-lg:0 10px 50px rgba(25,22,40,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #F3DEE5 0%, rgba(243,222,229,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,60px) 56px; max-width:980px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.toc a.star-link .num{color:var(--accent)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(15,12,20,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:66ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F6F2E9)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* prose bullet list inside mod cards */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline WebGL caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#F8EEF1; border:1px solid #DCB9C6; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+
+/* plot containers */
+.plot{width:100%; height:360px}
+.plot.tall{height:430px}
+.plot.d3{height:500px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #DCB9C6; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+.code{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size:13px; background:#1C1B22; color:#E7E2EE;
+  border-radius:10px; padding:13px 15px; overflow-x:auto; line-height:1.55; margin:10px 0}
+.code .c{color:#928BA0} .code .k{color:#9BB4E0} .code .s{color:#9FC08A}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(207,201,182,.16) 27px, rgba(207,201,182,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:940px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.05)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+/* small inline architecture diagram */
+.archwrap{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:10px; box-shadow:var(--shadow); overflow:auto; margin:10px 0}
+.archwrap svg{display:block; width:100%; min-width:560px; height:auto}
+
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(138,45,77,.04))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:80ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-meta{font-size:12.5px; color:var(--ink-faint); margin-top:6px}
+.foot-sub{font-style:italic; color:var(--ink-soft); margin-top:-4px !important}
+.foot-fine{font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+/* ---- session-10 additions ---- */
+.part-kicker{display:inline-block; font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:4px 11px; border-radius:999px}
+.btnrow{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 4px}
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+.closing-block{background:linear-gradient(180deg, rgba(138,45,77,.05), rgba(0,0,0,0)); border:1px solid var(--line); border-top:3px solid var(--accent)}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第十一节<small>把 Gibbs 用在真模型上，再踏入线性回归 — Ch6 p57–62 · Ch7 p1–8</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图（六类关系）</a>
+    <a href="#spine"><span class="num">0</span>本节主线（承接第十节）</a>
+    <a class="trap-link" href="#audit"><span class="num">0</span>先给 AI 纪要挑刺 ⚠</a>
+
+    <h4>Ⅰ · Gibbs 实战①：K 组正态</h4>
+    <a class="sub" href="#t-kg-model"><span class="num">1.1</span>单因子模型与联合后验</a>
+    <a class="sub" href="#t-kg-fc"><span class="num">1.2</span>两个满条件：正态 + 伽马</a>
+    <a class="sub star-link" href="#t-kg-live"><span class="num">1.3</span>亲手跑这台 Gibbs（K=4）★ 交互</a>
+    <a class="sub star-link" href="#t-kg-fc3d"><span class="num">1.4</span>精度一变，正态就移位收紧 ★ 3D</a>
+
+    <h4>Ⅱ · Gibbs 实战②：多元正态 + 逆Wishart</h4>
+    <a class="sub" href="#t-mvn-model"><span class="num">2.1</span>模型与逆Wishart 先验</a>
+    <a class="sub trap-link" href="#t-mvn-conj"><span class="num">2.2</span>盲点：它其实"非共轭" ⚠</a>
+    <a class="sub" href="#t-mvn-fc"><span class="num">2.3</span>两个满条件：N + InvWishart</a>
+    <a class="sub star-link" href="#t-mvn-live"><span class="num">2.4</span>估 Σ₁₁ 的右偏后验 ★ 交互</a>
+    <a class="sub star-link" href="#t-mvn-3d"><span class="num">2.5</span>数据云上"长"出协方差椭圆 ★ 3D</a>
+
+    <h4>Ⅲ · 踏入线性回归 + OLS</h4>
+    <a class="sub" href="#t-lr-model"><span class="num">3.1</span>模型 Y=Mβ+E 与"预测元"</a>
+    <a class="sub trap-link" href="#t-lr-linear"><span class="num">3.2</span>盲点：线性 ≠ 对 x 线性 ⚠</a>
+    <a class="sub" href="#t-ols"><span class="num">3.3</span>OLS：梯度=0 + 海森正定</a>
+    <a class="sub star-link" href="#t-proj3d"><span class="num">3.4</span>OLS 就是正交投影 ★ 3D</a>
+
+    <h4>Ⅳ · OLS 的频率派成色 + BLUE</h4>
+    <a class="sub" href="#t-unbias"><span class="num">4.1</span>定理 7.1：无偏 + 协方差</a>
+    <a class="sub star-link" href="#t-collin"><span class="num">4.2</span>共线性把方差顶上天 ★ 交互</a>
+    <a class="sub" href="#t-blue"><span class="num">4.3</span>Gauss–Markov：OLS 是 BLUE</a>
+    <a class="sub star-link" href="#t-blue-viz"><span class="num">4.4</span>BLUE：方差谷底只有一个 ★ 2D</a>
+
+    <h4>Ⅴ · 正态误差 MLE 与 n=p 崩溃</h4>
+    <a class="sub" href="#t-mle"><span class="num">5.1</span>正态误差下 MLE=OLS</a>
+    <a class="sub star-link" href="#t-np"><span class="num">5.2</span>n=p：残差归零，σ² 崩 ★ 交互</a>
+    <a class="sub" href="#t-olsmle"><span class="num">5.3</span>OLS vs MLE 对照表</a>
+
+    <h4>收尾</h4>
+    <a href="#closing"><span class="num">∎</span>一页总图 · 两章脉络</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <!-- ============================================================ HERO -->
+  <p class="h-eyebrow">用数据说话 · 直觉式交互讲义 · 第十一节</p>
+  <h1 class="title cjk">把 Gibbs 喂给真模型，<br>再一头扎进线性回归：OLS 其实是一道投影</h1>
+  <p class="lead cjk">这一节横跨两章。<b>上半场</b>接着第十节的 Gibbs 算法，把它<b>真正用起来</b>——课件 Ch6 p57–62 给了两个有血有肉的例子：<b class="kw">①</b> 一个<b>单因子（K 组）正态模型</b>，看 Gibbs 怎么把"K 个组均值 + 一个公共精度"拆成<b>一串一维满条件</b>逐个轮抽（θ 抽正态、λ 抽伽马）；<b class="kw">②</b> 一个<b>多元正态模型</b>，引入<b>逆Wishart</b>当协方差矩阵的先验——这里藏着一个连 AI 纪要都说反了的坑：它<b>其实不是联合共轭</b>，正因为不共轭才<b>非用 Gibbs 不可</b>。<b>下半场</b>正式翻开 Ch7：<b>线性回归</b>。我们会发现 OLS 估计 \(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\) 又是一台<b>封闭式估计机</b>（和共轭后验同一个气质），它有<b>两副面孔</b>——几何上是<b>把 Y 正交投影到设计矩阵的列空间</b>，统计上是<b>无偏、且在所有线性无偏估计里方差最小（BLUE，高斯–马尔可夫定理）</b>。最后，当误差<b>正态</b>时，MLE 与 OLS<b>重合</b>，可一旦 <b>n=p</b>，整台机器会以一种很有教育意义的方式<b>崩掉</b>。每个知识点都配齐六个通道：<b>直觉 · 公式 · 案例 · 2D · 3D · 交互</b>，并标出彼此的<b>继承 / 推广 / 互补 / 工具 / 对偶 / 盲点</b>六类关系。</p>
+
+  <p class="warn-inline cjk">⚠ 本页所有 3D（满条件曲面、协方差椭圆、OLS 投影几何…）一律用 <b>2D 画布手绘透视投影</b>，<b>不调用 WebGL、不用 Plotly 3D</b>，任何浏览器都该能拖动旋转。若某张图空白，几乎一定是没加载到 KaTeX / Plotly 的 CDN（换网络或刷新即可），而非 WebGL 问题。</p>
+
+  <!-- reading guide -->
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>一句话说清"它到底在干嘛"。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>KaTeX 排版，关键步骤不跳步。</p></div>
+    <div class="gchip case"><div class="ic">▣</div><h5>案例</h5><p>课件原题 + 可落地的数字。</p></div>
+    <div class="gchip d2"><div class="ic">▤</div><h5>2D 图</h5><p>Plotly 曲线，随滑块实时变。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>Canvas 手绘，可拖动旋转。</p></div>
+    <div class="gchip live"><div class="ic">⊕</div><h5>交互</h5><p>自己拨参数 / 让链跑起来。</p></div>
+    <div class="gchip flow"><div class="ic">→</div><h5>推导</h5><p>分步骤，看公式怎么"长出来"。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>容易错、纪要也错了的地方。</p></div>
+  </div>
+
+  <!-- ============================================================ CONCEPT MAP -->
+  <section id="map" class="topic-block">
+    <h3 class="topic cjk">知识全景地图</h3>
+    <p class="topic-en">How this lecture's ideas inherit, generalize, supply, dualize, and trap each other</p>
+    <p class="cjk">本节是一座<b>双拱桥</b>。左拱接<b>第十节的 Gibbs 算法</b>，把它落到两个真模型上（<span class="kw">Ⅰ K 组正态</span>→<span class="kw">Ⅱ 多元正态/逆Wishart</span>），其中 Ⅱ 藏着"<b>非共轭才需 Gibbs</b>"的盲点。右拱是全新的<b>线性回归</b>：<span class="kw">Ⅲ</span> 写下模型并推出 OLS（顺带揭穿"线性=对 x 线性"的误解），<span class="kw">Ⅳ</span> 给 OLS 称成色（无偏、协方差、BLUE），<span class="kw">Ⅴ</span> 换上正态误差看 MLE 与 OLS 何时一致、何时（n=p）崩。两拱的<b>合龙石</b>是一句话：<b>OLS 又是一台"封闭式估计机"</b>——和上半场的共轭后验同源，与第十节"算不出就抽样"的 MCMC 形成对照。点任意节点可跳转；边色代表六类关系。</p>
+    <div class="mapwrap"><svg id="conceptmap" viewBox="0 0 980 760" role="img" aria-label="第十一节知识全景地图">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B7AB98"></path>
+        </marker>
+      </defs>
+      <g id="edges" fill="none" stroke-width="1.8"></g>
+      <g id="nodes"></g>
+    </svg></div>
+    <div class="legend cjk">
+      <span><i style="border-color:#3E7C4E"></i>继承（A 是 B 的特例 / B 直接用到 A）</span>
+      <span><i style="border-color:#8A2D4D"></i>推广 / 主线推进</span>
+      <span><i style="border-color:#574AA6"></i>工具（A 为 B 提供计算手段）</span>
+      <span><i style="border-color:#1F6B66"></i>对偶 / 对照（抽样 ↔ 封闭式 · 频率派 ↔ 贝叶斯）</span>
+      <span><i style="border-color:#B7892A"></i>互补 / 供给（A 喂给 B 一块零件）</span>
+      <span><i style="border-color:#B0442B"></i>盲点（易错 / 纪要出错处）</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ SPINE -->
+  <section id="spine" class="topic-block">
+    <h3 class="topic cjk">本节主线：从"算法"到"真模型"，再从"抽样"到"封闭式"</h3>
+    <p class="topic-en">The through-line: put Gibbs to work, then meet OLS — a closed-form estimator with two faces</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 一句话串起两章</div>
+      <p class="cjk">第十节你学了 Gibbs 的<b>机械动作</b>（轮流抽满条件、永不拒绝）。但只看算法骨架是没"手感"的——这一节先让它<b>在真模型上跑起来</b>，再用它做跳板，跳到本课程的下一座大山：<b>线性回归</b>。脉络如下：</p>
+      <ul class="ul cjk">
+        <li><b>Ⅰ（Ch6 p57–59）K 组正态：</b>一个最干净的多参数例子。\(K\) 个组，每组 \(J\) 个观测，组 \(i\) 的均值是 \(\theta_i\)，所有组共享一个精度 \(\lambda\)。参数是 \((\theta_1,\dots,\theta_K,\lambda)\) 共 \(K{+}1\) 个。Gibbs 把它拆开：<b>每个 \(\theta_i\) 的满条件是正态</b>（且其均值是"数据 \(\bar x_i\) 与先验 \(\mu\) 的精度加权平均"——这就是第八节正态–正态共轭的复用），<b>\(\lambda\) 的满条件是伽马</b>。你会亲手跑它，看 5 条链各自爬向真值 \([-2,-1,1,2]\)。</li>
+        <li><b>Ⅱ（Ch6 p60–62）多元正态 + 逆Wishart：</b>升级到向量观测 \(X^i\sim N_k(\mu,\Sigma)\)，要同时估<b>均值向量 \(\mu\) 和协方差矩阵 \(\Sigma\)</b>。给 \(\Sigma\) 配的先验叫<b>逆Wishart</b>（它是<b>逆伽马的矩阵推广</b>，不是伽马的——纪要这里说反了）。关键盲点：课件用的是<b>独立先验</b> \(f(\mu)f(\Sigma)\)，这<b>不是</b>多元正态的联合共轭先验（联合共轭是 Normal–Inverse–Wishart，会把 \(\mu\) 的先验方差和 \(\Sigma\) 绑在一起）。正因为<b>不联合共轭</b>，后验没有现成的标准形式，<b>才必须上 Gibbs</b>——但每个满条件又恰好是标准分布（\(\mu\) 抽正态、\(\Sigma\) 抽逆Wishart），这叫<b>条件共轭 / 半共轭</b>。课件函数名直接写着 <span class="kw">Nonconjugate</span>。</li>
+        <li><b>Ⅲ（Ch7 p2–3）线性回归 + OLS：</b>换频道。回归要<b>用输入 \(x\) 预测输出 \(Y\)</b>，模型 \(Y=M\beta+E\)。"线性"是指<b>关于参数 \(\beta\) 线性</b>，<b>不要求</b>对输入 \(x\) 线性（\(m_i(x)\) 可以是 \(x^2,\sin x,\dots\)）。估 \(\beta\) 最自然的办法是<b>最小化残差平方和</b>，求导令梯度为 0、海森 \(2M^{\top}M\) 正定 \(\Rightarrow\) 唯一全局最小 \(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\)。这是一台<b>封闭式估计机</b>——和上半场的共轭后验一个气质，和第十节"算不出就抽样"恰成对照。它最深的直觉是<b>几何的</b>：OLS 把 \(Y\) <b>正交投影</b>到 \(M\) 的列空间，残差垂直于该空间。</li>
+        <li><b>Ⅳ（Ch7 p4–6）成色：无偏 + BLUE。</b>把 \(\hat\beta\) 当估计量，戴上第十节那副<b>频率派眼镜</b>：它<b>无偏</b>（\(\mathbb E\hat\beta=\beta\)），协方差是 \((M^{\top}M)^{-1}\sigma^2\)——这个公式直接告诉你<b>多重共线性</b>为什么致命（列几乎线性相关时 \(M^{\top}M\) 接近奇异、其逆爆炸、方差顶上天）。<b>高斯–马尔可夫定理</b>更进一步：在<b>所有线性无偏估计</b>里，OLS 的方差<b>最小</b>（BLUE）。</li>
+        <li><b>Ⅴ（Ch7 p7–8）MLE 与 n=p 崩溃。</b>给误差加上<b>正态</b>假设，写出似然。结论很漂亮：<b>n&gt;p 时 \(\hat\beta_{\text{MLE}}\) 与 OLS 完全一致</b>，而 \(\sigma^2\) 的 MLE 是 \(\text{RSS}/n\)（除以 \(n\)，<b>有偏</b>）。但一旦 <b>n=p</b>，设计矩阵变方阵满秩、<b>完美拟合、残差恒为 0</b>，似然 \((\sigma^2)^{-n/2}\) 随 \(\sigma^2\to 0\) 冲向无穷、<b>没有最大值</b>——\((\beta,\sigma^2)\) 的 MLE <b>不存在</b>（注意：\(\beta\) 仍能唯一求出，崩的是 \(\sigma^2\)，这点纪要含糊了）。</li>
+      </ul>
+    </div>
+    <div class="xander">
+      <p class="who cjk"><span>✎</span>给 Xander 的话（按你要的：直白 + 批判）</p>
+      <p class="cjk">你做因果和预测，线性回归是你<b>每天都要用</b>的地基，所以这一节我希望你把三件事刻进骨头里：<br>① <b>"线性"是个被滥用到失真的词。</b>它<b>只</b>约束"模型对 \(\beta\) 线性"，对输入想多弯就多弯。所以多项式回归、含交互项、含 \(\log x\) 的回归全是<b>线性回归</b>；而神经网络因为参数穿过非线性激活，<b>不是</b>。你以后读论文看到"线性模型"别先入为主以为画出来是直线。<br>② <b>OLS 的两副面孔要同时持有，缺一不可。</b>几何面（投影）让你<b>秒懂</b>残差为什么和拟合值正交、为什么 \(M\) 必须列满秩（列若相关，投影方向就退化）；统计面（无偏 + BLUE）让你知道<b>它好在哪、好的前提是什么</b>。特别是 \(\text{cov}(\hat\beta)=(M^{\top}M)^{-1}\sigma^2\) 这一个公式，同时解释了"信息量""共线性""为什么要标准化"——§4.2 让你亲手把共线性拨到爆炸。<br>③ <b>n=p 的崩溃是你以后调高维模型会反复撞见的幽灵。</b>残差自由度 \(n-p\) 一旦归零，你就<b>没有任何信息去估噪声</b>，所有"看起来完美"的拟合都是过拟合的伪装。把 §5.2 那张图拨到 \(n=p\)，亲眼看似然失去峰顶——这就是"参数比数据还多"时一切方差/不确定性估计失效的根。这条直觉，比记住 \(\hat\beta\) 的公式重要得多。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUDIT -->
+  <section id="audit" class="topic-block">
+    <h3 class="topic cjk">先给 AI 纪要 / 思维导图挑刺 ⚠</h3>
+    <p class="topic-en">Reading the machine-generated notes critically — what they nailed, and five things to fix</p>
+    <p class="cjk">你上传的 AI 纪要、图文纪要、思维导图，<b>叙事骨架基本到位</b>（Gibbs 用满条件逐参数更新、多元正态引入逆Wishart、线性回归"对参数线性"、OLS 无偏且 BLUE、\(\sigma^2\) 的 MLE 除以 \(n\) 是有偏的、\(n=p\) 时完美拟合……方向都对）。但有<b>五处</b>会把这一节最关键的两个概念（"为什么这里非共轭""OLS 到底假设了什么"）<b>带偏</b>，按"越要命越靠前"排列。前两条直接决定你能不能真懂这一节。</p>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 1（最要命）：纪要说"正态–逆Wishart 构成多元正态的共轭先验"——可课件用的<b>恰恰不是</b>它</div>
+      <p class="cjk">AI 纪要写"<b>正态-逆Wishart分布构成了多元正态模型的共轭先验，即后验分布仍保持相同形式</b>"。这句话单独看是<b>教科书结论</b>，但它<b>不是课件 p60–62 在做的事</b>，而这恰恰是整个例子的<b>题眼</b>。</p>
+      <p class="cjk">课件给的先验是<b>两个独立分布相乘</b>：\(f(\mu,\Sigma)=f(\mu)\,f(\Sigma)\)，其中 \(f(\mu)\propto 1\)（\(\mu\) 用平坦先验、与 \(\Sigma\) <b>无关</b>），\(f(\Sigma)\) 是逆Wishart。这<b>不是</b>真正的联合共轭先验。真正的<b>正态–逆Wishart（NIW）</b>共轭先验长这样：\(\Sigma\sim\text{InvWishart}\)，但 \(\mu\mid\Sigma\sim N(\mu_0,\Sigma/\kappa_0)\)——注意 \(\mu\) 的先验方差<b>必须正比于 \(\Sigma\)</b>，两者<b>绑在一起</b>。只有这样后验才是同族 NIW、能<b>直接抽样、不用 Gibbs</b>。</p>
+      <p class="cjk">课件用的是<b>独立先验</b>，联合起来<b>不共轭</b>——课件的 MATLAB 函数名直接叫 <span class="kw">NonconjugateMultivariateNormal</span>。<b>正因为不联合共轭，后验没有封闭标准形式，才必须用 Gibbs。</b>但每个<b>满条件</b>又恰好回到标准分布（\(\mu\mid\Sigma\) 是正态、\(\Sigma\mid\mu\) 是逆Wishart），这种"联合不共轭、逐条件共轭"的结构叫<b>条件共轭 / 半共轭（semi-conjugate）</b>，是 Gibbs 最常见的用武之地。把"半共轭"说成"共轭"，等于抹掉了"<b>为什么这里要用 Gibbs</b>"这个核心动机。§2.2 会把这层关系单独讲透。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 2（推广方向说反）：逆Wishart 是<b>逆伽马</b>的矩阵推广，不是"伽马的推广"</div>
+      <p class="cjk">思维导图写"<b>逆威沙特分布……伽马分布的推广</b>"。这一步推广<b>对错了对象</b>。一维世界里有一对：<b>伽马</b>常用作<b>精度</b>（方差的倒数）的先验，<b>逆伽马</b>常用作<b>方差</b>的先验。升到矩阵：<b>Wishart</b> 是伽马的矩阵版（用作<b>精度矩阵 \(\Sigma^{-1}\)</b> 的先验），<b>逆Wishart</b> 是<b>逆伽马</b>的矩阵版（用作<b>协方差矩阵 \(\Sigma\)</b> 的先验）。课件给 \(\Sigma\)（协方差，不是精度）配先验，用的正是<b>逆Wishart</b>——所以它的一维对应物是<b>逆伽马</b>。</p>
+      <p class="cjk">这不是咬文嚼字：记反了会让你在该用 Wishart 时用逆Wishart、把先验参数 \(\Psi\) 的含义搞颠。一个好记的锚点：逆Wishart 的<b>先验均值</b> \(\mathbb E(\Sigma)=\dfrac{\Psi}{\nu-k-1}\)（要求 \(\nu>k+1\)）——它给的是<b>协方差</b>的期望，正对应"逆伽马给方差期望"。（纪要也漏了 \(\nu>k+1\) 这个让均值存在的条件。）</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 3（把话说太满）："OLS 无需假设"——它无需<b>分布</b>假设，但绝非"无假设"</div>
+      <p class="cjk">思维导图把 OLS 的特点写成"<b>无需假设误差分布</b>"，AI 纪要也对照说"OLS没有假设；MLE假设误差项服从正态分布"。这容易被你读成"<b>OLS 什么都不假设</b>"——那是错的。要分清两层：</p>
+      <ul class="ul cjk">
+        <li><b>把 OLS 当纯优化</b>（最小化 \(\|Y-M\beta\|^2\)）：确实<b>不需要任何分布假设</b>，甚至不需要概率。这层纪要说得对。但它<b>另需</b>一个代数前提——\(M\) <b>列满秩</b>（否则 \(M^{\top}M\) 不可逆、解不唯一）。</li>
+        <li><b>要 OLS 的"好性质"</b>：那就<b>必须</b>有矩假设。<b>无偏</b>（定理 7.1）需要"误差均值为 0、模型设定正确"；<b>BLUE</b>（定理 7.2）还要"误差<b>不相关、同方差</b>"。所以纪要里"异方差/共线性会出问题"<b>恰恰证明</b> OLS 是有假设的——异方差破坏的就是同方差假设。</li>
+      </ul>
+      <p class="cjk">准确说法：<b>OLS 比 MLE 少一个<u>分布</u>假设（不必正态），但<u>不是</u>无假设</b>。它对"均值结构 + 二阶矩（同方差、不相关）+ 列满秩"是有要求的。下面 §4.1、§4.3 我会把每条假设挂到对应的结论上。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 4（崩错了对象）：n=p 时"无法求解 β 和 σ"——\(\beta\) 能唯一求出，崩的只是 \(\sigma^2\)</div>
+      <p class="cjk">转写纪要说 \(n=p\) 时"<b>无法通过求导方法求解贝塔和西格玛</b>"。这把两件事混成一件，反而盖住了真正的教训。课件 p8 讲得很清楚：\(n=p\) 时 \(M\) 是<b>方阵且满秩</b>，于是 \(M(M^{\top}M)^{-1}M^{\top}=I_n\)（投影矩阵退化成单位阵），\(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y=M^{-1}Y\) <b>仍然唯一确定</b>——而且拟合<b>完美</b>、残差 \(Y-M\hat\beta\equiv 0\)。</p>
+      <p class="cjk">真正崩的是 \(\sigma^2\)：残差恒为 0，似然变成 \(L(\hat\beta,\sigma^2)=(\sigma^2)^{-n/2}\)，当 \(\sigma^2\to 0\) 时它<b>冲向无穷、没有最大值</b>，所以 \((\beta,\sigma^2)\) 的 MLE <b>不存在</b>。换句话说：<b>参数把数据"用光了"，残差自由度 \(n-p=0\)，你没有任何剩余信息去估噪声 \(\sigma^2\)。</b>这才是"参数不能多于数据"的统计学根源（§5.2 让你拨着看）。说成"β 也求不出"会让你误以为是个数值/可解性问题，其实 β 好得很，问题在<b>信息</b>。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 5（精度 + 转写串字）：BLUE 不需要正态；几处名字写岔了</div>
+      <ul class="ul cjk">
+        <li><b>高斯–马尔可夫不需要误差正态。</b>纪要把 GM 和"误差正态下三种估计一致"讲在一起，容易让你以为"BLUE 要正态"。<b>不</b>：定理 7.2 只用"<b>不相关 + 同方差 + 均值 0</b>"，<b>正态完全没出场</b>。正态只在"把 BLUE 升级成<b>所有无偏估计</b>（不限线性）中的最优"时才需要——那是更强的结论（达到 Cramér–Rao 下界）。两者别混。另外课件定理 7.2 是对<b>每个线性组合 \(a^{\top}\beta\)</b> 陈述的（因而对每个分量都成立），比"整个 \(\hat\beta\) 方差最小"更精确。</li>
+        <li><b>转写串字：</b>"梯度<b>盘旋阵</b>"应为"梯度为 0 + 海森（\(2M^{\top}M\)）正定"；"<b>斜方弹性</b>协方差"应为"协方差"；"<b>贡献性</b>"应为"<b>共线性</b>"；"<b>曲据估计</b>"是语音乱码——课件 Ch7 p1–8 只讲了 <b>OLS 与 MLE 两种</b>估计，<b>没有</b>第三种"曲X估计"（你可能把后面才会讲的<b>岭回归 ridge</b> 听岔了，那要到模型选择/正则化部分）。</li>
+      </ul>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>公允地说</p>
+      <p class="cjk">这些错误集中在<b>"共轭 vs 半共轭""有无假设""崩的是谁"</b>这种<b>精度区</b>——纪要的<b>大叙事</b>是可信的，但<b>不能当公式手册或操作手册</b>。尤其"为什么这里非用 Gibbs 不可""OLS 到底假设了什么""\(n=p\) 崩的是 \(\sigma^2\) 不是 \(\beta\)"这三点，是本节"听懂大概、用时翻车"的高发区。下面每个量我都标注<b>用哪种参数化、对谁取期望、需要哪条假设、什么时候失灵</b>，并把最值得"摸"的几处（K 组链收敛、Σ₁₁ 右偏后验、OLS 投影几何、共线性方差爆炸、n=p 似然失峰）做成可交互的图。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART I ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第一部分 · Gibbs 实战①（Ch6 p57–59）</span>
+    <h2 class="part-title cjk">K 组正态：把"K 个均值 + 一个精度"拆成一串一维满条件</h2>
+    <p class="part-lead cjk">第十节给了 Gibbs 的算法骨架；这里给它<b>第一个有血有肉的模型</b>。设有一个<b>定性因子</b>取 \(K\) 个水平（如 \(K\) 种处理、\(K\) 个班级），每个水平做 \(J\) 次重复观测。组 \(i\) 的真实均值是 \(\theta_i\)，所有组共用一个<b>公共精度 \(\lambda\)</b>（精度 = 方差倒数）。要估的参数有 \(K{+}1\) 个：\((\theta_1,\dots,\theta_K,\lambda)\)。这正是 Gibbs 的主场——它把"一次抽一个 \((K{+}1)\) 维向量"拆成"<b>轮流抽每一个一维分量</b>"，而这里每个分量的满条件都是<b>查得到表的标准分布</b>。</p>
+  </div>
+
+  <!-- 1.1 model + joint posterior -->
+  <section id="t-kg-model" class="topic-block">
+    <h3 class="topic cjk">1.1　模型设定与联合后验</h3>
+    <p class="topic-en">One-way layout: K group means with a shared precision; write down the joint posterior</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#spine">承接第十节：Gibbs 算法骨架</a></span>
+      <span class="rel inherit"><span class="dot"></span>复用：第八节"正态–正态共轭"将原样出现在 θ 的满条件里</span>
+      <span class="rel tool"><span class="dot"></span>工具：丢掉与 θᵢ 无关的因子 ⇒ 满条件</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 抽样模型 + 独立先验</div>
+      <p class="cjk">数据按"水平 \(i\)、重复 \(j\)"双下标排列，给定参数后相互独立同正态（用<b>精度</b> \(\lambda\) 参数化，即方差为 \(\lambda^{-1}\)）：</p>
+      <p>$$X_{ij}\mid\theta_1,\dots,\theta_K,\lambda\;\sim\;N(\theta_i,\ \lambda^{-1}),\qquad i=1,\dots,K,\ \ j=1,\dots,J.$$</p>
+      <p class="cjk">参数取<b>相互独立</b>的先验——组均值各自正态、公共精度伽马：</p>
+      <p>$$\theta_i\sim N(\mu,\ \eta^{-1}),\quad i=1,\dots,K;\qquad \lambda\sim\text{Gamma}(a,b).$$</p>
+      <p class="cjk">记每组样本均值与（除以 \(J\) 的）样本方差：\(\displaystyle \bar x_i=\frac1J\sum_{j=1}^J x_{ij}\)，\(\displaystyle s_i^2=\frac1J\sum_{j=1}^J (x_{ij}-\bar x_i)^2\)。把似然 \(\times\) 先验、丢掉常数，得<b>联合后验</b>的核：</p>
+      <p>$$f(\theta_1,\dots,\theta_K,\lambda\mid x)\ \propto\ \lambda^{\frac{KJ}{2}+a-1}\exp\!\Big\{-\tfrac{\lambda}{2}\,J\textstyle\sum_{i=1}^K\big[(\theta_i-\bar x_i)^2+s_i^2\big]\;-\;\tfrac{\eta}{2}\textstyle\sum_{i=1}^K(\theta_i-\mu)^2\;-\;\tfrac{\lambda}{b}\Big\}\,I(\lambda>0).$$</p>
+      <p class="cap cjk">这个 \((K{+}1)\) 维的东西<b>不是</b>任何有名的分布——你无法直接抽样。但 Gibbs 不需要它整体可抽；它只问"<b>固定其余全部参数，单独一个参数的条件分布长啥样</b>"。下一节就把它逐个挑出来。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>推导 · 为什么 \(\sum_j(x_{ij}-\theta_i)^2 = J[(\theta_i-\bar x_i)^2 + s_i^2]\)</div>
+      <p class="cjk">联合后验里那个"\(J[(\theta_i-\bar x_i)^2+s_i^2]\)"是怎么从 \(\sum_j(x_{ij}-\theta_i)^2\) 来的？这是回归/方差分析里反复用到的<b>配方（add-and-subtract \(\bar x_i\)）</b>：</p>
+      <ol class="steps cjk">
+        <li><b>加减组均值：</b>\(\displaystyle\sum_{j=1}^J(x_{ij}-\theta_i)^2=\sum_{j=1}^J\big[(x_{ij}-\bar x_i)+(\bar x_i-\theta_i)\big]^2.\)</li>
+        <li><b>展开平方：</b>得三项 \(\sum_j(x_{ij}-\bar x_i)^2+\sum_j(\bar x_i-\theta_i)^2+2(\bar x_i-\theta_i)\sum_j(x_{ij}-\bar x_i)\)。</li>
+        <li><b>交叉项消失：</b>\(\sum_j(x_{ij}-\bar x_i)=0\)（偏离均值之和恒为 0），中间项<b>整块归零</b>。</li>
+        <li><b>收尾：</b>剩 \(\underbrace{\sum_j(x_{ij}-\bar x_i)^2}_{=Js_i^2}+\underbrace{J(\bar x_i-\theta_i)^2}_{J\text{ 个相同项}}=J\big[s_i^2+(\theta_i-\bar x_i)^2\big].\)</li>
+      </ol>
+      <p class="cap cjk">这一步的意义：它把"数据对 \(\theta_i\) 的依赖"<b>完全压进了 \((\theta_i-\bar x_i)^2\) 这一个二次项</b>，而 \(s_i^2\) 与 \(\theta_i\) 无关。所以抽 \(\theta_i\) 时只需盯住这个二次项——它会和先验的 \((\theta_i-\mu)^2\) 合并成一个新的正态。</p>
+    </div>
+  </section>
+
+  <!-- 1.2 full conditionals -->
+  <section id="t-kg-fc" class="topic-block">
+    <h3 class="topic cjk">1.2　两个满条件：θᵢ 抽正态（精度加权平均），λ 抽伽马</h3>
+    <p class="topic-en">The two full conditionals — a precision-weighted normal for each mean, a gamma for the precision</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-kg-model">从 §1.1 的联合后验"丢因子"得到</a></span>
+      <span class="rel inherit"><span class="dot"></span>复用：θᵢ 的更新 = 第八节正态–正态共轭（精度相加、均值精度加权）</span>
+      <span class="rel general"><span class="dot"></span>供给：§1.3 的采样器逐行实现这两条</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · θᵢ 的满条件（固定其余参数）</div>
+      <p class="cjk">在联合后验里只保留含 \(\theta_i\) 的项（\(\theta_{-i}\) 与 \(\lambda\) 都当常数），是两个二次项之和：\(-\tfrac{\lambda J}{2}(\theta_i-\bar x_i)^2-\tfrac{\eta}{2}(\theta_i-\mu)^2\)。两个正态核相乘<b>仍是正态</b>，按"精度相加、均值按精度加权"合并（即课件 p21 的结论）：</p>
+      <p>$$\boxed{\ \theta_i\mid x,\theta_{-i},\lambda\ \sim\ N\!\left(\frac{\lambda J\,\bar x_i+\eta\,\mu}{\lambda J+\eta},\ \big(\lambda J+\eta\big)^{-1}\right),\quad i=1,\dots,K.\ }$$</p>
+      <p class="cap cjk"><b>读这个公式</b>：后验均值是<b>数据信息 \(\bar x_i\)（权重 \(\lambda J\)）</b>与<b>先验信息 \(\mu\)（权重 \(\eta\)）</b>的<b>精度加权平均</b>；后验精度是两者精度之和 \(\lambda J+\eta\)。数据越多（\(J\) 大）或噪声越小（\(\lambda\) 大），数据权重 \(\lambda J\) 越大、估计越靠 \(\bar x_i\)、且越确定（方差越小）。这正是第八节正态–正态共轭的<b>原样复用</b>——只不过现在 \(\lambda\) 不是固定值，而是每一轮 Gibbs 从它自己的满条件里<b>刚抽出来的随机数</b>。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · λ 的满条件（固定所有 θ）</div>
+      <p class="cjk">只保留含 \(\lambda\) 的项：\(\lambda^{\frac{KJ}{2}+a-1}\exp\{-\lambda\cdot[\,\tfrac{J}{2}\sum_i((\theta_i-\bar x_i)^2+s_i^2)+\tfrac1b\,]\}\)。这正是<b>伽马分布</b>的核（形状 \(-1\) 次幂 \(\times\) 指数衰减）：</p>
+      <p>$$\boxed{\ \lambda\mid x,\theta\ \sim\ \text{Gamma}\!\left(\frac{KJ}{2}+a,\ \ \frac{2}{\,J\sum_{i=1}^K\big[(\theta_i-\bar x_i)^2+s_i^2\big]+\tfrac{2}{b}\,}\right).\ }$$</p>
+      <p class="cap cjk">这里第二个参数是<b>尺度（scale）</b>（与 MATLAB <code>gamrnd(shape,scale)</code> 一致），所以 \(\mathbb E(\lambda\mid\cdot)=\text{形状}\times\text{尺度}\)。直觉：形状随<b>总样本量 \(KJ\)</b> 增长；尺度的分母是"<b>所有组的总平方偏差 \(+\) 先验项</b>"——偏差越大说明噪声越大，尺度越小、抽出的 \(\lambda\)（精度）越小，对应方差越大。完全合理。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · Gibbs 在这里就是"两步交替的对话"</div>
+      <p class="cjk">把 Gibbs 想成 \(\theta\) 和 \(\lambda\) 之间的一场<b>来回对话</b>：<b>(1)</b> 给定当前的噪声水平 \(\lambda\)，各组均值 \(\theta_i\) 就按"数据和先验谁更可信"做加权平均，各自抽一个正态；<b>(2)</b> 给定刚更新的各组均值，把所有残差汇总，重新评估噪声 \(\lambda\)，抽一个伽马。两步交替无穷次，这条链的足迹就<b>踏遍</b>了那个 \((K{+}1)\) 维联合后验——而我们<b>从没</b>直接面对那个吓人的高维分布，只反复用了两个一维标准分布。这就是 Gibbs 把"高维难题"降维成"一串一维易事"的全部魔法。</p>
+    </div>
+  </section>
+
+  <!-- 1.3 interactive Gibbs sampler -->
+  <section id="t-kg-live" class="topic-block">
+    <h3 class="topic cjk">1.3　★ 亲手跑这台 Gibbs：看 5 条链各自爬向真值</h3>
+    <p class="topic-en">A live Gibbs sampler for the K-group model — watch four mean-chains and one precision-chain converge</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-kg-fc">逐行实现 §1.2 的两个满条件</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：θᵢ←normrnd，λ←gamrnd（每轮全更新一次）</span>
+      <span class="rel dual"><span class="dot"></span>对照：burn-in 与 trace plot 用法同第十节 MH</span>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>交互 · 复刻课件 OneWayANOVA 例子（K=4，真值 θ=[−2,−1,1,2]，真精度 λ=1）</div>
+      <p class="cjk">数据按课件设定生成一次：\(K=4\) 组，每组 \(J\) 个观测，真均值 \([-2,-1,1,2]\)，加 \(N(0,1)\) 噪声（故真精度 \(\lambda=1\)）。先验取课件值 \(\mu=0,\ \eta=0.1,\ a=0.1,\ b=10\)（很弱）。<b>上图</b>是 5 条 <b>trace plot</b>：4 条彩色 = 各组均值 \(\theta_i\)，1 条深色 = 公共精度 \(\lambda\)，横轴是迭代步。<b>下图</b>是<b>丢掉前 \(N_0\) 步后</b>各 \(\theta_i\) 的后验直方图，应分别聚在 \(-2,-1,1,2\) 附近。</p>
+      <p class="cjk"><b>请亲自观察</b>（这是 Gibbs 唯一需要"手感"的地方）：</p>
+      <ul class="ul cjk">
+        <li><b>点"运行"</b>：5 条链从初值（\(\theta\) 全设 \(\mu=0\)、\(\lambda\) 设先验均值 \(ab=1\)）出发，迅速各自爬到真值附近后<b>横向抖动</b>——这"抖动带"就是后验，带的宽窄 ≈ 后验标准差。注意它<b>永不被拒</b>（Gibbs 接受率恒为 1），所以没有 MH 那种水平死线。</li>
+        <li><b>把 \(J\) 调大</b>（如 40）：数据权重 \(\lambda J\) 压倒先验，抖动带<b>变窄</b>、链更快锁定真值、组间分得更开——这是"数据越多后验越集中"的现身。</li>
+        <li><b>把 \(J\) 调到很小</b>（如 2–3）：每组只有两三个点，抖动带<b>变宽</b>，相邻真值（如 \(-1\) 与 \(1\)）的后验可能<b>互相渗透</b>——小样本下你分不清两个接近的组均值。</li>
+      </ul>
+      <div class="controls">
+        <div class="ctrl"><label>每组样本量 J <span class="val" id="kg-J-v">10</span></label><input type="range" id="kg-J" min="2" max="50" step="1" value="10"></div>
+        <div class="seg" id="kg-speed" style="margin-top:6px">
+          <button data-spd="2" class="on">慢放</button><button data-spd="8">常速</button><button data-spd="40">快进</button>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="kg-run">▶ 运行 / 暂停</button>
+        <button class="btn ghost" id="kg-step">+200 步</button>
+        <button class="btn ghost" id="kg-reset">↺ 重置（重抽数据）</button>
+      </div>
+      <div class="readout cjk">
+        <span>迭代：<b id="kg-iter">0</b></span>
+        <span>λ 后验均值（丢 burn-in）：<b id="kg-lam">—</b></span>
+        <span id="kg-verdict" class="rd-note">点"运行"，盯住抖动带的宽窄随 J 怎么变</span>
+      </div>
+      <div class="plotwrap"><div id="p-kg-trace" class="plot tall"><div class="loading cjk">等待运行…</div></div></div>
+      <div class="plotwrap"><div id="p-kg-hist" class="plot"><div class="loading cjk">后验直方图将在这里出现…</div></div></div>
+      <p class="cap cjk">真精度 \(\lambda=1\)（噪声方差 1）。课件用 \(N=10^4,\ N_0=10^3\) 跑出的 \(\theta\) 后验均值约 \([-1.97,-1.26,1.43,2.13]\)、\(\lambda\approx 1.42\)——你这里步数少、随机种子不同，数字会有出入，但<b>定性结论一致</b>：链都收敛、各组分开、\(\lambda\) 落在 1 附近偏高一点（弱先验 \(b=10\) 把它略微往上拉）。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">▣</span>案例 · 课件 MATLAB 代码（你刚才那台采样器的"原文"）</div>
+      <div class="code"><span class="c">% OneWayANOVA：K 组正态的 Gibbs 采样</span>
+K=4; J=10; truemean=[-2;-1;1;2];
+Data=repmat(truemean,1,J)+normrnd(0,1,K,J);   <span class="c">% 生成数据（真 λ=1）</span>
+xbar=mean(Data,2); s2=var(Data,1,2);          <span class="c">% s2 除以 J（population var）</span>
+mu=0; eta=0.1; a=0.1; b=10;                    <span class="c">% 弱先验</span>
+theta=mu*ones(K,1); lambda=a*b;                <span class="c">% 初值</span>
+Nsim=10000; N0=1000; storepar=zeros(K+1,Nsim);
+<span class="k">while</span>(count&lt;=(Nsim-1))
+  <span class="k">for</span> i=1:K                                    <span class="c">% 逐个抽 θ_i（正态）</span>
+    theta(i)=normrnd((lambda*J*xbar(i)+eta*mu)/(lambda*J+eta), sqrt(1/(lambda*J+eta)));
+  <span class="k">end</span>
+  lambda=gamrnd(K*J/2+a, 2/(J*sum((theta-xbar).^2+s2)+2/b));  <span class="c">% 抽 λ（伽马）</span>
+  storepar(:,count)=[theta;lambda]; count=count+1;
+<span class="k">end</span>
+mean(storepar(:,(N0+1):Nsim),2)               <span class="c">% 丢 burn-in 后求后验均值</span></div>
+      <p class="cap cjk">注意内层 <code>for i=1:K</code> 抽 \(\theta_i\) 时，用的 \(\lambda\) 是<b>本轮刚更新到的</b>；而抽 \(\lambda\) 时用的 \(\theta\) 是<b>这一整轮 \(K\) 个 \(\theta\) 都更新完</b>的——这就是第十节说的"有新用新"。本页的 JS 采样器与这段一一对应。</p>
+    </div>
+  </section>
+
+  <!-- 1.4 3D full conditional -->
+  <section id="t-kg-fc3d" class="topic-block">
+    <h3 class="topic cjk">1.4　★ 精度一变，θᵢ 的满条件就移位又收紧（3D）</h3>
+    <p class="topic-en">How the normal full conditional of θᵢ shifts and sharpens as the precision λ changes</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-kg-fc">把 §1.2 的 θᵢ 满条件画成曲面</a></span>
+      <span class="rel general"><span class="dot"></span>解释：为什么 Gibbs 里 θ 和 λ 必须"互相喂"</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 满条件密度 \(N\big(\tfrac{\lambda J\bar x_i+\eta\mu}{\lambda J+\eta},(\lambda J+\eta)^{-1}\big)\)：横轴 θ、纵轴 λ、高度=密度</div>
+      <p class="cjk">这张曲面把"\(\theta_i\) 的满条件"沿不同的 \(\lambda\) <b>摞</b>起来看：每给一个 \(\lambda\)（纵轴的一行），就是一条正态密度（横轴 \(\theta\)）。沿 \(\lambda\) 从小到大走，盯住这条钟形：</p>
+      <ul class="ul cjk">
+        <li><b>峰会移位：</b>\(\lambda\) 很小时（数据没说服力），峰停在<b>先验均值 \(\mu\)</b> 附近；\(\lambda\) 增大，峰被<b>拽向数据均值 \(\bar x_i\)</b>（金色虚线）。</li>
+        <li><b>峰会收紧：</b>方差 \((\lambda J+\eta)^{-1}\) 随 \(\lambda\) 增大而减小——钟形越来越<b>瘦高</b>。这就是"噪声越小、对该组均值越笃定"。</li>
+      </ul>
+      <p class="cjk">这正解释了 Gibbs 里 \(\theta\) 与 \(\lambda\) <b>为何必须交替喂养</b>：抽 \(\theta_i\) 要知道当前 \(\lambda\)（决定钟形在哪、多瘦）；而抽 \(\lambda\) 又要知道刚更新的所有 \(\theta\)（决定残差多大）。拨动滑块改 \(\bar x_i,\mu,\eta\)，看曲面整体如何被推拉。</p>
+      <div class="controls">
+        <div class="ctrl"><label>数据均值 x̄ᵢ <span class="val" id="kg3-xbar-v">2.0</span></label><input type="range" id="kg3-xbar" min="-3" max="3" step="0.1" value="2"></div>
+        <div class="ctrl"><label>先验均值 μ <span class="val" id="kg3-mu-v">0.0</span></label><input type="range" id="kg3-mu" min="-3" max="3" step="0.1" value="0"></div>
+        <div class="ctrl"><label>先验精度 η <span class="val" id="kg3-eta-v">0.5</span></label><input type="range" id="kg3-eta" min="0.05" max="4" step="0.05" value="0.5"></div>
+      </div>
+      <div class="plotwrap"><div id="p-kg-fc3d" class="plot d3"><div class="loading cjk">正在绘制满条件曲面…</div></div></div>
+      <p class="cap cjk">取 \(J=10\) 固定。把 \(\eta\) 调大（强先验）会发现：即便 \(\lambda\) 很大，峰也<b>不肯完全</b>贴到 \(\bar x_i\)——强先验把估计往 \(\mu\) 拽。这就是"先验权重"那把主观的刀（第十节 §5.2 讲过它的两面）。</p>
+    </div>
+  </section>
+
+  <!-- ===================== PART II ===================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第二部分 · Gibbs 实战②（Ch6 p60–62）</span>
+    <h2 class="part-title cjk">多元正态 + 逆Wishart：把"均值向量 + 协方差矩阵"交替抽</h2>
+    <p class="part-lead cjk">K 组正态里待估的是\(K\) 个标量均值加一个标量精度。这一节把维度真正抬起来：观测是 \(k\) 维向量，参数是<b>一个均值向量 \(\mu\) 加一整个协方差矩阵 \(\Sigma\)</b>。\(\Sigma\) 里既有方差也有协方差，是个<b>矩阵参数</b>——给它配先验、抽它的后验，都得用矩阵分布（逆Wishart）。这一节的题眼是：课件用的先验<b>联合起来并不共轭</b>（函数名直接写 <span class="kw">Nonconjugate</span>），所以<b>必须</b>上 Gibbs；但每个满条件又恰好落回标准分布。这正是 §0 错误 1 要纠的地方，下面把它彻底讲清。</p>
+  </div>
+
+  <!-- 2.1 model + inverse-Wishart prior -->
+  <section id="t-mvn-model" class="topic-block">
+    <h3 class="topic cjk">2.1　模型设定与逆Wishart 先验</h3>
+    <p class="topic-en">A multivariate normal sampling model with a flat prior on the mean and an inverse-Wishart prior on the covariance</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-kg-model">从"标量精度 λ"升级到"协方差矩阵 Σ"</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：逆Wishart = 协方差矩阵的共轭族先验</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 抽样模型 + 独立先验</div>
+      <p class="cjk">观测是 \(n\) 个独立的 \(k\) 维正态向量，参数是均值向量与协方差矩阵这<b>一对</b> \(\theta=(\mu,\Sigma)\)：</p>
+      <p>$$X^{(i)}\mid\mu,\Sigma\;\sim\;N_k(\mu,\ \Sigma),\qquad i=1,\dots,n.$$</p>
+      <p class="cjk">课件给的先验是<b>两个独立块相乘</b>——均值用<b>平坦先验</b>（无信息、与 \(\Sigma\) 无关），协方差用<b>逆Wishart</b>：</p>
+      <p>$$f(\mu)\propto 1,\qquad f(\Sigma)=\text{InvWishart}(\Psi,\nu)\ \propto\ |\Sigma|^{-\frac{\nu+k+1}{2}}\exp\!\Big\{-\tfrac12\,\mathrm{tr}\!\big(\Sigma^{-1}\Psi\big)\Big\}.$$</p>
+      <p class="cjk">逆Wishart 由<b>尺度矩阵 \(\Psi\)（\(k\times k\) 正定）</b>与<b>自由度 \(\nu\)</b> 两个超参刻画。它最该记住的一条性质是<b>先验均值</b>：</p>
+      <p>$$\mathbb E(\Sigma)=\frac{\Psi}{\nu-k-1},\qquad \text{要求}\ \nu>k+1.$$</p>
+      <p class="cap cjk">所以 \(\Psi\) 大致定"你先验上认为 \(\Sigma\) 多大"，\(\nu\) 定"这个先验信念有多硬"（\(\nu\) 越大越集中在 \(\Psi/(\nu-k-1)\) 附近）。\(\nu\le k+1\) 时连先验均值都不存在——这是 §0 错误 2 提到、纪要漏掉的门槛。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">✦</span>直觉 · 为什么协方差要专门一族矩阵先验</div>
+      <p class="cjk">一维时方差是个正数，配<b>逆伽马</b>先验就行。升到 \(k\) 维，\(\Sigma\) 不只是几个数：它必须<b>对称、正定</b>（否则不是合法协方差）。逆Wishart 的妙处是它<b>天生只把质量放在正定矩阵上</b>——你从它抽出来的每个样本都是合法协方差矩阵，省去"抽完还要检查/投影回正定"的麻烦。它就是<b>逆伽马的矩阵版</b>（§0 错误 2 的锚点：给<b>协方差</b>配先验 ⇒ 逆Wishart；给<b>精度矩阵 \(\Sigma^{-1}\)</b> 配先验才是 Wishart）。</p>
+    </div>
+  </section>
+
+  <!-- 2.2 the "nonconjugate" point -->
+  <section id="t-mvn-conj" class="topic-block">
+    <h3 class="topic cjk">2.2　★ 盲点：这个先验其实"非共轭"——所以才非用 Gibbs 不可</h3>
+    <p class="topic-en">Why the independent prior is jointly non-conjugate, yet conditionally conjugate (semi-conjugate)</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span><a href="#audit">直接对应 §0 错误 1</a></span>
+      <span class="rel general"><span class="dot"></span>解释：Gibbs 的"用武之地"=半共轭</span>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⇄</span>推导 · 把"共轭 / 半共轭 / 不共轭"一次摆清</div>
+      <p class="cjk">"共轭"是说<b>先验和后验同族</b>——若成立，后验参数有封闭公式，<b>能直接抽样，不必 Gibbs</b>。要判断这里到底属于哪种，看三个层次：</p>
+      <ol class="steps cjk">
+        <li><b>真正的联合共轭（NIW）长这样：</b>\(\Sigma\sim\text{InvWishart}(\Psi,\nu)\)，且 \(\mu\mid\Sigma\sim N(\mu_0,\ \Sigma/\kappa_0)\)。关键在<b>\(\mu\) 的先验方差正比于 \(\Sigma\)</b>，两者<b>焊死在一起</b>。这样联合先验才与似然共轭、后验仍是 NIW，可<b>一步直抽</b>。</li>
+        <li><b>课件用的不是它：</b>课件取 \(f(\mu)\propto1\)（与 \(\Sigma\) <b>无关</b>）\(\times\ f(\Sigma)=\text{InvWishart}\)。\(\mu,\Sigma\) <b>先验独立</b>。这个联合先验<b>不与多元正态似然共轭</b>——联合后验<b>没有</b>封闭的标准分布形式。MATLAB 函数名诚实地写着 <span class="kw">NonconjugateMultivariateNormal</span>。</li>
+        <li><b>但它"逐条件"共轭：</b>固定 \(\Sigma\) 看 \(\mu\) → 后验是正态；固定 \(\mu\) 看 \(\Sigma\) → 后验是逆Wishart。<b>每个满条件都回到标准族</b>。这种"<b>联合不共轭、条件共轭</b>"叫<b>半共轭 / 条件共轭（semi-conjugate）</b>。</li>
+      </ol>
+      <p class="cjk"><b>这就是 Gibbs 的标准应用场景</b>：联合抽不了（不共轭），但每个满条件都能直抽（半共轭），于是轮流抽 \(\mu\mid\Sigma\)、\(\Sigma\mid\mu\) 就能逼近联合后验。把"半共轭"误说成"共轭"，等于把"<b>为什么这里非要用 Gibbs</b>"这个动机整个抹掉——明明能一步直抽的话，根本用不着 Gibbs。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">✦</span>一句话锚点</div>
+      <p class="cjk"><b>共轭 → 直抽</b>；<b>半共轭 → Gibbs</b>；<b>连半共轭都不是 → 才轮到 MH</b>（第十节那套带接受率的）。课件这个例子卡在中间一档：<b>半共轭，用 Gibbs</b>。</p>
+    </div>
+  </section>
+
+  <!-- 2.3 full conditionals -->
+  <section id="t-mvn-fc" class="topic-block">
+    <h3 class="topic cjk">2.3　两个满条件：一个正态、一个逆Wishart</h3>
+    <p class="topic-en">The two full conditionals that drive the Gibbs sampler</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-kg-fc">和 §1.2 同构：每个满条件都查得到表</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：把这两条接力，就是 §2.4 的采样器</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 似然的核与两个满条件</div>
+      <p class="cjk">记样本均值 \(\bar x=\frac1n\sum_i x^{(i)}\) 与<b>离差平方和矩阵</b> \(S=\sum_{i=1}^n (x^{(i)}-\bar x)(x^{(i)}-\bar x)^{\top}\)。似然写成"绕 \(\bar x\) 的散布 + 中心偏移"两块：</p>
+      <p>$$f(x\mid\mu,\Sigma)\ \propto\ |\Sigma|^{-\frac n2}\exp\!\Big\{-\tfrac12\,\mathrm{tr}\!\big(\Sigma^{-1}S\big)\;-\;\tfrac n2\,(\bar x-\mu)^{\top}\Sigma^{-1}(\bar x-\mu)\Big\}.$$</p>
+      <p class="cjk"><b>满条件 ①（给定 \(\Sigma\)，抽 \(\mu\)）。</b>平坦先验下只剩似然里关于 \(\mu\) 的那块二次型，配方即得正态——和单参数"正态均值"那套一模一样，只是升成向量：</p>
+      <p>$$\mu\mid\Sigma,x\ \sim\ N_k\!\Big(\bar x,\ \tfrac1n\,\Sigma\Big).$$</p>
+      <p class="cjk"><b>满条件 ②（给定 \(\mu\)，抽 \(\Sigma\)）。</b>把似然里两块 \(\mathrm{tr}\) 项与逆Wishart 先验的核相乘合并，尺度矩阵相加、自由度相加：</p>
+      <p>$$\Sigma\mid\mu,x\ \sim\ \text{InvWishart}\!\Big(\ \Psi+S+n(\bar x-\mu)(\bar x-\mu)^{\top},\ \ \nu+n\ \Big).$$</p>
+      <p class="cap cjk">读这两条像读一对"互喂"的指令：抽 \(\mu\) 要知道当前 \(\Sigma\)（决定 \(\mu\) 后验有多散）；抽 \(\Sigma\) 又要知道刚更新的 \(\mu\)（决定中心偏移项 \(n(\bar x-\mu)(\bar x-\mu)^{\top}\) 有多大）。这与 §1 的 \(\theta\leftrightarrow\lambda\) 互喂是同一种结构。\(\nu+n\) 是整数（先验自由度 + 样本量），下一节抽样正好用得上。</p>
+    </div>
+  </section>
+
+  <!-- 2.4 Sigma_11 posterior interactive -->
+  <section id="t-mvn-live" class="topic-block">
+    <h3 class="topic cjk">2.4　★ 估 Σ₁₁ 的后验：一条被先验与数据"拔河"出来的右偏分布（交互）</h3>
+    <p class="topic-en">Live Gibbs reproduction of the textbook example: the posterior of the variance entry Σ₁₁</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-mvn-fc">就是把 §2.3 两条满条件接力跑</a></span>
+      <span class="rel general"><span class="dot"></span>复现课件 p62 的 MATLAB 例子</span>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">▶</span>实时 · Gibbs 抽 (μ,Σ)，只盯协方差矩阵的左上角 Σ₁₁</div>
+      <p class="cjk">课件固定数据：\(n=20\)，样本均值 \(\bar x=(60,\ 1.7)^{\top}\)，离差矩阵 \(S=20\cdot\!\left(\begin{smallmatrix}9&0.3\\0.3&0.025\end{smallmatrix}\right)\)（即<b>数据本身报出</b>的 \(\Sigma_{11}\) 约 \(S_{11}/n=9\)）。先验 \(\Psi=\!\left(\begin{smallmatrix}4&0\\0&0.04\end{smallmatrix}\right)\)。我们跑 §2.3 的两条满条件，把每步抽到的 \(\Sigma_{11}\) 堆成直方图。盯三件事：</p>
+      <ul class="ul cjk">
+        <li><b>形状右偏：</b>方差类参数的后验天然<b>右偏</b>（左有 0 这堵墙、右边长尾），峰不在均值处。这与"正态对称"是两码事。</li>
+        <li><b>位置在拔河：</b>先验说 \(\Sigma_{11}\) 的均值是 \(\Psi_{11}/(\nu-k-1)\)（默认 \(=4/(4-2-1)=4\)），数据说约 \(9\)。后验落在两者之间，<b>偏向数据</b>（\(n=20\) 比先验自由度 \(\nu=4\) 重）。</li>
+        <li><b>调 ν 看拔河力度：</b>把 \(\nu\) 调大（强先验），峰被往 \(4\) 拽；\(\nu\) 调小，峰贴近数据的 \(9\)。这就是"先验自由度 = 先验有多硬"。</li>
+      </ul>
+      <div class="controls">
+        <div class="ctrl"><label>先验自由度 ν <span class="val" id="mvn-nu-v">4</span></label><input type="range" id="mvn-nu" min="3.1" max="60" step="0.1" value="4"></div>
+        <div class="ctrl"><label>先验尺度 Ψ₁₁ <span class="val" id="mvn-psi-v">4.0</span></label><input type="range" id="mvn-psi" min="1" max="20" step="0.5" value="4"></div>
+        <div class="ctrl seg" id="mvn-speed" role="group" aria-label="速度">
+          <button data-spd="5" class="on">慢</button><button data-spd="30">中</button><button data-spd="160">快</button>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn accent" id="mvn-run">▶ 连续抽</button>
+        <button class="btn" id="mvn-step">单步 +1</button>
+        <button class="btn" id="mvn-reset">↻ 重置</button>
+        <span class="readout cjk">已抽 <b id="mvn-iter">0</b> 步　|　后验均值 Σ₁₁ ≈ <b id="mvn-mean">—</b>　|　先验均值 Σ₁₁ = <b id="mvn-pm">4.00</b>　|　<span id="mvn-verdict">数据 S₁₁/n = 9.00，看后验落哪</span></span>
+      </div>
+      <div class="plotwrap"><div id="p-mvn-hist" class="plot tall"><div class="loading cjk">等待开抽…</div></div></div>
+      <p class="cap cjk">忽略前 \(N_0\) 步（burn-in）后再统计直方图——这是第十节强调过的。注意：把 \(\nu\) 拉到很大、\(\Psi_{11}\) 改小，你能把后验<b>整条</b>拽离数据的 9，这正是"强先验会带偏估计"的可视化（先验是一把主观的刀，第十节 §5.2 讲过两面性）。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">◧</span>案例 · 课件 p62 的 NonconjugateMultivariateNormal（MATLAB 骨架）</div>
+      <p class="cjk">下面是课件示例的结构（已精简注释）。看两处和本页 JS 完全对应：\(\mu\) 用 <code>mvnrnd</code> 抽正态、\(\Sigma\) 用 <code>iwishrnd</code> 抽逆Wishart，尺度矩阵正是 \(\Psi+S+n(\bar x-\mu)(\bar x-\mu)^{\top}\)：</p>
+      <pre class="code">n=20; xbar=[60;1.7];
+S=20*[9 0.3; 0.3 0.025];        % 离差平方和矩阵
+nu=4;  Psi=[4 0; 0 0.04];       % 逆Wishart 先验：自由度 nu、尺度 Psi
+Nsim=1500; N0=500;              % 总迭代 / burn-in
+Sig=Psi/(nu-3);                 % 初值：取先验均值（k=2 ⇒ nu-k-1=nu-3）
+keep=zeros(Nsim,1);
+for t=1:Nsim
+    % ① 给定 Sigma，抽 mu ~ N(xbar, Sigma/n)
+    mu = mvnrnd(xbar', Sig/n)';
+    % ② 给定 mu，抽 Sigma ~ InvWishart(Psi + S + n(xbar-mu)(xbar-mu)', nu+n)
+    d  = xbar - mu;
+    Sig = iwishrnd(Psi + S + n*(d*d'), nu+n);
+    keep(t) = Sig(1,1);         % 只留 Sigma_11
+end
+hist(keep(N0+1:end), 40)        % 右偏的后验直方图</pre>
+      <p class="cap cjk">本页 JS 没有 <code>iwishrnd</code> 现成函数，所以用定义自己造：逆Wishart 等价于"<b>先抽 Wishart，再求逆</b>"。\(2\times2\) 的 Wishart 用 \(W=\sum_{j=1}^{\nu+n} z_jz_j^{\top}\)（\(z_j\sim N(0,\Sigma_{\text{scale}}^{-1})\) 经 Cholesky 生成），再对 \(W\) 做 \(2\times2\) 闭式求逆得 \(\Sigma\)。细节见文末"诚实的边角声明"。</p>
+    </div>
+  </section>
+
+  <!-- 2.5 covariance ellipses 3D -->
+  <section id="t-mvn-3d" class="topic-block">
+    <h3 class="topic cjk">2.5　★ 数据云上"长"出协方差椭圆：Σ 的三个数怎样塑形那口钟（3D）</h3>
+    <p class="topic-en">How the three entries of a 2×2 covariance reshape the bell and its 1σ ellipse</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-mvn-live">Gibbs 抽的就是这个 Σ</a></span>
+      <span class="rel general"><span class="dot"></span>把"矩阵参数"翻译成看得见的几何</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 二元正态密度曲面 + 地面 1σ 椭圆 + 数据云</div>
+      <p class="cjk">\(\Sigma\) 是个矩阵，听起来抽象，但它对二元正态钟形的作用<b>完全是几何的</b>。曲面是密度 \(N_2(0,\Sigma)\)，地面那圈是它的 \(1\sigma\) 等高椭圆，散点是从该 \(\Sigma\) 采的数据云。拨三个滑块：</p>
+      <ul class="ul cjk">
+        <li><b>\(\Sigma_{11}\)（横向方差）：</b>调大 → 钟沿 \(x\) 摊平、椭圆<b>横向拉长</b>。这正是 §2.4 在估的那个数。</li>
+        <li><b>\(\Sigma_{22}\)（纵向方差）：</b>调大 → 钟沿 \(y\) 摊平、椭圆纵向拉长。</li>
+        <li><b>\(\Sigma_{12}\)（协方差 / 相关）：</b>从 0 拨开 → 椭圆<b>倾斜</b>、钟被"拧"成斜的。正协方差 ⇒ 椭圆朝右上倾；负的朝左上。对角线（方差）管胖瘦，<b>非对角（协方差）管倾斜</b>。</li>
+      </ul>
+      <p class="cjk">把这页和 §2.4 连起来看：Gibbs 每抽一个 \(\Sigma\)，等于在这里<b>随机摆一次椭圆的胖瘦与倾斜</b>；许多个后验 \(\Sigma\) 叠起来，就是"我们对这口钟形状到底有多少把握"。</p>
+      <div class="controls">
+        <div class="ctrl"><label>Σ₁₁ 横向方差 <span class="val" id="mvn3-s11-v">9.0</span></label><input type="range" id="mvn3-s11" min="1" max="16" step="0.5" value="9"></div>
+        <div class="ctrl"><label>Σ₂₂ 纵向方差 <span class="val" id="mvn3-s22-v">4.0</span></label><input type="range" id="mvn3-s22" min="1" max="16" step="0.5" value="4"></div>
+        <div class="ctrl"><label>Σ₁₂ 协方差 <span class="val" id="mvn3-s12-v">0.0</span></label><input type="range" id="mvn3-s12" min="-7" max="7" step="0.2" value="0"></div>
+      </div>
+      <div class="readout cjk">
+        <span>相关系数 ρ = Σ₁₂/√(Σ₁₁Σ₂₂) = <b id="mvn3-rho">0.00</b></span>
+        <span>行列式 detΣ = <b id="mvn3-det">36.0</b></span>
+        <span id="mvn3-note" class="rd-note">对角管胖瘦，非对角管倾斜；|ρ|→1 椭圆压成线</span>
+      </div>
+      <div class="plotwrap"><div id="p-mvn-3d" class="plot d3"><div class="loading cjk">正在搭 3D 场景…</div></div></div>
+      <p class="cap cjk">拖动可旋转、滚轮缩放（纯 Canvas，无 WebGL）。当 \(\Sigma_{12}^2\) 接近 \(\Sigma_{11}\Sigma_{22}\) 时，椭圆会被压成一条线——那是协方差矩阵<b>趋于奇异</b>（两维近乎线性相关），正是第四部分"多重共线性"在协方差侧的同一件事。读数面板里 \(\rho=\Sigma_{12}/\sqrt{\Sigma_{11}\Sigma_{22}}\) 越接近 \(\pm1\) 越危险。</p>
+    </div>
+  </section>
+
+  <!-- ===================== PART III ===================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第三部分 · 线性回归登场（Ch7 p2–4）</span>
+    <h2 class="part-title cjk">Y = Mβ + E：最小二乘的真身是一道"把 Y 投到列空间"的影子</h2>
+    <p class="part-lead cjk">前两部分都在贝叶斯/Gibbs 的世界里。从这里起切到<b>频率派的经典回归</b>。核心模型一句话：响应 \(Y\) 等于若干<b>预测元</b>的线性组合加上随机误差。本部分先把模型与"线性"的真正含义钉死（线性指<b>对参数 \(\beta\)</b> 线性，<b>不是</b>对 \(x\)），再用一页 3D 把最小二乘的几何真身亮出来——它就是把数据向量 \(Y\) <b>正交投影</b>到设计矩阵的列空间上，残差与列空间垂直。这张图是理解后面无偏、BLUE、共线性、\(n=p\) 崩溃的总钥匙。</p>
+  </div>
+
+  <!-- 3.1 model -->
+  <section id="t-lr-model" class="topic-block">
+    <h3 class="topic cjk">3.1　模型 Y=Mβ+E 与"预测元 m(x)"</h3>
+    <p class="topic-en">The linear model in matrix form, and what the design matrix really holds</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>从贝叶斯切到频率派经典回归</span>
+      <span class="rel tool"><span class="dot"></span>工具：设计矩阵 M 把"预测元"码成一张表</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 逐点形式 → 矩阵形式</div>
+      <p class="cjk">每个点上，响应 \(Y\) 是 \(p\) 个<b>预测元</b> \(m_1(x),\dots,m_p(x)\) 的线性组合，加均值为 0 的随机误差：</p>
+      <p>$$Y(x)=m(x)\,\beta+E(x)=\sum_{l=1}^p m_l(x)\,\beta_l+E(x),\qquad \mathbb E[E]=0,\ \operatorname{Var}(E)=\sigma^2.$$</p>
+      <p class="cjk">关键细节有三点，纪要容易一带而过：</p>
+      <ul class="ul cjk">
+        <li><b>\(x\) 是<u>非随机</u>的（设计点）：</b>课件明确把 \(x^{(i)}\) 当作<b>实验者选定/给定</b>的值（设计矩阵 = design matrix），随机性<b>只来自误差 \(E\)</b>。这与"\(x\) 也是随机变量"的设定不同，后续期望/方差都是<b>给定 \(x\)</b> 下算的。</li>
+        <li><b>预测元 \(m_l\) 可以对 \(x\) 非线性：</b>\(m_l(x)\) 可以是 \(x^2,\ \sin x,\ \log x,\ \) 样条…… 这不破坏"线性回归"的身份（见 §3.2）。</li>
+        <li><b>误差<u>不相关</u>（不是独立）：</b>课件只要求 \(\operatorname{cov}(E_i,E_j)=0\ (i\ne j)\)。不相关 ⊊ 独立——这是后面 BLUE 只需"不相关"就够的伏笔。</li>
+      </ul>
+      <p class="cjk">把 \(n\) 个点摞起来，记 \(M_{il}=m_l(x^{(i)})\)（\(n\times p\)），就得<b>矩阵形式</b>：</p>
+      <p>$$Y=M\beta+E,\qquad Y,E\in\mathbb R^{n},\ \ \beta\in\mathbb R^{p},\ \ M\in\mathbb R^{n\times p}.$$</p>
+      <p class="cap cjk">课件用 \(M\)（有些书用 \(X\) 或 \(D\)）。下面统一用 \(M\)，并假设 \(M\) <b>列满秩</b>——这要求至少 \(n\ge p\)，且各列线性无关。这个假设是整套结论（解唯一、可逆、无偏、BLUE）的总地基，\(n=p\) 那一节会让你看到它一塌方会怎样。</p>
+    </div>
+  </section>
+
+  <!-- 3.2 linear means linear in beta -->
+  <section id="t-lr-linear" class="topic-block">
+    <h3 class="topic cjk">3.2　★ 盲点："线性"指对 β 线性，<u>不是</u>对 x 线性</h3>
+    <p class="topic-en">"Linear" refers to linearity in the parameters, not in the inputs</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span>纠正最常见的"直线"误解</span>
+      <span class="rel general"><span class="dot"></span>这次纪要其实做对了——给它记一功</span>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>易错直觉：把"线性回归"想成"画直线"</div>
+      <p class="cjk">很多人（不是这次纪要）一听"线性回归"就以为只能拟合直线。错。判断是不是线性回归，<b>只看模型对参数 \(\beta\) 是否线性</b>——即 \(Y\) 能否写成 \(\sum_l \beta_l\,m_l(x)\) 这种"系数 × 已知函数"的和。预测元 \(m_l(x)\) 本身可以任意弯：</p>
+      <ul class="ul cjk">
+        <li>取 \(m(x)=(1,x,x^2,x^3)\)：拟合的是<b>三次曲线</b>，但它<b>仍是线性回归</b>（对 \(\beta\) 线性）。</li>
+        <li>取 \(m(x)=(1,\sin x,\cos x)\)：拟合周期信号，照样是线性回归。</li>
+      </ul>
+      <p class="cjk">反例（<b>不</b>是线性回归）：\(Y=\beta_1 e^{\beta_2 x}+E\)。这里 \(\beta_2\) 钻进了指数，<b>对参数非线性</b>——不能用 \(M\beta\) 表达，OLS 的闭式解失效。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">✦</span>给纪要记一功：神经网络这点它说对了</div>
+      <p class="cjk">AI 纪要写"<b>神经网络训练本质是回归问题，但因含非线性激活函数，整体模型关于参数非线性，故不属于线性回归</b>"——这<b>判断准确</b>，值得肯定。神经网络确实是在做回归（最小化某种预测误差），但激活函数把<b>参数</b>（权重）卷成了高度非线性的复合，所以它<b>对参数非线性</b>、不属于线性回归。一句话对照：<b>多项式回归对 \(x\) 非线性、对 \(\beta\) 线性 ⇒ 是线性回归；神经网络对 \(\beta\) 非线性 ⇒ 不是。</b>区分点永远落在<b>参数</b>那一侧。</p>
+    </div>
+  </section>
+
+  <!-- 3.3 OLS -->
+  <section id="t-ols" class="topic-block">
+    <h3 class="topic cjk">3.3　OLS：梯度 = 0，海森正定，解唯一</h3>
+    <p class="topic-en">Least squares as an unconstrained convex minimization with a unique closed-form solution</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>把"误差尽量小"写成可解的优化</span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">关联 §0 错误 3：OLS 不是"无假设"，但这层只需列满秩</a></span>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⇄</span>推导 · 从目标函数到 β̂=(MᵀM)⁻¹MᵀY</div>
+      <ol class="steps cjk">
+        <li><b>目标：</b>最小化残差平方和 \(\displaystyle Q(\beta)=\|Y-M\beta\|^2=(Y-M\beta)^{\top}(Y-M\beta)\)。这是<b>纯优化</b>——此处<b>不需要任何分布假设</b>（§0 错误 3 的"无需分布假设"那半句是对的）。</li>
+        <li><b>梯度置零：</b>展开求导，\(\nabla Q(\beta)=2M^{\top}M\beta-2M^{\top}Y\)。令 \(\nabla Q=0\) 得<b>正规方程</b> \(M^{\top}M\,\beta=M^{\top}Y\)。<b>（纪要把这步口误成"梯度盘旋阵"——其实就是"梯度=0"。）</b></li>
+        <li><b>海森正定 ⇒ 真的是最小：</b>\(\nabla^2 Q=2M^{\top}M\)。\(M\) <b>列满秩 ⇒ \(M^{\top}M\) 正定</b>（对任意 \(v\ne0\)，\(v^{\top}M^{\top}Mv=\|Mv\|^2>0\)）。正定 ⇒ \(Q\) 严格凸 ⇒ 驻点是<b>唯一全局极小</b>。</li>
+        <li><b>解：</b>正定即可逆，于是</li>
+      </ol>
+      <p>$$\boxed{\ \hat\beta=(M^{\top}M)^{-1}M^{\top}Y\ }\qquad\text{（最小二乘估计 OLS）}.$$</p>
+      <p class="cap cjk">这里唯一的"前提"是 \(M\) <b>列满秩</b>（一个<b>代数</b>条件，不是分布条件）。它一旦不成立——比如两列共线、或 \(n<p\)——\(M^{\top}M\) 退化、不可逆，解就不唯一甚至不存在。第四部分讲"共线性把方差顶上天"，第五部分讲"\(n=p\) 残差归零"，都是这条前提在边缘上的故事。</p>
+    </div>
+  </section>
+
+  <!-- 3.4 projection 3D -->
+  <section id="t-proj3d" class="topic-block">
+    <h3 class="topic cjk">3.4　★ OLS 就是正交投影：残差垂直于列空间（3D）</h3>
+    <p class="topic-en">The geometry of least squares: project Y onto the column space, residual is orthogonal</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-ols">把 §3.3 的代数解翻成几何</a></span>
+      <span class="rel general"><span class="dot"></span>本节的"总钥匙"：投影视角</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · \(n=3,\ p=2\)：数据向量 Y、投影 Ŷ=Mβ̂、残差 e⊥平面</div>
+      <p class="cjk">取最小可视的情形：\(n=3\)（三个观测 ⇒ \(Y\) 是 \(\mathbb R^3\) 里一根向量），\(p=2\)（两个预测元 ⇒ \(M\) 的两列张成一个<b>过原点的平面</b>，即<b>列空间</b>）。最小二乘在干什么？</p>
+      <ul class="ul cjk">
+        <li>所有可能的拟合值 \(M\beta\) 必须落在这张<b>平面（列空间）</b>上——你只能用两列的线性组合去够 \(Y\)。</li>
+        <li>\(Y\) 一般<b>不在</b>平面上（有噪声）。OLS 取平面上<b>离 \(Y\) 最近</b>的点 \(\hat Y=M\hat\beta\)——几何上就是 \(Y\) 到平面的<b>垂足</b>。</li>
+        <li>"最近"\(\iff\)<b>残差 \(e=Y-\hat Y\) 垂直于整张平面</b>（正交于 \(M\) 的每一列）。这正是正规方程 \(M^{\top}(Y-M\hat\beta)=0\) 的几何意思——直角标记就画在垂足处。</li>
+      </ul>
+      <p class="cjk">拨滑块：前两个调拟合值在平面内的位置（相当于动 \(\hat\beta\) 的两个分量），第三个调 \(Y\) 离开平面的高度（噪声/残差大小）。注意<b>无论 \(Y\) 怎么动，垂足 \(\hat Y\) 和那条垂直的残差始终成直角</b>——这就是 OLS 的不变内核。</p>
+      <div class="controls">
+        <div class="ctrl"><label>沿列① 系数 a <span class="val" id="proj-a-v">1.0</span></label><input type="range" id="proj-a" min="-2" max="2" step="0.1" value="1"></div>
+        <div class="ctrl"><label>沿列② 系数 b <span class="val" id="proj-b-v">0.8</span></label><input type="range" id="proj-b" min="-2" max="2" step="0.1" value="0.8"></div>
+        <div class="ctrl"><label>残差高度 h（离平面） <span class="val" id="proj-h-v">1.2</span></label><input type="range" id="proj-h" min="0" max="2.5" step="0.1" value="1.2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-proj3d" class="plot d3"><div class="loading cjk">正在搭投影场景…</div></div></div>
+      <p class="cap cjk">把 \(h\) 调到 0：\(Y\) <b>落进</b>平面，残差消失、\(\hat Y=Y\)、完美拟合。这就是 \(n=p\)（甚至 \(p\ge n\)）时会发生的事——平面"撑满"了整个空间，任何 \(Y\) 都在里面，残差恒为 0。第五部分会专门讲这件事如何让 \(\sigma^2\) 的 MLE 崩掉。拖动旋转、滚轮缩放（纯 Canvas，无 WebGL）。</p>
+    </div>
+  </section>
+
+  <!-- ===================== PART IV ===================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第四部分 · OLS 为何"最优"（Ch7 p4–6）</span>
+    <h2 class="part-title cjk">无偏、协方差、与 Gauss–Markov：BLUE 到底强在哪、又不需要什么</h2>
+    <p class="part-lead cjk">有了投影视角，这一部分回答两个问题：OLS 估出来的 \(\hat\beta\) <b>准不准</b>（无偏？方差多大？），以及它在所有"线性无偏"的对手里<b>是不是方差最小</b>（Gauss–Markov）。两个反复被纪要说糊的点会在这里钉死：一是协方差 \((M^{\top}M)^{-1}\sigma^2\) 怎么读出"共线性会把方差顶上天"（§4.2 用交互演示），二是 Gauss–Markov<b>根本不需要正态假设</b>（§0 错误 5）——它只吃"均值 0、不相关、同方差"这三样二阶矩条件。</p>
+  </div>
+
+  <!-- 4.1 Theorem 7.1 -->
+  <section id="t-unbias" class="topic-block">
+    <h3 class="topic cjk">4.1　定理 7.1：β̂ 无偏，协方差 = (MᵀM)⁻¹σ²</h3>
+    <p class="topic-en">Theorem 7.1 — the least squares estimator is unbiased with covariance (MᵀM)⁻¹σ²</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>把 §3.3 的 β̂ 当随机变量来体检</span>
+      <span class="rel general"><span class="dot"></span>协方差公式是 §4.2 共线性的根</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 期望与协方差（给定设计 M）</div>
+      <p class="cjk">\(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\) 里 \(Y=M\beta+E\) 含随机误差，所以 \(\hat\beta\) 是<b>随机变量</b>。代入 \(Y\)：</p>
+      <p>$$\hat\beta=(M^{\top}M)^{-1}M^{\top}(M\beta+E)=\beta+(M^{\top}M)^{-1}M^{\top}E.$$</p>
+      <p class="cjk">在<b>\(\mathbb E[E]=0\)、\(\operatorname{cov}(E)=\sigma^2 I_n\)</b>（误差均值 0、不相关、同方差）下：</p>
+      <p>$$\mathbb E(\hat\beta)=\beta\quad(\textbf{无偏}),\qquad \operatorname{cov}(\hat\beta)=(M^{\top}M)^{-1}M^{\top}\,(\sigma^2 I)\,M(M^{\top}M)^{-1}=\sigma^2\,(M^{\top}M)^{-1}.$$</p>
+      <p class="cap cjk">两处要划重点：(1) 无偏<b>不是白来的</b>——它要"误差均值 0 + 模型设定正确"，这恰恰说明 OLS <b>有</b>假设（§0 错误 3）。(2) 协方差是 \(\sigma^2(M^{\top}M)^{-1}\)：噪声 \(\sigma^2\) 越大越散、信息矩阵 \(M^{\top}M\) 越"虚"（接近奇异）越散。下一节就拧 \(M^{\top}M\) 的奇异程度看方差怎么爆。另外注意：这里只用了"<b>不相关</b>"（\(\operatorname{cov}(E)=\sigma^2I\)），<b>没用独立、更没用正态</b>。</p>
+    </div>
+  </section>
+
+  <!-- 4.2 multicollinearity interactive -->
+  <section id="t-collin" class="topic-block">
+    <h3 class="topic cjk">4.2　★ 共线性把方差顶上天：VIF=1/(1−ρ²)（交互）</h3>
+    <p class="topic-en">Multicollinearity inflates the variance of the coefficients without bound</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-unbias">就是 (MᵀM)⁻¹σ² 里 MᵀM 趋于奇异</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：ρ→1 时方差 →∞</span>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">▶</span>实时 · 两个标准化预测元，拨它们的相关 ρ，看系数置信椭圆被拉成针</div>
+      <p class="cjk">取两个<b>标准化</b>预测元（列已中心化、单位方差），它们的相关系数为 \(\rho\)。则 \(M^{\top}M=n\!\left(\begin{smallmatrix}1&\rho\\\rho&1\end{smallmatrix}\right)\)，由 §4.1：</p>
+      <p>$$\operatorname{Var}(\hat\beta_j)=\frac{\sigma^2}{n\,(1-\rho^2)},\qquad \text{VIF}=\frac1{1-\rho^2},\qquad \det(M^{\top}M)=n^2(1-\rho^2).$$</p>
+      <p class="cjk">左图是 VIF 随 \(\rho\) 的曲线（红点是当前 \(\rho\)）；右图是 \((\hat\beta_1,\hat\beta_2)\) 的<b>置信椭圆</b>。拨 \(\rho\)：</p>
+      <ul class="ul cjk">
+        <li>\(\rho=0\)（两元正交）：VIF\(=1\)，椭圆是<b>圆</b>，两系数互不干扰、各自方差最小。</li>
+        <li>\(\rho\to1\)（高度共线）：\(1-\rho^2\to0\)，VIF \(\to\infty\)，椭圆被<b>拉成一根斜针</b>——沿"\(\hat\beta_1+\hat\beta_2\)"方向还算定，但沿"\(\hat\beta_1-\hat\beta_2\)"方向<b>方差炸裂</b>：数据分不清是谁的功劳，系数符号都能翻。</li>
+      </ul>
+      <div class="controls">
+        <div class="ctrl"><label>预测元相关 ρ <span class="val" id="collin-rho-v">0.00</span></label><input type="range" id="collin-rho" min="0" max="0.985" step="0.005" value="0"></div>
+      </div>
+      <div class="controls">
+        <span class="readout cjk">VIF = <b id="collin-vif">1.00</b>　|　Var(β̂ⱼ) 相对 ρ=0 放大 <b id="collin-amp">1.0×</b>　|　det(MᵀM)/n² = <b id="collin-det">1.000</b>　|　<span id="collin-verdict">两元正交，最稳</span></span>
+      </div>
+      <div class="plotwrap" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div id="p-collin-vif" class="plot"><div class="loading cjk">画 VIF 曲线…</div></div>
+        <div id="p-collin-ell" class="plot"><div class="loading cjk">画置信椭圆…</div></div>
+      </div>
+      <p class="cap cjk">注意 OLS <b>仍然无偏</b>——共线性不偏，只是<b>方差大到没用</b>。这呼应 §0 错误 3：异方差、共线性会"出问题"恰恰证明 OLS 是<b>有</b>条件的好。课件给的对策是<b>从根上减变量</b>（剔冗余 / PCA 降维），而不是硬解。和 §2.5 连起来：那里椭圆被压扁是<b>协方差矩阵</b>奇异，这里椭圆被拉长是<b>信息矩阵 MᵀM</b> 奇异，两者是一枚硬币的两面。</p>
+    </div>
+  </section>
+
+  <!-- 4.3 Gauss-Markov -->
+  <section id="t-blue" class="topic-block">
+    <h3 class="topic cjk">4.3　Gauss–Markov：OLS 是 BLUE——且<u>不需要</u>正态</h3>
+    <p class="topic-en">Theorem 7.2 — among linear unbiased estimators, OLS has the smallest variance, with no normality assumption</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>给 §4.1 的无偏再加一句"而且最优"</span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">直接对应 §0 错误 5：别把它和正态-MLE 混为一谈</a></span>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⇄</span>推导 · 为什么任何"线性无偏"对手都不会更小</div>
+      <p class="cjk">想估某个线性组合 \(a^{\top}\beta\)。考虑<b>所有</b>形如 \(rY+s\)（\(r\) 行向量、\(s\) 标量）的<b>线性</b>估计量。Gauss–Markov（定理 7.2）说：在它们之中、要求<b>无偏</b>的那些里，OLS 给的 \(a^{\top}\hat\beta=cY\)（其中 \(c=a^{\top}(M^{\top}M)^{-1}M^{\top}\)）<b>方差最小</b>。证明骨架：</p>
+      <ol class="steps cjk">
+        <li><b>无偏挤掉 s，钉住 rM：</b>要对一切 \(\beta\) 有 \(\mathbb E[rY+s]=rM\beta+s=a^{\top}\beta\)，必须 \(s=0\) 且 \(rM=a^{\top}\)。</li>
+        <li><b>拆成 OLS + 偏移：</b>记 \(d=r-c\)，则 \(dM=rM-cM=a^{\top}-a^{\top}=0\)（偏移落在 \(M\) 的"零空间"那侧）。</li>
+        <li><b>交叉项为零（迹的轮换）：</b>\(\operatorname{Var}(rY)=\sigma^2 rr^{\top}=\sigma^2(c+d)(c+d)^{\top}=\sigma^2\big(cc^{\top}+\underbrace{2cd^{\top}}_{=0}+dd^{\top}\big)\)。其中 \(cd^{\top}=a^{\top}(M^{\top}M)^{-1}(Md^{\top})^{\!\top}\)… 用 \(dM=0\) 得 \(cd^{\top}=0\)。</li>
+        <li><b>结论：</b>\(\operatorname{Var}(rY)=\underbrace{\sigma^2 cc^{\top}}_{\text{OLS 的方差}}+\sigma^2\,dd^{\top}\ \ge\ \sigma^2 cc^{\top}\)，等号当且仅当 \(d=0\)（就是 OLS）。</li>
+      </ol>
+      <p>$$\Rightarrow\quad a^{\top}\hat\beta\ \text{是}\ a^{\top}\beta\ \text{的}\ \textbf{BLUE}\ (\textbf{B}est\ \textbf{L}inear\ \textbf{U}nbiased\ \textbf{E}stimator).$$</p>
+      <p class="cap cjk"><b>整个证明只用了一阶矩（无偏）和二阶矩（\(\operatorname{cov}(E)=\sigma^2I\)，即均值 0、不相关、同方差）。从头到尾没出现"正态"。</b>所以 Gauss–Markov 在误差<b>非正态</b>时照样成立，且<b>无论 \(\sigma^2\) 已知与否</b>。纪要把它和"正态误差下 MLE=OLS"并排讲，容易让你以为 BLUE 需要正态——不需要。正态只在<b>下一部分</b>（要写似然、做 MLE、做精确区间检验）才登场。另：BLUE 是<b>逐个线性组合 \(a^{\top}\beta\)</b> 成立的（取遍 \(a\) 即覆盖每个分量）。</p>
+    </div>
+  </section>
+
+  <!-- 4.4 BLUE viz -->
+  <section id="t-blue-viz" class="topic-block">
+    <h3 class="topic cjk">4.4　★ BLUE：方差谷底只有一个，OLS 正坐底（2D）</h3>
+    <p class="topic-en">Visualizing the variance parabola: OLS sits at the unique minimum</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>把 §4.3 的"\(+\sigma^2 dd^{\top}\ge0\)"画出来</span>
+      <span class="rel general"><span class="dot"></span>"最优"= 抛物线唯一谷底</span>
+    </div>
+
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">◎</span>2D · 沿"偏离 OLS"的方向走一条线，看方差的抛物线</div>
+      <p class="cjk">把 §4.3 的几何拍扁成一维：所有线性无偏估计量可写成<b>OLS + \(t\times\)（某个不改无偏性的偏移方向）</b>。它们的方差是</p>
+      <p>$$\operatorname{Var}(t)=\underbrace{V_{\min}}_{\text{OLS 方差}}+\;t^2\cdot(\text{正常数}).$$</p>
+      <p class="cjk">这是一条开口朝上的<b>抛物线</b>，<b>唯一谷底在 \(t=0\)</b>——那就是 OLS。任何偏离（\(t\ne0\)）都让你<b>付出 \(t^2\) 的额外方差，换不回任何无偏性上的好处</b>。拨滑块让红点离开谷底，看方差怎么涨：</p>
+      <div class="controls">
+        <div class="ctrl"><label>偏离 OLS 的量 t <span class="val" id="blue-t-v">0.0</span></label><input type="range" id="blue-t" min="-2" max="2" step="0.05" value="0"></div>
+      </div>
+      <div class="controls">
+        <span class="readout cjk">当前方差 = <b id="blue-var">—</b>　|　相对 OLS 多付 <b id="blue-excess">+0.0%</b>　|　<span id="blue-verdict">正坐谷底——这就是 BLUE</span></span>
+      </div>
+      <div class="plotwrap"><div id="p-blue" class="plot"><div class="loading cjk">画方差抛物线…</div></div></div>
+      <p class="cap cjk">谷底"平"（导数为 0）解释了一个实务现象：在 OLS 附近<b>小幅</b>偏离，方差几乎不变（二阶才起效）；但走远了惩罚就是平方级。这也是为什么"接近最优"的估计量在小样本里有时看着差不多——差距藏在抛物线的曲率里。</p>
+    </div>
+  </section>
+
+  <!-- ===================== PART V ===================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第五部分 · 正态误差与 MLE（Ch7 p7–8）</span>
+    <h2 class="part-title cjk">加上正态假设：MLE 何时等于 OLS，又为何在 n=p 时崩给你看</h2>
+    <p class="part-lead cjk">前面 OLS 与 Gauss–Markov 都<b>没碰正态</b>。这一部分才请正态登场：假设 \(E\sim N(0,\sigma^2 I)\)，写出似然、做极大似然。结论有两层——\(n>p\) 时 \(\hat\beta_{\text{MLE}}\) 与 OLS <b>完全一致</b>（只是 \(\sigma^2\) 的 MLE 除以 \(n\) 而非 \(n-p\)，因此有偏）；而 \(n=p\) 时会发生一件耐人寻味的事：<b>\(\hat\beta\) 照样唯一可解（完美拟合），但 \(\sigma^2\) 的 MLE 不存在</b>。这正是 §0 错误 4 要纠的"崩的是谁"。最后用一张表把 OLS 与 MLE 的假设、结果、适用条件对齐。</p>
+  </div>
+
+  <!-- 5.1 normal MLE = OLS -->
+  <section id="t-mle" class="topic-block">
+    <h3 class="topic cjk">5.1　正态误差下，β 的 MLE 就是 OLS</h3>
+    <p class="topic-en">Under normal errors the MLE of β coincides with OLS; the MLE of σ² divides by n</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>这才是"正态"第一次真正被用到</span>
+      <span class="rel dual"><span class="dot"></span>对偶：同一个 β̂，两种理由（最小二乘 vs 最大似然）</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 似然 → β̂ 与 σ̂²</div>
+      <p class="cjk">误差正态 ⇒ \(Y\sim N(M\beta,\sigma^2 I)\)，似然</p>
+      <p>$$L(\beta,\sigma^2)=(2\pi\sigma^2)^{-n/2}\exp\!\Big\{-\frac1{2\sigma^2}\,\|Y-M\beta\|^2\Big\}.$$</p>
+      <ol class="steps cjk">
+        <li><b>对 \(\beta\)：</b>不论 \(\sigma^2\) 多少，最大化 \(L\) 等价于<b>最小化 \(\|Y-M\beta\|^2\)</b>——这正是 OLS 的目标。所以 \(\hat\beta_{\text{MLE}}=(M^{\top}M)^{-1}M^{\top}Y=\hat\beta_{\text{OLS}}\)。<b>正态把"最小二乘"和"最大似然"接成了同一个答案。</b></li>
+        <li><b>对 \(\sigma^2\)：</b>把 \(\hat\beta\) 代回、对 \(\sigma^2\) 求导置零，得 \(\displaystyle\hat\sigma^2_{\text{MLE}}=\frac{\|Y-M\hat\beta\|^2}{n}=\frac{\text{RSS}}{n}\)。</li>
+      </ol>
+      <p class="cjk"><b>注意分母是 \(n\)，不是 \(n-p\)</b>。所以 \(\hat\sigma^2_{\text{MLE}}\) <b>有偏</b>（偏小），无偏估计要除以自由度 \(n-p\)：\(\ s^2=\dfrac{\text{RSS}}{n-p}\)。这点纪要说对了。</p>
+      <p class="cap cjk">一句话记牢：<b>正态假设不改变 \(\beta\) 的点估计（还是 OLS），只是额外给了 \(\sigma^2\) 的 MLE 和一整套精确分布（\(t\)、\(F\) 检验）</b>。\(\beta\) 那一半，正态可有可无；要做检验、要区间，正态才真正值钱。</p>
+    </div>
+  </section>
+
+  <!-- 5.2 n=p collapse interactive -->
+  <section id="t-np" class="topic-block">
+    <h3 class="topic cjk">5.2　★ n=p：残差归零，β̂ 仍唯一、σ² 的 MLE 却崩了（交互）</h3>
+    <p class="topic-en">When n equals p the residuals vanish, β̂ is still unique, but the MLE of σ² fails to exist</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-proj3d">就是投影里"平面撑满空间、h=0"</a></span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">纠正 §0 错误 4：崩的是 σ²，不是 β</a></span>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">▶</span>实时 · 把 n 拉向 p=3，看 σ² 的对数似然曲线如何失去峰</div>
+      <p class="cjk">固定 \(p=3\)。给定 \(\hat\beta\) 后，把对数似然只看成 \(\sigma^2\) 的函数（profile）：</p>
+      <p>$$\ell(\sigma^2)=-\frac n2\ln\sigma^2-\frac{\text{RSS}}{2\sigma^2}+\text{const}.$$</p>
+      <ul class="ul cjk">
+        <li><b>\(n>p\)（RSS>0）：</b>曲线有<b>唯一峰</b>，峰顶在 \(\sigma^2=\text{RSS}/n\)。一切正常。</li>
+        <li><b>\(n=p\)（RSS=0）：</b>\(M\) 变方阵且满秩 ⇒ 投影矩阵 \(M(M^{\top}M)^{-1}M^{\top}=I_n\) ⇒ \(\hat Y=Y\)、<b>残差恒为 0、RSS=0</b>。于是 \(\ell(\sigma^2)=-\frac n2\ln\sigma^2\) <b>单调</b>，\(\sigma^2\to0^+\) 时 \(\ell\to+\infty\)——<b>没有最大值，\(\sigma^2\) 的 MLE 不存在</b>。</li>
+      </ul>
+      <p class="cjk"><b>但请看清：\(\hat\beta\) <u>照样唯一可解</u></b>（方阵满秩，\(\hat\beta=M^{-1}Y\)，完美拟合）。崩掉的<b>只是 \(\sigma^2\)</b>——因为自由度 \(n-p=0\)，<b>没有任何残余信息去估噪声</b>。把"\(n=p\) 解不出 \(\beta\) 和 \(\sigma\)"说全了就错：\(\beta\) 解得出，\(\sigma^2\) 才是真正没救的那个。</p>
+      <div class="controls">
+        <div class="ctrl"><label>样本量 n（p 固定=3） <span class="val" id="np-n-v">8</span></label><input type="range" id="np-n" min="3" max="14" step="1" value="8"></div>
+        <div class="ctrl"><label>真实噪声 σ <span class="val" id="np-sd-v">1.0</span></label><input type="range" id="np-sd" min="0.2" max="2" step="0.1" value="1"></div>
+        <div class="ctrl"><button class="btn" id="np-resample">↻ 重抽噪声</button></div>
+      </div>
+      <div class="controls">
+        <span class="readout cjk">n=<b id="np-n2">8</b>　p=<b>3</b>　自由度 n−p=<b id="np-df">5</b>　|　RSS=<b id="np-rss">—</b>　|　σ̂²=RSS/n=<b id="np-sig2">—</b>　|　β̂：<b id="np-beta">唯一可解</b></span>
+      </div>
+      <div class="plotwrap"><div id="p-np" class="plot tall"><div class="loading cjk">画 σ² 的对数似然曲线…</div></div></div>
+      <p class="cap cjk">把 \(n\) 一格格拉到 3：你会看到峰<b>越来越靠近 0、越来越尖</b>，到 \(n=3\) 时峰彻底滑向 \(\sigma^2=0\)、曲线变成一路上扬没有顶——MLE 在边界上跑了。现实含义：<b>参数和样本一样多 ⇒ 完美拟合 ⇒ 你以为"零误差"，其实是没有自由度去看见误差</b>。这也是过拟合最干净的极端案例（§0 错误 4）。</p>
+    </div>
+  </section>
+
+  <!-- 5.3 OLS vs MLE table -->
+  <section id="t-olsmle" class="topic-block">
+    <h3 class="topic cjk">5.3　OLS vs MLE 对照表：假设、结果、何时失效</h3>
+    <p class="topic-en">A side-by-side of least squares and maximum likelihood</p>
+    <div class="rels cjk">
+      <span class="rel dual"><span class="dot"></span>同一 β̂、两种世界观的总账</span>
+      <span class="rel general"><span class="dot"></span>收口：把全章假设挂回各自结论</span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">✦</span>对照 · 一张表读完两者关系</div>
+      <table class="tab cjk">
+        <thead><tr><th>维度</th><th>最小二乘 OLS</th><th>极大似然 MLE（正态误差）</th></tr></thead>
+        <tbody>
+          <tr><td>出发点</td><td>最小化残差平方和 \(\|Y-M\beta\|^2\)（纯几何/优化）</td><td>最大化样本似然 \(L(\beta,\sigma^2)\)（概率）</td></tr>
+          <tr><td>对误差的<b>分布</b>假设</td><td><b>不需要</b>（无需正态，甚至无需概率）</td><td><b>需要</b>：\(E\sim N(0,\sigma^2I)\)</td></tr>
+          <tr><td>必备的<b>代数</b>前提</td><td>\(M\) 列满秩（\(M^{\top}M\) 可逆）</td><td>同左（且 \(n>p\) 才有 \(\sigma^2\) 的 MLE）</td></tr>
+          <tr><td>\(\beta\) 的解</td><td>\(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\)</td><td><b>与 OLS 完全相同</b></td></tr>
+          <tr><td>\(\sigma^2\) 的估计</td><td>（无偏）\(s^2=\text{RSS}/(n-p)\)</td><td>\(\hat\sigma^2=\text{RSS}/n\)（<b>有偏</b>，偏小）</td></tr>
+          <tr><td>最优性</td><td><b>BLUE</b>（Gauss–Markov，<b>不靠正态</b>）</td><td>正态下渐近有效、可做 \(t\)/\(F\) <b>精确推断</b></td></tr>
+          <tr><td>\(n=p\) 时</td><td>\(\hat\beta\) 唯一（完美拟合），但无残差信息</td><td>\(\hat\beta\) 唯一；<b>\(\sigma^2\) 的 MLE 不存在</b></td></tr>
+          <tr><td>怕什么</td><td>共线性（方差爆）、异方差（不再 BLUE）</td><td>同左，外加<b>正态假设若错</b>则推断失真</td></tr>
+        </tbody>
+      </table>
+      <p class="cap cjk">一句话收口：<b>β 这一半，OLS 和正态-MLE 殊途同归；分歧只在 σ² 的分母、以及"能不能做精确检验"。</b>正态不是用来求 \(\beta\) 的——它是用来给 \(\beta\) 配一套可信区间和假设检验的。这与第十节贝叶斯那套"给参数一整个后验分布"形成对照：频率派用正态换来 \(t\)/\(F\)，贝叶斯用先验换来后验。</p>
+    </div>
+  </section>
+
+  <!-- ===================== CLOSING ===================== -->
+  <section id="closing" class="topic-block closing-block">
+    <h3 class="topic cjk">收束　第十一节的两条主线，与它跨在第六、七章接缝上的位置</h3>
+    <p class="topic-en">Two threads through session 11, sitting on the seam between the Bayesian and the regression chapters</p>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一句话脉络</div>
+      <p class="cjk">这一节横跨两章，但其实是<b>同一个动作的两副面孔——"先把结构看清，再决定用什么工具"</b>：</p>
+      <ol class="steps cjk">
+        <li><b>贝叶斯收尾（§1–2）：先看共轭层级，再决定要不要采样。</b>K 组正态把"\(K\) 均值 + 1 精度"拆成一串<b>查得到表</b>的一维满条件；多元正态把维度抬到矩阵参数 \(\Sigma\)。题眼是 §2.2：课件先验<b>联合不共轭</b>（函数名写死 <span class="kw">Nonconjugate</span>）、却<b>逐条件共轭</b>——这种"半共轭"<b>正是 Gibbs 的主场</b>。能直抽就别 Gibbs，能 Gibbs 就别 MH：<b>工具的选择由结构决定</b>。</li>
+        <li><b>回归开篇（§3–5）：先看几何，再谈估计与最优。</b>OLS 的真身是<b>把 \(Y\) 正交投影到列空间</b>（§3.4 的 3D 是总钥匙）；无偏与 BLUE（§4）只吃<b>一、二阶矩</b>，<b>不靠正态</b>（§0 错误 5）；正态要到 §5 写似然、做检验才登场，而它<b>不改 \(\beta\) 的点估计</b>，只额外给 \(\sigma^2\) 的 MLE 和精确推断。\(n=p\) 的崩塌（§5.2）则是投影"撑满空间"的代数后果——<b>崩的是 \(\sigma^2\)，不是 \(\beta\)</b>（§0 错误 4）。</li>
+      </ol>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>放进第六→第七章的坐标系</div>
+      <p class="cjk">第八～十节把<b>贝叶斯</b>从"共轭点估计"一路推到"<b>后验算不动就采样</b>"（MH/Gibbs）；<b>本节前半</b>给 Gibbs 配上<b>两个真模型</b>（K 组正态、多元正态），让你看清"半共轭 ⇒ Gibbs"的判定，给整章一个有血肉的收口。<b>本节后半</b>翻开第七章，从<b>最小二乘的几何</b>起步——这是后面<b>模型选择（AIC/BIC、岭/Lasso、交叉验证）</b>的地基：一旦理解"OLS = 投影、共线性 = 信息矩阵奇异、\(n=p\) = 自由度耗尽"，正则化与变量选择就都成了"<b>如何在投影里加约束 / 减维度</b>"的自然延伸。</p>
+    </div>
+
+    <div class="xander">
+      <p class="who cjk"><span>✦</span>给 Xander 的收尾（照例欢迎拆台）</p>
+      <p class="cjk">我把这节的两半都按"<b>先看结构、再选工具</b>"重排了，没顺课件页码走：贝叶斯半边的主线是<b>共轭层级（共轭→半共轭→都不是）</b>，回归半边的主线是<b>几何（投影）先于代数</b>。你可以质疑这个编排——比如有人主张回归该<b>先讲假设清单、再讲几何</b>，把投影当成"锦上添花"而非"总钥匙"；我反过来，是因为我认为<b>几何能让你少背一张假设表</b>（无偏、BLUE、共线性、\(n=p\) 全能从投影图里"看"出来）。这是个可争的取舍。<br><br>另外我对纪要做了<b>五处批判（§0）</b>，按我判断的"<b>最容易听懂了、用时翻车</b>"排序，最要命的是<b>错误 1</b>（把"半共轭"说成"共轭"，等于抹掉了\"为什么要用 Gibbs\"）和<b>错误 4</b>（\(n=p\) 崩的是 \(\sigma^2\) 不是 \(\beta\)）。但我也给纪要<b>记了一功</b>（§3.2：神经网络那点它判断准确）——批判要两头都诚实。如果你觉得我哪条批评过重、或我自己有盲点，<b>请直接顶回来</b>。<br><br>下一步若你愿意，我们可以拿 §4.2 的共线性做个数值实验：<b>同一份数据，OLS vs 岭回归</b>，看岭如何用一点点偏差换回大量方差——把"BLUE 是'无偏里'最优、但放开无偏可以更好"这件事用数字钉死，正好接上模型选择那一章。</p>
+    </div>
+  </section>
+
+  <footer class="foot-wrap">
+    <p class="foot-title cjk">统计补课 · 第十一节 · 交互式讲义</p>
+    <p class="foot-sub cjk">先看结构再选工具：半共轭就上 Gibbs；最小二乘的真身，是把 Y 投到列空间的一道影子</p>
+    <p class="foot-meta cjk">覆盖范围：Chapter 6 · p57–62（K 组正态 Gibbs、多元正态 + 逆Wishart）＋ Chapter 7 · p1–8（Y=Mβ+E、OLS 投影、定理 7.1 无偏/协方差、Gauss–Markov BLUE、正态 MLE、\(n=p\) 崩塌）。<br>八种模态（直觉/公式/案例/2D/3D/交互/流程/陷阱）+ 六类关系（继承/泛化/工具/对照/边界/警示）· 3D 全程<b>纯 Canvas 绘制，无需 WebGL</b>。</p>
+    <p class="foot-fine cjk">讲义内容由 AI 依据你的会议纪要、思维导图与课件（Ch6 p57–62、Ch7 p1–8）整理生成，并对纪要做了批判性勘误；公式与结论以课本为准，如与课件出入请以课件原文为准，也欢迎当面纠错。</p>
+  </footer>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1E1C18',inkSoft:'#574F46',faint:'#8C857A',line:'#E4D8C2',lineStrong:'#D2C2A4',
+  accent:'#8A2D4D',accentSoft:'#F3DEE5',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',goldSoft:'#F4E9CF',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:54,r:16,t:16,b:44},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.13,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var PURPLE_SCALE=[[0,'#F3DEE5'],[0.5,'#C77FA6'],[1,'#6E2A50']];
+var WINE_SCALE=[[0,'#F3DEE5'],[0.5,'#C06A8C'],[1,'#7A1F44']];
+var TEAL_SCALE=[[0,'#DCEDEB'],[0.5,'#5AA39D'],[1,'#1F6B66']];
+var GOLD_SCALE=[[0,'#F6ECD3'],[0.5,'#D9B25A'],[1,'#8A6A1F']];
+var GREEN_SCALE=[[0,'#E0EDE3'],[0.5,'#6FA77E'],[1,'#2E5C3C']];
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+var npdf=normPdf;
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function maxOf(a){return Math.max.apply(null,a);}
+function max2(Z){var m=-Infinity,i,j;for(i=0;i<Z.length;i++)for(j=0;j<Z[i].length;j++)if(Z[i][j]>m)m=Z[i][j];return m;}
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],
+    throwOnError:false,strict:false});
+}
+/* ---- extra math for session 11: gamma / chi2 / wishart / inv-wishart / small linalg ---- */
+function gammaRand(shape,scale){
+  scale=(scale==null?1:scale);
+  if(shape<1){var u0=Math.random();return gammaRand(1+shape,scale)*Math.pow(u0,1/shape);}
+  var d=shape-1/3,c=1/Math.sqrt(9*d),x,v,u;
+  for(;;){do{x=randn();v=1+c*x;}while(v<=0);v=v*v*v;u=Math.random();
+    if(u<1-0.0331*x*x*x*x)return d*v*scale;
+    if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v*scale;}
+}
+function chi2(k){return gammaRand(k/2,2);}
+function inv2(M){var a=M[0][0],b=M[0][1],c=M[1][0],d=M[1][1],det=a*d-b*c;if(Math.abs(det)<1e-12)det=(det<0?-1:1)*1e-12;return [[d/det,-b/det],[-c/det,a/det]];}
+function chol2(M){var l11=Math.sqrt(Math.max(M[0][0],1e-12));var l21=M[1][0]/l11;var t=M[1][1]-l21*l21;var l22=Math.sqrt(Math.max(t,1e-12));return [[l11,0],[l21,l22]];}
+function mm2(A,B){return [[A[0][0]*B[0][0]+A[0][1]*B[1][0],A[0][0]*B[0][1]+A[0][1]*B[1][1]],
+                         [A[1][0]*B[0][0]+A[1][1]*B[1][0],A[1][0]*B[0][1]+A[1][1]*B[1][1]]];}
+function tr2(A){return [[A[0][0],A[1][0]],[A[0][1],A[1][1]]];}
+/* Wishart_2(V,df) via Bartlett (handles fractional df>1). Returns 2x2. */
+function wishart2(V,df){
+  var L=chol2(V);
+  var a11=Math.sqrt(chi2(df)),a22=Math.sqrt(chi2(Math.max(df-1,0.001))),a21=randn();
+  var A=[[a11,0],[a21,a22]];
+  var LA=mm2(L,A);
+  return mm2(LA,tr2(LA));
+}
+/* InvWishart_2(Scale,df): if S~IW(Scale,df) then S^{-1}~Wishart(Scale^{-1},df). */
+function invWishart2(Scale,df){return inv2(wishart2(inv2(Scale),df));}
+/* sample mu ~ N_2(mean, Cov) given Cov 2x2 */
+function mvn2(meanv,Cov){var L=chol2(Cov);var z1=randn(),z2=randn();return [meanv[0]+L[0][0]*z1,meanv[1]+L[1][0]*z1+L[1][1]*z2];}
+/* solve 3x3 A x = b (Gaussian elimination, partial pivot) */
+function solve3(A,b){
+  var M=[[A[0][0],A[0][1],A[0][2],b[0]],[A[1][0],A[1][1],A[1][2],b[1]],[A[2][0],A[2][1],A[2][2],b[2]]],i,j,k;
+  for(i=0;i<3;i++){
+    var p=i;for(k=i+1;k<3;k++)if(Math.abs(M[k][i])>Math.abs(M[p][i]))p=k;
+    var tmp=M[i];M[i]=M[p];M[p]=tmp;
+    if(Math.abs(M[i][i])<1e-12)M[i][i]=1e-12;
+    for(k=i+1;k<3;k++){var f=M[k][i]/M[i][i];for(j=i;j<4;j++)M[k][j]-=f*M[i][j];}
+  }
+  var x=[0,0,0];for(i=2;i>=0;i--){var s=M[i][3];for(j=i+1;j<3;j++)s-=M[i][j]*x[j];x[i]=s/M[i][i];}
+  return x;
+}
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={bridge:C.accentSoft,gen:'#F4E9CF',test:'#DFEDE2',tool:'#E5E1F2',warn:'#F3E0DA'};
+var NODE_STROKE={bridge:C.accent,gen:C.gold,test:C.green,tool:C.violet,warn:C.rust};
+var NODE_TXT={bridge:C.accent,gen:'#8a6a1f',test:C.green,tool:C.violet,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+  {id:'seed',ty:'bridge',x:404,y:28, w:172,h:60,href:'#spine',     t:['第十节落点','算不动 → 采样']},
+  {id:'kg',  ty:'tool',  x:62, y:152,w:166,h:60,href:'#t-kg-model',t:['Ⅰ K 组正态','Gibbs 拆一维']},
+  {id:'kgl', ty:'test',  x:62, y:278,w:166,h:60,href:'#t-kg-live', t:['θ、λ 互喂','轨迹收敛']},
+  {id:'mvn', ty:'tool',  x:62, y:404,w:166,h:60,href:'#t-mvn-model',t:['Ⅱ 多元正态','+ 逆Wishart']},
+  {id:'ncj', ty:'warn',  x:62, y:530,w:166,h:60,href:'#t-mvn-conj',t:['半共轭','⇒ 才用 Gibbs']},
+  {id:'s11', ty:'test',  x:62, y:656,w:166,h:60,href:'#t-mvn-live',t:['Σ₁₁ 右偏','先验↔数据拔河']},
+  {id:'lr',  ty:'gen',   x:752,y:152,w:166,h:60,href:'#t-lr-model',t:['Ⅲ Y=Mβ+E','线性=对 β 线性']},
+  {id:'prj', ty:'bridge',x:752,y:278,w:166,h:60,href:'#t-proj3d',  t:['OLS = 正交投影','残差 ⊥ 列空间']},
+  {id:'col', ty:'warn',  x:752,y:404,w:166,h:60,href:'#t-collin',  t:['Ⅳ 共线性','方差顶上天']},
+  {id:'blu', ty:'gen',   x:752,y:530,w:166,h:60,href:'#t-blue',    t:['Gauss–Markov','OLS 是 BLUE']},
+  {id:'np',  ty:'warn',  x:752,y:656,w:166,h:60,href:'#t-np',      t:['Ⅴ n=p','β̂在 · σ²崩']},
+  {id:'mle', ty:'gen',   x:406,y:540,w:168,h:60,href:'#t-mle',     t:['正态登场','MLE=OLS·只为推断']}
+];
+var MAP_EDGES=[
+  ['seed','kg','derive'],['kg','kgl','derive'],['kgl','mvn','gen'],['mvn','ncj','warn'],['ncj','s11','derive'],
+  ['seed','lr','derive'],['lr','prj','derive'],['prj','col','derive'],['col','blu','gen'],['blu','np','gen'],
+  ['prj','mle','tool'],['mle','np','derive'],['col','s11','warn']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong;
+    var p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(a.x>b.x+b.w-2){p1=anchor(a,'l');p2=anchor(b,'r');}
+    else if(Math.abs(b.x-a.x)<14){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+n.h/2+5-((n.t.length-1)*8);
+    n.t.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':12.5,'font-weight':600,fill:NODE_TXT[n.ty]});
+      tx.textContent=line;g.appendChild(tx);
+    });
+    N.appendChild(g);
+  });
+}
+/* ===================== nav + sliders ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){var rs=document.querySelectorAll('input[type=range]'),i;for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+function seg(id,cb){var box=document.getElementById(id);if(!box)return;
+  box.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('button'):null;if(!b||!box.contains(b))return;
+    var bs=box.querySelectorAll('button'),i;for(i=0;i<bs.length;i++)bs[i].classList.remove('on');b.classList.add('on');if(cb)cb();});}
+function segData(id,key){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute('data-'+key):null;}
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}
+    else if(o.type==='dots'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      } else if(o.type==='dots'){o._V.map(proj).forEach(function(q){prims.push({z:q.d,k:2,sx:q.sx,sy:q.sy,r:o.r||3,color:o.color});});}
+    });
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else if(p.k===1){ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(p.sx,p.sy,p.r,0,6.2832);ctx.fillStyle=p.color;ctx.fill();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function ed(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',ed);cv.addEventListener('pointercancel',ed);cv.addEventListener('pointerleave',ed);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+/* ===================== Part I viz ===================== */
+/* §1.3 live Gibbs sampler for the K-group normal model */
+function kgLive(){
+  var traceDiv=document.getElementById('p-kg-trace'),histDiv=document.getElementById('p-kg-hist');
+  if(!traceDiv||!histDiv||typeof Plotly==='undefined')return;
+  var TRUE=[-2,-1,1,2],K=4,MU=0,ETA=0.1,A=0.1,B=10,N0=200;
+  var COLS=['#7A1F44','#1F6B66','#B7892A','#574AA6'],LAMCOL='#1E1C18';
+  var J=10,xbar=[],s2=[],theta=[0,0,0,0],lam=1,iter=0,WIN=400;
+  var xs=[],th=[[],[],[],[]],lz=[],post=[[],[],[],[]],lamSum=0,lamN=0;
+  var running=false,timer=null,frame=0;
+  function regen(){
+    xbar=[];s2=[];var i,j;
+    for(i=0;i<K;i++){var g=[],m=TRUE[i];for(j=0;j<J;j++)g.push(m+randn());
+      var mn=mean(g);xbar.push(mn);var sv=0;for(j=0;j<J;j++)sv+=(g[j]-mn)*(g[j]-mn);s2.push(sv/J);}
+  }
+  function reset(){
+    stop();J=+document.getElementById('kg-J').value;regen();
+    theta=[0,0,0,0];lam=A*B;iter=0;xs=[];th=[[],[],[],[]];lz=[];post=[[],[],[],[]];lamSum=0;lamN=0;
+    document.getElementById('kg-iter').textContent='0';
+    document.getElementById('kg-lam').textContent='—';
+    document.getElementById('kg-verdict').textContent='点"运行"，盯住抖动带的宽窄随 J 怎么变';
+    drawTrace();drawHist();
+  }
+  function sweep(){
+    var i;
+    for(i=0;i<K;i++){var prec=lam*J+ETA,mn=(lam*J*xbar[i]+ETA*MU)/prec;theta[i]=mn+randn()/Math.sqrt(prec);}
+    var ss=0;for(i=0;i<K;i++)ss+=(theta[i]-xbar[i])*(theta[i]-xbar[i])+s2[i];
+    lam=gammaRand(K*J/2+A,2/(J*ss+2/B));iter++;
+    xs.push(iter);for(i=0;i<K;i++)th[i].push(theta[i]);lz.push(lam);
+    if(xs.length>WIN){xs.shift();for(i=0;i<K;i++)th[i].shift();lz.shift();}
+    if(iter>N0){for(i=0;i<K;i++)post[i].push(theta[i]);lamSum+=lam;lamN++;}
+  }
+  function drawTrace(){
+    var traces=[],i;
+    for(i=0;i<K;i++)traces.push({x:xs,y:th[i],mode:'lines',line:{color:COLS[i],width:1.3},name:'θ'+(i+1)});
+    traces.push({x:xs,y:lz,mode:'lines',line:{color:LAMCOL,width:1.8,dash:'dot'},name:'λ',yaxis:'y2'});
+    var shapes=[];TRUE.forEach(function(t,i){shapes.push({type:'line',xref:'paper',x0:0,x1:1,y0:t,y1:t,line:{color:COLS[i],width:1,dash:'dash'},opacity:0.32});});
+    var lay=baseLayout({showlegend:true,
+      xaxis:{title:'迭代步',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      yaxis:{title:'θᵢ（组均值）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-4,4]},
+      yaxis2:{title:'λ',overlaying:'y',side:'right',showgrid:false,zeroline:false,range:[0,3]},
+      shapes:shapes});
+    Plotly.react(traceDiv,traces,lay,CONF);
+  }
+  function drawHist(){
+    var traces=[],i;
+    for(i=0;i<K;i++)traces.push({x:post[i],type:'histogram',opacity:0.55,marker:{color:COLS[i]},name:'θ'+(i+1),nbinsx:34});
+    var shapes=[];TRUE.forEach(function(t,i){shapes.push({type:'line',yref:'paper',x0:t,x1:t,y0:0,y1:1,line:{color:COLS[i],width:1.4,dash:'dash'}});});
+    var lay=baseLayout({barmode:'overlay',showlegend:true,
+      xaxis:{title:'θᵢ 后验（丢前'+N0+'步）',gridcolor:C.line,linecolor:C.lineStrong,range:[-4,4]},
+      yaxis:{title:'频数',gridcolor:C.line,linecolor:C.lineStrong},shapes:shapes});
+    Plotly.react(histDiv,traces,lay,CONF);
+  }
+  function loop(){
+    if(!running)return;
+    var spd=+(segData('kg-speed','spd')||8),k,i;
+    for(k=0;k<spd;k++)sweep();
+    document.getElementById('kg-iter').textContent=iter;
+    if(lamN>0)document.getElementById('kg-lam').textContent=(lamSum/lamN).toFixed(3);
+    drawTrace();frame++;if(frame%6===0)drawHist();
+    if(iter>N0+120){var sd=0;for(i=0;i<K;i++){var m=mean(post[i]),v=0,t;for(t=0;t<post[i].length;t++)v+=(post[i][t]-m)*(post[i][t]-m);sd+=Math.sqrt(v/post[i].length);}sd/=K;
+      document.getElementById('kg-verdict').textContent='抖动带≈后验标准差 '+sd.toFixed(3)+'（J='+J+'）；调大 J 它收窄、相邻组分得更开。';}
+    timer=requestAnimationFrame(loop);
+  }
+  function start(){if(running)return;running=true;loop();}
+  function stop(){running=false;if(timer)cancelAnimationFrame(timer);timer=null;}
+  document.getElementById('kg-run').addEventListener('click',function(){running?stop():start();});
+  document.getElementById('kg-step').addEventListener('click',function(){var k;for(k=0;k<200;k++)sweep();document.getElementById('kg-iter').textContent=iter;if(lamN>0)document.getElementById('kg-lam').textContent=(lamSum/lamN).toFixed(3);drawTrace();drawHist();});
+  document.getElementById('kg-reset').addEventListener('click',reset);
+  var js=document.getElementById('kg-J');
+  js.addEventListener('input',function(){document.getElementById('kg-J-v').textContent=js.value;});
+  js.addEventListener('change',reset);
+  seg('kg-speed');
+  reset();
+}
+/* §1.4 3D full-conditional surface of theta_i over lambda */
+function kgFc3d(){
+  var div=document.getElementById('p-kg-fc3d');if(!div)return;
+  var scene=Scene3D(div,{xr:[-6,6],yr:[0.06,4],zr:[0,3],xlabel:'θᵢ',ylabel:'λ',zlabel:'密度',yaw:-0.82,pitch:0.6});
+  if(!scene)return;
+  var J=10;
+  var sx=document.getElementById('kg3-xbar'),sm=document.getElementById('kg3-mu'),se=document.getElementById('kg3-eta');
+  var X=lin(-6,6,46),Y=lin(0.06,4,40);
+  function build(){
+    var xbar=+sx.value,mu=+sm.value,eta=+se.value;
+    document.getElementById('kg3-xbar-v').textContent=xbar.toFixed(1);
+    document.getElementById('kg3-mu-v').textContent=mu.toFixed(1);
+    document.getElementById('kg3-eta-v').textContent=eta.toFixed(2);
+    var Z=[],i,j;
+    for(i=0;i<Y.length;i++){var lam=Y[i],prec=lam*J+eta,m=(lam*J*xbar+eta*mu)/prec,sd=Math.sqrt(1/prec),row=[];
+      for(j=0;j<X.length;j++)row.push(Math.min(npdf(X[j],m,sd),3));Z.push(row);}
+    scene.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Z,scale:TEAL_SCALE,alpha:0.93,wire:true},
+      {type:'line',pts:[[xbar,0.06,0],[xbar,4,0]],color:'#B7892A',width:2.5},
+      {type:'line',pts:[[mu,0.06,0],[mu,4,0]],color:'rgba(140,133,122,0.7)',width:1.6}
+    ]);
+  }
+  sx.addEventListener('input',build);sm.addEventListener('input',build);se.addEventListener('input',build);
+  build();
+}
+/* ===================== Part II viz ===================== */
+/* §2.4 live Gibbs for multivariate normal + inverse-Wishart (semi-conjugate) */
+function mvnLive(){
+  var div=document.getElementById('p-mvn-hist');if(!div||typeof Plotly==='undefined')return;
+  var n=20,k=2,xbar=[60,1.7],S=[[180,6],[6,0.5]],N0=150;
+  var DATA=9,WINE='#7A1F44',GOLD='#B7892A';
+  var Sig=[[4,0],[0,0.04]],mu=[60,1.7],iter=0,samp=[],sum11=0,running=false,timer=null,frame=0,CAP=4000;
+  function psi(){var p11=+document.getElementById('mvn-psi').value;return [[p11,0],[0,0.04]];}
+  function nu(){return +document.getElementById('mvn-nu').value;}
+  function priorMean(){var v=nu()-k-1;return psi()[0][0]/(v<=0.01?0.01:v);}
+  function reset(){
+    stop();Sig=[[psi()[0][0]/Math.max(nu()-k-1,0.1),0],[0,0.04/Math.max(nu()-k-1,0.1)]];
+    mu=[xbar[0],xbar[1]];iter=0;samp=[];sum11=0;
+    document.getElementById('mvn-iter').textContent='0';
+    document.getElementById('mvn-mean').textContent='—';
+    document.getElementById('mvn-pm').textContent=priorMean().toFixed(2);
+    document.getElementById('mvn-verdict').textContent='数据 S₁₁/n = '+DATA.toFixed(2)+'，看后验落哪';
+    drawHist();
+  }
+  function sweep(){
+    mu=mvn2(xbar,[[Sig[0][0]/n,Sig[0][1]/n],[Sig[1][0]/n,Sig[1][1]/n]]);
+    var dx0=xbar[0]-mu[0],dx1=xbar[1]-mu[1],P=psi();
+    var Scale=[[P[0][0]+S[0][0]+n*dx0*dx0,P[0][1]+S[0][1]+n*dx0*dx1],
+               [P[1][0]+S[1][0]+n*dx1*dx0,P[1][1]+S[1][1]+n*dx1*dx1]];
+    Sig=invWishart2(Scale,nu()+n);iter++;
+    if(iter>N0){samp.push(Sig[0][0]);sum11+=Sig[0][0];if(samp.length>CAP){sum11-=samp.shift();}}
+  }
+  function drawHist(){
+    var pm=priorMean();
+    var shapes=[{type:'line',yref:'paper',x0:DATA,x1:DATA,y0:0,y1:1,line:{color:GOLD,width:2,dash:'dash'}}];
+    if(pm<=23.5)shapes.push({type:'line',yref:'paper',x0:pm,x1:pm,y0:0,y1:1,line:{color:'rgba(140,133,122,0.85)',width:1.6,dash:'dot'}});
+    if(samp.length>0){var pmean=sum11/samp.length;shapes.push({type:'line',yref:'paper',x0:pmean,x1:pmean,y0:0,y1:1,line:{color:WINE,width:2.4}});}
+    var lay=baseLayout({
+      xaxis:{title:'后验 Σ₁₁（金=数据9，灰=先验，红=后验均值）',gridcolor:C.line,linecolor:C.lineStrong,range:[0,24]},
+      yaxis:{title:'频数',gridcolor:C.line,linecolor:C.lineStrong},shapes:shapes});
+    Plotly.react(div,[{x:samp,type:'histogram',marker:{color:'rgba(122,31,68,0.5)',line:{color:WINE,width:0.6}},nbinsx:46}],lay,CONF);
+  }
+  function loop(){
+    if(!running)return;var spd=+(segData('mvn-speed','spd')||5),i;
+    for(i=0;i<spd;i++)sweep();
+    document.getElementById('mvn-iter').textContent=iter;
+    if(samp.length>0){var pm=sum11/samp.length;document.getElementById('mvn-mean').textContent=pm.toFixed(2);
+      if(iter>N0+80)document.getElementById('mvn-verdict').textContent='后验均值 '+pm.toFixed(2)+' 落在先验('+priorMean().toFixed(1)+')与数据(9.00)之间，右偏。';}
+    frame++;if(frame%4===0)drawHist();
+    timer=requestAnimationFrame(loop);
+  }
+  function start(){if(running)return;running=true;loop();}
+  function stop(){running=false;if(timer)cancelAnimationFrame(timer);timer=null;}
+  document.getElementById('mvn-run').addEventListener('click',function(){running?stop():start();});
+  document.getElementById('mvn-step').addEventListener('click',function(){sweep();document.getElementById('mvn-iter').textContent=iter;if(samp.length>0)document.getElementById('mvn-mean').textContent=(sum11/samp.length).toFixed(2);drawHist();});
+  document.getElementById('mvn-reset').addEventListener('click',reset);
+  var sn=document.getElementById('mvn-nu'),sp=document.getElementById('mvn-psi');
+  sn.addEventListener('input',function(){document.getElementById('mvn-nu-v').textContent=(+sn.value).toFixed(1);document.getElementById('mvn-pm').textContent=priorMean().toFixed(2);});
+  sp.addEventListener('input',function(){document.getElementById('mvn-psi-v').textContent=(+sp.value).toFixed(1);document.getElementById('mvn-pm').textContent=priorMean().toFixed(2);});
+  sn.addEventListener('change',reset);sp.addEventListener('change',reset);
+  seg('mvn-speed');
+  reset();
+}
+/* §2.5 3D bivariate-normal density + floor 1-sigma ellipse + data cloud */
+function mvnEllipse(){
+  var div=document.getElementById('p-mvn-3d');if(!div)return;
+  var scene=Scene3D(div,{xr:[-12,12],yr:[-12,12],zr:[0,1],xlabel:'x',ylabel:'y',zlabel:'密度(归一)',yaw:-0.82,pitch:0.62});
+  if(!scene)return;
+  var s1=document.getElementById('mvn3-s11'),s2=document.getElementById('mvn3-s22'),s3=document.getElementById('mvn3-s12');
+  var X=lin(-12,12,41),Y=lin(-12,12,41);
+  var Zsmp=[],i;for(i=0;i<140;i++)Zsmp.push([randn(),randn()]);
+  function build(){
+    var a=+s1.value,d=+s2.value,b=+s3.value;
+    document.getElementById('mvn3-s11-v').textContent=a.toFixed(1);
+    document.getElementById('mvn3-s22-v').textContent=d.toFixed(1);
+    document.getElementById('mvn3-s12-v').textContent=b.toFixed(1);
+    var det=a*d-b*b,rho=b/Math.sqrt(a*d);
+    document.getElementById('mvn3-rho').textContent=rho.toFixed(2);
+    document.getElementById('mvn3-det').textContent=det.toFixed(1);
+    document.getElementById('mvn3-note').textContent=(Math.abs(rho)>=1?'⚠ |ρ|≥1：Σ 非正定，已退化成一条线':(Math.abs(rho)>0.9?'⚠ |ρ|→1，椭圆几乎压成线（趋于奇异）':'对角管胖瘦，非对角管倾斜'));
+    var Si=inv2([[a,b],[b,d]]),ii=Si[0][0],ij=Si[0][1],jj=Si[1][1];
+    var Z=[],r,c,zmax=1e-9;
+    for(r=0;r<Y.length;r++){var row=[],y=Y[r];for(c=0;c<X.length;c++){var x=X[c];
+      var q=ii*x*x+2*ij*x*y+jj*y*y;var z=Math.exp(-0.5*q);row.push(z);if(z>zmax)zmax=z;}Z.push(row);}
+    for(r=0;r<Z.length;r++)for(c=0;c<Z[r].length;c++)Z[r][c]/=zmax;
+    var L=chol2([[a,b],[b,d]]),ell=[],t;
+    for(t=0;t<=64;t++){var ang=t/64*6.2832,cu=Math.cos(ang),su=Math.sin(ang);
+      ell.push([L[0][0]*cu, L[1][0]*cu+L[1][1]*su, 0]);}
+    var dots=Zsmp.map(function(z){return [L[0][0]*z[0], L[1][0]*z[0]+L[1][1]*z[1], 0.004];});
+    scene.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Z,scale:WINE_SCALE,alpha:0.82,wire:false},
+      {type:'line',pts:ell,color:'#1F6B66',width:3},
+      {type:'dots',pts:dots,color:'rgba(30,28,24,0.55)',r:2.4}
+    ]);
+  }
+  s1.addEventListener('input',build);s2.addEventListener('input',build);s3.addEventListener('input',build);
+  build();
+}
+/* ===================== Part III viz ===================== */
+/* §3.4 OLS = orthogonal projection onto the column space (n=3,p=2) */
+function lrProj3d(){
+  var div=document.getElementById('p-proj3d');if(!div)return;
+  var scene=Scene3D(div,{xr:[-4,4],yr:[-4,4],zr:[-4.5,4.5],xlabel:'',ylabel:'',zlabel:'',yaw:-0.7,pitch:0.5});
+  if(!scene)return;
+  var u1=[1,0.3,0.5],u2=[0.2,1,-0.4];
+  var nx=u1[1]*u2[2]-u1[2]*u2[1],ny=u1[2]*u2[0]-u1[0]*u2[2],nz=u1[0]*u2[1]-u1[1]*u2[0];
+  var nm=Math.sqrt(nx*nx+ny*ny+nz*nz),nh=[nx/nm,ny/nm,nz/nm];
+  var u1m=Math.sqrt(u1[0]*u1[0]+u1[1]*u1[1]+u1[2]*u1[2]),u1h=[u1[0]/u1m,u1[1]/u1m,u1[2]/u1m];
+  var X=lin(-3.2,3.2,13),Y=lin(-3.2,3.2,13),Z=[],r,c;
+  for(r=0;r<Y.length;r++){var row=[];for(c=0;c<X.length;c++)row.push(-(nh[0]*X[c]+nh[1]*Y[r])/nh[2]);Z.push(row);}
+  var sa=document.getElementById('proj-a'),sb=document.getElementById('proj-b'),sh=document.getElementById('proj-h');
+  function build(){
+    var a=+sa.value,b=+sb.value,h=+sh.value;
+    document.getElementById('proj-a-v').textContent=a.toFixed(1);
+    document.getElementById('proj-b-v').textContent=b.toFixed(1);
+    document.getElementById('proj-h-v').textContent=h.toFixed(1);
+    var Yh=[a*u1[0]+b*u2[0], a*u1[1]+b*u2[1], a*u1[2]+b*u2[2]];
+    var Yv=[Yh[0]+h*nh[0], Yh[1]+h*nh[1], Yh[2]+h*nh[2]];
+    var dl=0.42,pa=[Yh[0]+dl*u1h[0],Yh[1]+dl*u1h[1],Yh[2]+dl*u1h[2]];
+    var pb=[Yh[0]+dl*nh[0],Yh[1]+dl*nh[1],Yh[2]+dl*nh[2]];
+    var pc=[Yh[0]+dl*(u1h[0]+nh[0]),Yh[1]+dl*(u1h[1]+nh[1]),Yh[2]+dl*(u1h[2]+nh[2])];
+    scene.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Z,solid:'#1F6B66',alpha:0.26,wire:true},
+      {type:'line',pts:[[0,0,0],Yv],color:'#7A1F44',width:3.2},
+      {type:'line',pts:[[0,0,0],Yh],color:'#B7892A',width:3.2},
+      {type:'line',pts:[Yh,Yv],color:'#B0442B',width:2.6},
+      {type:'line',pts:[pa,pc,pb],color:'rgba(30,28,24,0.85)',width:1.6},
+      {type:'dots',pts:[[0,0,0]],color:'rgba(30,28,24,0.9)',r:3},
+      {type:'dots',pts:[Yh],color:'#B7892A',r:4},
+      {type:'dots',pts:[Yv],color:'#7A1F44',r:4}
+    ]);
+  }
+  sa.addEventListener('input',build);sb.addEventListener('input',build);sh.addEventListener('input',build);
+  build();
+}
+/* ===================== Part IV viz ===================== */
+/* §4.2 multicollinearity: VIF curve + confidence ellipse of (beta1,beta2) */
+function collinearity(){
+  var vd=document.getElementById('p-collin-vif'),ed=document.getElementById('p-collin-ell');
+  if(!vd||!ed||typeof Plotly==='undefined')return;
+  var sr=document.getElementById('collin-rho');
+  var RX=lin(0,0.985,100),RY=RX.map(function(r){return 1/(1-r*r);});
+  function ring(Cov,k){var L=chol2(Cov),xs=[],ys=[],t;
+    for(t=0;t<=72;t++){var a=t/72*6.2832,cu=Math.cos(a),su=Math.sin(a);
+      xs.push(L[0][0]*cu*k);ys.push((L[1][0]*cu+L[1][1]*su)*k);}return {x:xs,y:ys};}
+  function build(){
+    var rho=+sr.value,vif=1/(1-rho*rho),det=1-rho*rho;
+    document.getElementById('collin-rho-v').textContent=rho.toFixed(3);
+    document.getElementById('collin-vif').textContent=vif.toFixed(2);
+    document.getElementById('collin-amp').textContent=vif.toFixed(1)+'×';
+    document.getElementById('collin-det').textContent=det.toFixed(3);
+    document.getElementById('collin-verdict').textContent=(rho<0.3?'两元近正交，最稳':rho<0.7?'方差开始膨胀':rho<0.9?'方差明显放大，系数不稳':'近乎共线：方差爆炸，符号都可能翻');
+    var lay1=baseLayout({xaxis:{title:'预测元相关 ρ',gridcolor:C.line,linecolor:C.lineStrong,range:[0,1]},
+      yaxis:{title:'VIF = 1/(1−ρ²)',gridcolor:C.line,linecolor:C.lineStrong,range:[0,40]}});
+    Plotly.react(vd,[
+      {x:RX,y:RY,mode:'lines',line:{color:'#7A1F44',width:2.6}},
+      {x:[rho],y:[Math.min(vif,40)],mode:'markers',marker:{color:'#B0442B',size:11}}
+    ],lay1,CONF);
+    var Cov=[[1/det,-rho/det],[-rho/det,1/det]];
+    var r1=ring(Cov,1),r2=ring(Cov,2);
+    var lay2=baseLayout({xaxis:{title:'β̂₁',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-6,6]},
+      yaxis:{title:'β̂₂',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-6,6],scaleanchor:'x',scaleratio:1}});
+    Plotly.react(ed,[
+      {x:r2.x,y:r2.y,mode:'lines',line:{color:'rgba(122,31,68,0.4)',width:1.6},fill:'toself',fillcolor:'rgba(122,31,68,0.06)'},
+      {x:r1.x,y:r1.y,mode:'lines',line:{color:'#7A1F44',width:2.4},fill:'toself',fillcolor:'rgba(122,31,68,0.16)'},
+      {x:[0],y:[0],mode:'markers',marker:{color:'#1E1C18',size:7}}
+    ],lay2,CONF);
+  }
+  sr.addEventListener('input',build);
+  build();
+}
+/* §4.4 Gauss-Markov BLUE: variance parabola, OLS sits at the unique minimum */
+function blueViz(){
+  var div=document.getElementById('p-blue');if(!div||typeof Plotly==='undefined')return;
+  var st=document.getElementById('blue-t');
+  var TX=lin(-2,2,121),TY=TX.map(function(t){return 1+t*t;});
+  function build(){
+    var t=+st.value,v=1+t*t,ex=t*t*100;
+    document.getElementById('blue-t-v').textContent=t.toFixed(2);
+    document.getElementById('blue-var').textContent=v.toFixed(3);
+    document.getElementById('blue-excess').textContent='+'+ex.toFixed(1)+'%';
+    document.getElementById('blue-verdict').textContent=(Math.abs(t)<1e-9?'正坐谷底——这就是 BLUE':'偏离 OLS：方差多付 '+ex.toFixed(1)+'%。任何其它线性无偏估计都在谷壁上。');
+    var lay=baseLayout({
+      xaxis:{title:'偏离 OLS 的量 t（t=0 即 OLS）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-2,2]},
+      yaxis:{title:'估计量方差（OLS=1 归一）',gridcolor:C.line,linecolor:C.lineStrong,range:[0.9,5.1]},
+      shapes:[{type:'line',x0:0,x1:0,yref:'paper',y0:0,y1:1,line:{color:'rgba(140,133,122,0.7)',width:1.4,dash:'dot'}},
+              {type:'line',xref:'paper',x0:0,x1:1,y0:1,y1:1,line:{color:'#1F6B66',width:1.4,dash:'dash'}}]});
+    Plotly.react(div,[
+      {x:TX,y:TY,mode:'lines',line:{color:'#7A1F44',width:2.8}},
+      {x:[t],y:[v],mode:'markers',marker:{color:'#B0442B',size:12}},
+      {x:[0],y:[1],mode:'markers',marker:{color:'#1F6B66',size:10,symbol:'diamond'}}
+    ],lay,CONF);
+  }
+  st.addEventListener('input',build);
+  build();
+}
+/* ===================== Part V viz ===================== */
+/* §5.2 n=p collapse: beta-hat stays unique, MLE of sigma^2 fails (RSS=0) */
+function npCollapse(){
+  var div=document.getElementById('p-np');if(!div||typeof Plotly==='undefined')return;
+  var P=3,BT=[0.5,1.0,-0.3],sn=document.getElementById('np-n'),ss=document.getElementById('np-sd');
+  var noise=[];
+  function regenNoise(n,sd){noise=[];for(var i=0;i<n;i++)noise.push(sd*randn());}
+  function compute(){
+    var n=+sn.value,sd=+ss.value;
+    if(noise.length!==n)regenNoise(n,sd);
+    var xs=lin(-2,2,n),M=[],Y=[],i,a,b;
+    for(i=0;i<n;i++){var x=xs[i];M.push([1,x,x*x]);Y.push(BT[0]+BT[1]*x+BT[2]*x*x+noise[i]);}
+    var MtM=[[0,0,0],[0,0,0],[0,0,0]],MtY=[0,0,0];
+    for(i=0;i<n;i++)for(a=0;a<P;a++){MtY[a]+=M[i][a]*Y[i];for(b=0;b<P;b++)MtM[a][b]+=M[i][a]*M[i][b];}
+    var bh=solve3(MtM,MtY),rss=0;
+    for(i=0;i<n;i++){var yh=bh[0]*M[i][0]+bh[1]*M[i][1]+bh[2]*M[i][2];rss+=(Y[i]-yh)*(Y[i]-yh);}
+    return {n:n,sd:sd,bh:bh,rss:rss,df:n-P};
+  }
+  function build(){
+    var r=compute(),n=r.n,rss=r.rss,df=r.df,sig2=rss/n;
+    document.getElementById('np-n-v').textContent=n;
+    document.getElementById('np-sd-v').textContent=(+ss.value).toFixed(1);
+    document.getElementById('np-n2').textContent=n;
+    document.getElementById('np-df').textContent=df;
+    document.getElementById('np-rss').textContent=(rss<1e-6?rss.toExponential(1):rss.toFixed(3));
+    document.getElementById('np-sig2').textContent=(df<=0?'→0（MLE 不存在）':sig2.toFixed(3));
+    document.getElementById('np-beta').textContent='唯一可解 β̂=['+r.bh[0].toFixed(2)+', '+r.bh[1].toFixed(2)+', '+r.bh[2].toFixed(2)+']';
+    var smax=Math.max(3.5,sig2*3+0.6),G=lin(0.06,smax,220);
+    var L=G.map(function(s){return -n/2*Math.log(s)-rss/(2*s);});
+    var lmin=Math.min.apply(null,L),lmax=Math.max.apply(null,L);
+    var shapes=[],ann=[],dots=[];
+    if(df>0){shapes.push({type:'line',x0:sig2,x1:sig2,yref:'paper',y0:0,y1:1,line:{color:'#7A1F44',width:1.8,dash:'dash'}});
+      dots=[{x:[sig2],y:[-n/2*Math.log(sig2)-rss/(2*sig2)],mode:'markers',marker:{color:'#B0442B',size:12}}];
+      ann=[{x:sig2,y:-n/2*Math.log(sig2)-rss/(2*sig2),text:'σ̂²=RSS/n='+sig2.toFixed(2),showarrow:true,arrowhead:2,ax:30,ay:-34,font:{size:12,color:'#7A1F44'},arrowcolor:'#7A1F44'}];
+    }else{
+      ann=[{x:0.06,y:lmax,text:'σ²→0 时 ℓ→+∞：无最大值 ⇒ σ̂² 不存在（但 β̂ 仍唯一）',showarrow:true,arrowhead:2,ax:120,ay:10,font:{size:12,color:'#B0442B'},arrowcolor:'#B0442B'}];
+    }
+    var lay=baseLayout({
+      xaxis:{title:'σ²',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,smax]},
+      yaxis:{title:'对数似然 ℓ(σ²)',gridcolor:C.line,linecolor:C.lineStrong,range:[lmin-0.6,lmax+1.2]},
+      shapes:shapes,annotations:ann});
+    Plotly.react(div,[{x:G,y:L,mode:'lines',line:{color:(df>0?'#1F6B66':'#B0442B'),width:2.8}}].concat(dots),lay,CONF);
+  }
+  sn.addEventListener('input',function(){regenNoise(+sn.value,+ss.value);build();});
+  ss.addEventListener('input',function(){regenNoise(+sn.value,+ss.value);build();});
+  document.getElementById('np-resample').addEventListener('click',function(){regenNoise(+sn.value,+ss.value);build();});
+  regenNoise(+sn.value,+ss.value);build();
+}
+/* ===================== init / boot ===================== */
+function safe(name,fn){try{fn();}catch(e){if(window.console&&console.warn)console.warn('[viz '+name+']',e);}}
+function init(){
+  safe('math',renderMath);
+  safe('sliders',wireSliderFill);
+  safe('nav',wireNav);
+  safe('menu',wireMenu);
+  safe('map',buildMap);
+  safe('kgLive',kgLive);
+  safe('kgFc3d',kgFc3d);
+  safe('mvnLive',mvnLive);
+  safe('mvnEllipse',mvnEllipse);
+  safe('lrProj3d',lrProj3d);
+  safe('collinearity',collinearity);
+  safe('blueViz',blueViz);
+  safe('npCollapse',npCollapse);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>

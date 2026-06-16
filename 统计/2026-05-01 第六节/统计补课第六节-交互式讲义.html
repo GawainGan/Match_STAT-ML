@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第六节 · Ch5 p51–60：多元正态——把钟形曲线立成有朝向的山）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly (仅用于 2D；3D 全部由本页内置的 Canvas 引擎绘制，绝不调用 WebGL) -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F3EEE2;
+  --card:#FFFDF8;
+  --ink:#1E1C18;
+  --ink-soft:#574F46;
+  --ink-faint:#8C857A;
+  --line:#E4D8C2;
+  --line-strong:#D2C2A4;
+  --accent:#2C53A0;        /* 第六节主色：深靛蓝（多元正态 — 多维空间、几何朝向、把钟立起来转个向） */
+  --accent-soft:#DCE6F6;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 检验 / 推导 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(40,30,15,.05), 0 8px 30px rgba(40,30,15,.06);
+  --shadow-lg:0 10px 50px rgba(40,30,15,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #DCE6F6 0%, rgba(220,230,246,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #EBF1E1 0%, rgba(235,241,225,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,60px) 140px; max-width:980px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:312px; flex:0 0 312px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:312px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(20,15,8,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:66ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F1F4FA)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* plot containers */
+.plot{width:100%; height:360px}
+.plot.tall{height:430px}
+.plot.d3{height:470px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #B6C5E4; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(210,194,164,.16) 27px, rgba(210,194,164,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:980px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.04)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+.footer{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:13.5px}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第六节<small>多元正态分布 — Ch5 p51–60</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图</a>
+    <a href="#spine"><span class="num">0</span>本节主线（承接第五节）</a>
+    <a class="trap-link" href="#audit"><span class="num">0</span>先给 AI 纪要挑刺 ⚠</a>
+
+    <h4>Ⅰ · 从一元升到多元</h4>
+    <a class="sub" href="#t-vec"><span class="num">1.1</span>向量化：标量 → 矩阵</a>
+    <a class="sub trap-link" href="#t-mgf"><span class="num">1.2</span>MGF / 特征函数：身份证 ⚠</a>
+
+    <h4>Ⅱ · 三大核心性质（Thm 5.13）</h4>
+    <a class="sub" href="#t-marginal"><span class="num">2.1</span>边际：子集仍正态</a>
+    <a class="sub" href="#t-conditional"><span class="num">2.2</span>条件：仍正态（回归种子）</a>
+    <a class="sub trap-link" href="#t-quadratic"><span class="num">2.3</span>二次型→卡方 · 马氏距离 ⚠</a>
+
+    <h4>Ⅲ · 协方差矩阵的几何</h4>
+    <a class="sub" href="#t-psd"><span class="num">3.1</span>PSD/PD：协方差的形状</a>
+    <a class="sub" href="#t-spectral"><span class="num">3.2</span>谱分解 · 白化（掰正椭圆）</a>
+
+    <h4>Ⅳ · 从数据反推参数</h4>
+    <a class="sub trap-link" href="#t-mle"><span class="num">4.1</span>MLE：μ̂=X̄, Σ̂=W/n ⚠</a>
+    <a class="sub" href="#t-ellipsoid"><span class="num">4.2</span>椭球置信集 · Fisher 阵</a>
+
+    <h4>Ⅴ · 三个延伸</h4>
+    <a class="sub trap-link" href="#t-bm"><span class="num">5.1</span>布朗运动：正态+独立增量 ⚠</a>
+    <a class="sub" href="#t-hilbert"><span class="num">5.2</span>希尔伯特空间 · 范数</a>
+    <a class="sub" href="#t-tail"><span class="num">5.3</span>长尾 vs 短尾 · 违约建模</a>
+
+    <h4>收束</h4>
+    <a href="#closing"><span class="num">∎</span>本节总览 · 通向第六/七章</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <p class="h-eyebrow">交互式讲义 · 第六节</p>
+  <h1 class="title cjk">一元正态只是<mark>一维的钟</mark>；当数据长成向量，<br>整座钟会<mark>立起来、被拉斜</mark>——形状全写在协方差矩阵里</h1>
+  <p class="lead muted" style="margin-top:14px">第五节我们一直在估<b>标量</b>参数（一个 \(\theta\)、一对 \((\mu,\sigma^2)\)），似然山是一座一维或二维的丘。这一节，<b>数据本身长成了向量</b> \(X=(X_1,\dots,X_k)^\top\)：一个人同时有身高、体重、血压；一支股票同时有多个因子暴露。描述它们的，是<b>多元正态分布</b> \(N_k(\mu,\Sigma)\)。核心只有一句话——<b>把一元的标量运算，整体换成向量 / 矩阵运算</b>，而那座钟的<b>朝向、胖瘦、倾斜</b>，全部编码在协方差矩阵 \(\Sigma\) 里。沿着这条主线，我们回答四个问题：①升维时<a class="inlink" href="#t-vec">到底改变了什么</a>、什么没变（<a class="inlink" href="#t-mgf">MGF 仍是"身份证"</a>）；②多元正态<a class="inlink" href="#t-marginal">最好用的三大性质</a>（边际、<a class="inlink" href="#t-conditional">条件</a>、<a class="inlink" href="#t-quadratic">二次型→卡方</a>）；③这些性质如何<a class="inlink" href="#t-psd">钉成 \(\Sigma\) 的几何形状</a>（半正定、<a class="inlink" href="#t-spectral">谱分解、白化</a>）；④怎么从数据<a class="inlink" href="#t-mle">反推 \(\mu,\Sigma\)</a>、画出<a class="inlink" href="#t-ellipsoid">椭球置信集</a>。最后用三个延伸（<a class="inlink" href="#t-bm">布朗运动</a>、<a class="inlink" href="#t-hilbert">希尔伯特空间</a>、<a class="inlink" href="#t-tail">长尾分布</a>）把这套语言接到你关心的世界。</p>
+
+  <div class="note cjk"><b>怎么读这份讲义。</b>每个知识点尽量用八种"通道"讲：<b>直觉</b>（说人话）、<b>公式</b>（精确）、<b>案例</b>（落地）、<b>2D 图</b>、<b>3D 图</b>（可拖动旋转）、<b>交互</b>（你来拨滑块 / 切换）、<b>推导</b>（看链条）、<b>盲点</b>（批判，⚠）。它们之间用顶部的"<b>关系标签</b>"互相挂钩（继承 / 互补 / 强化 / 工具 / 边界）。本节所有 3D 图都由页面内置的 <b>Canvas 引擎</b>绘制——<b>不使用 WebGL</b>，所以不会再出现"WebGL is not supported by your browser"。如果某张图没出来，刷新一次即可（库偶尔加载慢），不会整页崩。</div>
+
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>先建立画面感，不纠结符号。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>把直觉钉死成可计算的式子。</p></div>
+    <div class="gchip case"><div class="ic">✎</div><h5>案例</h5><p>一个能落地、能算的具体场景。</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5>2D 图</h5><p>等高线、散点、边际——平面里的形状。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>把钟立起来，拖动旋转看朝向。</p></div>
+    <div class="gchip live"><div class="ic">⊹</div><h5>交互</h5><p>拨滑块 / 切换，亲手让图动起来。</p></div>
+    <div class="gchip flow"><div class="ic">⟶</div><h5>推导</h5><p>看清结论是怎么一步步逼出来的。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>容易记错、最该警惕的缝隙。</p></div>
+  </div>
+
+  <!-- ============================================================ MAP -->
+  <section id="map" style="margin-top:30px">
+  <div class="mapwrap">
+    <svg id="conceptmap" viewBox="0 0 1300 820" role="img" aria-label="第六节知识全景地图">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B7AB98"></path>
+        </marker>
+      </defs>
+      <g id="edges" fill="none" stroke-width="1.8"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+  <div class="legend cjk">
+    <span><i style="border-color:#3E7C4E"></i>推导 / 继承</span>
+    <span><i style="border-color:#2C53A0"></i>推广 / 一般化</span>
+    <span><i style="border-color:#574AA6"></i>提供工具</span>
+    <span><i style="border-color:#B7892A; border-top-style:dashed"></i>补充 / 强化</span>
+    <span><i style="border-color:#B0442B; border-top-style:dashed"></i>盲点警告</span>
+  </div>
+  </section>
+
+  <!-- ============================================================ SPINE -->
+  <section class="topic-block" id="spine">
+    <h3 class="topic cjk">0 · 本节主线：把"一元的钟"换成"多维的山"，朝向写进 Σ</h3>
+    <p class="topic-en">From a 1-D bell to a tilted multidimensional hill — its shape lives entirely in the covariance matrix.</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一句话主线</div>
+      <p>一元正态 \(N(\mu,\sigma^2)\) 只需要两个数：中心 \(\mu\)、胖瘦 \(\sigma^2\)。多元正态 \(N_k(\mu,\Sigma)\) 也只需要两件东西，但<b>升了一维</b>：中心是一个<b>向量</b> \(\mu\in\mathbb R^k\)，胖瘦 + 朝向是一个<b>矩阵</b> \(\Sigma\in\mathbb R^{k\times k}\)。\(\Sigma\) 的对角元是各分量自己的方差，<b>非对角元</b>是分量之间的协方差——正是它让那座钟<b>不再正着摆，而是斜着躺</b>。</p>
+      <p style="margin-bottom:0"><b>第一层（不变的）</b>：把标量乘法换成向量/矩阵乘法之后，<a class="inlink" href="#t-vec">线性变换仍保持正态</a>、<a class="inlink" href="#t-mgf">MGF 仍唯一确定分布</a>。<b>第二层（三大性质）</b>：<a class="inlink" href="#t-marginal">任取一个子集仍是正态</a>（边际）；<a class="inlink" href="#t-conditional">固定一部分、看另一部分仍是正态</a>（条件——这就是线性回归的种子）；<a class="inlink" href="#t-quadratic">把数据按 \(\Sigma^{-1}\) 加权平方求和，服从卡方</a>（这就是马氏距离）。<b>第三层（几何与估计）</b>：这三条性质要求 \(\Sigma\) 必须<a class="inlink" href="#t-psd">半正定</a>，它的<a class="inlink" href="#t-spectral">谱分解</a>决定了那座钟的椭圆等高线的<b>轴向和长短</b>；最后用 <a class="inlink" href="#t-mle">MLE</a> 从数据估出 \(\mu,\Sigma\)，并给均值画一个<a class="inlink" href="#t-ellipsoid">椭球置信集</a>。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>推导 · 本节逻辑链（先看骨架，再填血肉）</div>
+      <p style="margin-bottom:0" class="cjk">向量化 \(N_k(\mu,\Sigma)\)（标量→矩阵，<b>维度匹配</b>）<b>→</b> 线性变换 \(BX+C\sim N(B\mu+C,\,B\Sigma B^\top)\)（<a class="inlink" href="#t-vec">Thm 5.11</a>）<b>→</b> MGF \(\psi_X(t)=\exp(\mu^\top t+\tfrac12 t^\top\Sigma t)\)（<a class="inlink" href="#t-mgf">Thm 5.12</a>，唯一确定分布）<b>→</b> 三大性质（<a class="inlink" href="#t-marginal">Thm 5.13</a>）：边际 \(X_a\sim N(\mu_a,\Sigma_{aa})\)、条件 \(X_b|X_a\sim N(\mu_b+\Sigma_{ab}^\top\Sigma_{aa}^{-1}(X_a-\mu_a),\ \Sigma_{bb}-\Sigma_{ab}^\top\Sigma_{aa}^{-1}\Sigma_{ab})\)、二次型 \((X-\mu)^\top\Sigma^{-1}(X-\mu)\sim\chi^2_k\) <b>┄┄</b> 这三条都要 \(\Sigma\) 可逆 ⟹ <b>正定</b>（<a class="inlink" href="#t-psd">协方差阵 ⟺ 半正定</a>）<b>→</b> 谱分解 \(\Sigma=\Gamma\Lambda\Gamma^\top\) 给出椭圆轴；白化 \(Z=\Sigma^{-1/2}(X-\mu)\sim N(0,I)\)（<a class="inlink" href="#t-spectral">把斜钟掰正</a>）<b>┄┄</b> MLE：\(\hat\mu=\bar X\)、\(\widehat\Sigma=W/n\)（<a class="inlink" href="#t-mle">除以 n，有偏</a>）<b>→</b> 已知 \(\Sigma\) 时均值的 <b>椭球置信集</b> \(\{\mu: n(\bar X-\mu)^\top\Sigma^{-1}(\bar X-\mu)\le\chi^2_{k,1-\alpha}\}\)，Fisher 信息阵 \(=n\Sigma^{-1}\)（<a class="inlink" href="#t-ellipsoid">Thm 5.13(3) 直接给</a>）<b>┄┄</b> <span style="color:var(--rust)">延伸：正态增量 ⟹ <a class="inlink" href="#t-bm">布朗运动</a>；内积/范数 ⟹ <a class="inlink" href="#t-hilbert">希尔伯特空间</a>；MGF 发散 ⟹ <a class="inlink" href="#t-tail">长尾分布</a></span>。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>写在前面 · 给爱较真的你</p>
+      <p>你一再说"没有认识是百分百对的，总会有盲点"。我照例<b>先把这句话用在你自己上传的那份 AI 会议纪要上</b>——它整体抓得不错，但有 <b>5 处</b>经不起推敲，而且全都踩在多元正态<b>最微妙的概念缝隙</b>上：特征函数 vs MGF、卡方与伽马的关系、Σ 的 MLE 是不是有偏、"马氏距离"指的是距离还是距离的平方、布朗运动的"三性质"到底是哪三条。下面专开一节<a class="inlink" href="#audit">⚠ 给 AI 纪要挑刺</a>，逐条对照教材 \(p51\!-\!60\) 原文。</p>
+      <p style="margin-bottom:0">对你做<b>因果推断</b>，本节的两件东西将来会反复出现：<b>条件分布</b>（<a class="inlink" href="#t-conditional">2.2</a>）就是线性回归 \(E[Y|X]\) 的概率版原型——你做的几乎每个回归，都是在算一个条件期望；<b>椭球置信集</b>（<a class="inlink" href="#t-ellipsoid">4.2</a>）则是"一组系数的联合不确定性"，IV、GMM 里报的协方差矩阵全是它的推广。把这两件事的几何看清楚，比背公式值钱得多。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUDIT -->
+  <section class="topic-block" id="audit">
+    <h3 class="topic cjk">0 · 先给那份 AI 会议纪要挑刺（逐条对照 Ch5 p51–60）</h3>
+    <p class="topic-en">Auditing the auto-generated minutes against the textbook — exactly where multivariate normal trips people up.</p>
+    <div class="rels">
+      <span class="rel warn"><span class="dot"></span>盲点预演：本节后面每个 ⚠ 都对应这里一条</span>
+      <span class="rel general"><span class="dot"></span>对应教材 <a href="#t-mgf">p51</a>、<a href="#t-quadratic">p53</a>、<a href="#t-mle">p58–59</a></span>
+    </div>
+    <p class="cjk">你这次上传了两份纪要（"AI 纪要"和"转写纪要"）。两份都抓住了主干，但都把<b>几处本就微妙、或听岔了的地方</b>固化成了"知识点"。下面五条，建议你边读本节边核对。</p>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 1 · "特征函数 / 并非所有函数都有特征函数"——主角认错了，而且说反了</p>
+      <p>纪要写："<b>特征函数</b>如同分布的'身份证'，唯一确定分布。<b>并非所有函数都有特征函数</b>（如指数增长无界的函数）。"两层问题：</p>
+      <p>（a）<b>认错了主角。</b>教材 \(p51\) Theorem 5.12 用的是 <b>矩母函数 MGF</b> \(\psi_X(t)=\mathbb E[e^{t^\top X}]\)，<b>不是</b>特征函数 \(\varphi_X(t)=\mathbb E[e^{it^\top X}]\)（差一个虚数单位 \(i\)）。课上老师大概率口头提了"特征函数（傅里叶视角）"，但教材正文一路用的是 MGF。</p>
+      <p style="margin-bottom:0">（b）<b>恰好说反了。</b>真相是：<b>每个分布都有特征函数</b>（因为 \(|e^{itx}|=1\) 处处有界，积分一定收敛）；<b>反而是 MGF 可能不存在</b>——当尾巴太肥时 \(\mathbb E[e^{tX}]=\infty\)（柯西分布、对数正态、Pareto 都没有 MGF）。所以"并非所有都有"的，是 <b>MGF</b>，不是特征函数。这个区分一点都不学究：<b>"MGF 在 \(0\) 附近发散"正是一个分布是<a class="inlink" href="#t-tail">长尾</a>的判据之一</b>——挑刺 1 和你纪要末尾的"long tail 建模"是同一件事的两端。详见 <a class="inlink" href="#t-mgf">1.2</a> 与 <a class="inlink" href="#t-tail">5.3</a>。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 2 · "卡方与正态、伽马没有交集"——错，卡方<u>就是</u>伽马的特例</p>
+      <p>转写纪要写："卡方分布与正态分布、伽马分布等不同，<b>它们之间没有交集</b>。"这与教材直接矛盾。</p>
+      <p style="margin-bottom:0">教材 \(p53\) 白纸黑字：\(\chi^2_k\) <b>就是</b> \(\mathrm{Gamma}(k/2,\,2)\)（形状参数 \(k/2\)、尺度参数 \(2\)）。也就是说卡方<b>不是</b>和伽马并列的另一个家族，而是伽马家族里<b>被挑出来的一支</b>。它和正态的关系也很紧：\(\chi^2_k\) 的定义就是 \(k\) 个独立标准正态<b>平方之和</b> \(\sum_{i=1}^k Z_i^2\)。所以三者非但"有交集"，还层层嵌套：正态平方求和 → 卡方 ⊂ 伽马。这条直接对应 <a class="inlink" href="#t-quadratic">2.3</a> 的二次型分布。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 3 · "协方差 MLE 注意自由度修正"——MLE 恰恰<u>不</u>修正，它是有偏的</p>
+      <p>AI 纪要写："协方差矩阵：通过似然函数求导得到。注意样本协方差与总体协方差估计的区别（<b>自由度修正</b>）。"这句话把方向搞拧了。</p>
+      <p style="margin-bottom:0">教材 \(p59\) 推出的<b>极大似然估计</b>是 \(\widehat\Sigma=\dfrac1n\sum_i(X_i-\bar X)(X_i-\bar X)^\top=W/n\)——<b>除以 \(n\)，不是 \(n-1\)</b>。正因为除以 \(n\)，它是<b>有偏的</b>（\(\mathbb E[\widehat\Sigma]=\frac{n-1}{n}\Sigma\neq\Sigma\)）。"自由度修正"（除以 \(n-1\)）给出的是<b>无偏</b>估计，但那<b>不是 MLE</b>。准确说法应是："MLE 除以 \(n\)（有偏）；若要无偏，得手动改成除以 \(n-1\)。" 纪要把"MLE 会做修正"说成了既定事实，恰好相反。见 <a class="inlink" href="#t-mle">4.1</a>。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 4 · "马氏距离满足三角不等式"——是，但教材里那个卡方量是它的<u>平方</u></p>
+      <p>AI 纪要把马氏距离写成 \((x-\mu)^\top\Sigma^{-1}(x-\mu)\)，并说它"满足非负性、对称性和<b>三角不等式</b>"。这里藏着一个被揉掉的区别。</p>
+      <p style="margin-bottom:0">真正满足三角不等式、配得上"距离"二字的，是<b>带根号</b>的 \(d_M(x,\mu)=\sqrt{(x-\mu)^\top\Sigma^{-1}(x-\mu)}\)（它等于把数据白化 \(z=\Sigma^{-1/2}(x-\mu)\) 之后的<b>欧氏距离</b>，欧氏距离当然是度量）。而教材 \(p53\) 里服从 \(\chi^2_k\) 的那个量 \(V=(x-\mu)^\top\Sigma^{-1}(x-\mu)\)，是马氏距离的<b>平方</b>——<b>平方之后就不再满足三角不等式了</b>（欧氏距离平方也不满足）。一句话：<b>"距离"要开根号，"服从卡方"的是距离平方</b>。这俩在纪要里被当成一个，是最隐蔽的一处。见 <a class="inlink" href="#t-quadratic">2.3</a>。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 5 · 布朗运动"三性质：鞅、正态增量、增量服从正态分布"——把一条说了两遍，漏了关键的"独立"</p>
+      <p style="margin-bottom:0">转写纪要把随机过程的三性质列成"<b>鞅、正态增量、增量服从正态分布</b>"——后两条<b>是同一件事</b>（"正态增量"="增量服从正态分布"），等于把一条数了两遍，却<b>漏掉了真正关键的第三条：独立增量</b>。标准布朗运动的刻画是：① <b>鞅</b>（给定当前及历史，对未来的最佳预测就是当前值）；② <b>正态平稳增量</b>（\(B_t-B_s\sim N(0,\,t-s)\)）；③ <b>独立增量</b>（不相交时间段的增量互相独立）。少了"独立"这一条，就退化成了<a class="inlink" href="#t-bm">分数布朗运动</a>那类<b>有长程依赖</b>的过程——研究难度完全不同。AI 纪要的 docx 版其实列对了，是转写版把它读岔了。见 <a class="inlink" href="#t-bm">5.1</a>。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART I -->
+  <header class="part-head" id="part1">
+    <div class="pk">Ⅰ</div>
+    <h2 class="cjk">从一元升到多元：把标量运算整体换成矩阵运算</h2>
+    <p>升维听起来吓人，但多元正态的"骨架"和一元一模一样——只是每一处<b>标量</b>都换成了对应的<b>向量或矩阵</b>。先把这套"翻译表"建立起来，并解决一个会贯穿全节的小但要命的细节：<b>维度匹配</b>。然后看看升维之后，什么东西<b>没有变</b>（MGF 仍是分布的"身份证"）。</p>
+  </header>
+
+  <!-- 1.1 vectorization -->
+  <section class="topic-block" id="t-vec">
+    <h3 class="topic cjk">1.1 向量化：一张"标量 → 矩阵"的翻译表，外加维度匹配</h3>
+    <p class="topic-en">Everything scalar becomes a vector or a matrix — mind the dimensions.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承自一元正态 <a href="#top">\(N(\mu,\sigma^2)\)</a></span>
+      <span class="rel general"><span class="dot"></span>是 <a href="#t-marginal">三大性质</a> 的共同地基</span>
+      <span class="rel dual"><span class="dot"></span>与 <a href="#t-mgf">MGF（身份证）</a> 一体两面</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 同一个钟，从"一根轴"变成"一个平面/空间"</div>
+      <p>一元正态 \(N(\mu,\sigma^2)\) 是一条对称的钟形曲线，住在一根数轴上。把它<b>升到二维</b>：现在有两个随机量（比如身高 \(X_1\)、体重 \(X_2\)），它们的联合密度是一座<b>三维的小山</b>——山的"等高线"是一圈圈<b>椭圆</b>。当 \(X_1,X_2\) 不相关时椭圆<b>正着摆</b>；一旦相关（高的人通常也重），椭圆就<b>斜着躺</b>。这个"斜"，就是协方差矩阵 \(\Sigma\) 的非对角元在起作用。</p>
+      <p style="margin-bottom:0">翻译规则只有一句：<b>凡是一元里的标量，多元里就换成对应的向量或矩阵</b>。中心 \(\mu\)（一个数）→ 均值向量 \(\mu\)（\(k\) 个数）；方差 \(\sigma^2\)（一个数）→ 协方差矩阵 \(\Sigma\)（\(k\times k\)）；"除以方差" \(/\sigma^2\) → "乘以逆矩阵" \(\Sigma^{-1}\)；"标准差" \(\sigma\) → "矩阵平方根" \(\Sigma^{1/2}\)。难点不在概念，而在<b>维度对不对得上</b>——这是下面那条注释要专门盯的。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 一元 ↔ 多元，逐项对照</div>
+      <div class="scrollx"><table class="tab cjk">
+        <tr><th>部件</th><th>一元 \(N(\mu,\sigma^2)\)</th><th>多元 \(N_k(\mu,\Sigma)\)</th></tr>
+        <tr><td class="lbl">中心</td><td>\(\mu\in\mathbb R\)</td><td>\(\mu\in\mathbb R^{k}\)（向量）</td></tr>
+        <tr><td class="lbl">散布</td><td>\(\sigma^2>0\)</td><td>\(\Sigma\in\mathbb R^{k\times k}\) 正定（矩阵）</td></tr>
+        <tr><td class="lbl">密度 PDF</td><td>\(\dfrac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{(x-\mu)^2}{2\sigma^2}}\)</td><td>\(\dfrac{1}{(2\pi)^{k/2}|\Sigma|^{1/2}}e^{-\frac12(x-\mu)^\top\Sigma^{-1}(x-\mu)}\)</td></tr>
+        <tr><td class="lbl">标准化</td><td>\(z=\dfrac{x-\mu}{\sigma}\)</td><td>\(z=\Sigma^{-1/2}(x-\mu)\)（白化）</td></tr>
+        <tr><td class="lbl">线性变换</td><td>\(aX+b\sim N(a\mu+b,a^2\sigma^2)\)</td><td>\(BX+C\sim N_p(B\mu+C,\,B\Sigma B^\top)\)</td></tr>
+      </table></div>
+      <p style="margin:10px 0 0"><b>Thm 5.11（教材 p51）</b>：若 \(X\sim N_k(\mu,\Sigma)\)，\(B\) 是固定 \(p\times k\) 矩阵、\(C\) 固定 \(p\times1\) 向量，则 \(BX+C\sim N_p(B\mu+C,\,B\Sigma B^\top)\)。一个极有用的特例：任何 \(X\sim N_k(\mu,\Sigma)\) 都能写成 \(X=AZ+\mu\)，其中 \(Z\) 是 \(k\) 个<b>独立标准正态</b>、\(\Sigma=AA^\top\)。换句话说，<b>所有多元正态都是"把一堆独立标准正态线性搅拌再平移"得来的</b>——这是后面几乎每个证明的起手式。</p>
+    </div>
+    <div class="note cjk"><b>维度匹配（老师反复强调的那个细节）。</b>\(B\Sigma B^\top\) 不能写成 \(B^\top\Sigma B\)：前者 \((p\times k)(k\times k)(k\times p)=p\times p\)，对；后者维度根本乘不起来。二次型 \((x-\mu)^\top\Sigma^{-1}(x-\mu)\) 的形状是 \((1\times k)(k\times k)(k\times 1)=1\times1\)，<b>结果是一个标量</b>（一个数），所以才能放进 \(\exp(\cdot)\)。养成习惯：<b>每写一个矩阵乘积，先在脑子里把维度标在下面对一遍</b>，对不上就一定错了。这个习惯在你后面写 IV/GMM 的方差公式时能省掉大量调试。</div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 身高 × 体重：一个能算的 Σ</div>
+      <p>设成年男性身高 \(X_1\)（cm）、体重 \(X_2\)（kg）近似 \(N_2(\mu,\Sigma)\)，\(\mu=(175,\,72)^\top\)，</p>
+      <p style="margin-bottom:0">\[\Sigma=\begin{pmatrix}\sigma_1^2 & \rho\sigma_1\sigma_2\\[2pt]\rho\sigma_1\sigma_2 & \sigma_2^2\end{pmatrix}=\begin{pmatrix}49 & 0.7\cdot7\cdot10\\[2pt]0.7\cdot7\cdot10 & 100\end{pmatrix}=\begin{pmatrix}49 & 49\\[2pt]49 & 100\end{pmatrix}.\] 对角线读出"各自的方差"（身高 SD = 7cm，体重 SD = 10kg）；非对角 \(49\) 读出"正相关"（\(\rho=0.7\)）。把 \(\rho\) 调大，下面那座 3D 钟会越来越<b>斜</b>；调到 \(0\)，钟就<b>正着摆</b>，两个变量互不牵连。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 拨相关系数 ρ，看等高线椭圆怎么"斜"过来</div>
+      <p class="cap">这是二元正态的<b>密度等高线</b>（一圈圈椭圆）加上一批抽样点。\(\rho=0\)：椭圆<b>正着摆</b>，长短轴沿坐标轴。\(\rho\) 增大：椭圆<b>沿 45° 斜过来</b>，越拉越扁——这就是"身高高的人往往也重"在几何上的样子。\(\rho\to\pm1\)：椭圆压成一条线，两个变量几乎线性绑定。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="vec2d-rho-v">0.70</span></label><input type="range" id="vec2d-rho" min="-0.95" max="0.95" step="0.05" value="0.7"></div>
+        <button class="btn ghost" id="vec2d-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-vec-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="vec2d-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D 图 · 把那座钟立起来（拖动旋转）</div>
+      <p class="cap">同一个二元正态，这次画成<b>三维密度曲面</b>——一座光滑的钟形小山。拖动旋转它，从正上方看就是上面的椭圆等高线；从侧面看就是钟形。拨动 \(\rho\)：你会看到山脊<b>沿对角线方向拉长、垂直方向压扁</b>，整座山被"拧"了一个角度。这正是协方差矩阵 \(\Sigma\) 的<b>非对角元</b>的几何含义。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="vec3d-rho-v">0.60</span></label><input type="range" id="vec3d-rho" min="-0.9" max="0.9" step="0.05" value="0.6"></div>
+      </div>
+      <div class="plotwrap"><div id="p-vec-3d" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+      <p class="cap" id="vec3d-info" style="margin-top:6px"></p>
+    </div>
+  </section>
+
+  <!-- 1.2 MGF / characteristic function -->
+  <section class="topic-block" id="t-mgf">
+    <h3 class="topic cjk">1.2 ⚠ MGF / 特征函数：分布的"身份证"——以及它什么时候会失效</h3>
+    <p class="topic-en">The MGF is a fingerprint that uniquely determines the distribution — when it exists.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承自一元 MGF \(M_X(t)=\mathbb E[e^{tX}]\)</span>
+      <span class="rel tool"><span class="dot"></span>是 <a href="#t-marginal">三大性质</a> 证明的核心工具</span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 1</a>，并通向 <a href="#t-tail">长尾分布</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 一个函数，把整张分布"压缩"成一条曲线</div>
+      <p>分布有很多种"指纹"：PDF、CDF、矩母函数 MGF、特征函数。它们都<b>唯一地确定</b>一个分布——知道其中任何一个，就等于知道了这个分布的一切。MGF 之所以好用，是因为它把两件麻烦事变简单：<b>① 求各阶矩</b>（在 \(0\) 处求导：\(M'(0)=\mathbb E[X]\)、\(M''(0)=\mathbb E[X^2]\)…）；<b>② 处理独立和</b>（独立随机变量相加，MGF 直接<b>相乘</b>）。后者是证明"独立正态之和仍正态"的一行神器。</p>
+      <p style="margin-bottom:0"><b>但这里有个被纪要弄反的关键点。</b>"身份证"分两种：<b>特征函数 \(\varphi_X(t)=\mathbb E[e^{itX}]\) 永远存在</b>（因为 \(|e^{itx}|=1\) 处处有界，积分铁定收敛）；而 <b>MGF \(M_X(t)=\mathbb E[e^{tX}]\) 可能不存在</b>——当尾巴太肥，\(e^{tx}\) 涨得比密度衰减得还快，期望就成了 \(+\infty\)。所以"并不是所有分布都有"的，是 <b>MGF</b>，不是特征函数。正态尾巴衰减极快（\(e^{-x^2/2}\)），MGF 处处存在；柯西、对数正态、Pareto 这类<a class="inlink" href="#t-tail">长尾</a>分布，MGF 在 \(0\) 附近就炸了。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 多元正态的 MGF（Thm 5.12, p51）</div>
+      <p>\[\psi_X(t)=\mathbb E\big[e^{t^\top X}\big]=\exp\!\Big(\mu^\top t+\tfrac12\,t^\top\Sigma t\Big),\qquad t\in\mathbb R^k.\] 对应的<b>特征函数</b>只差一个 \(i\)：\(\varphi_X(t)=\exp\!\big(i\mu^\top t-\tfrac12 t^\top\Sigma t\big)\)。两者的 \(\frac12 t^\top\Sigma t\) 项，正是"<b>正态</b>"这一身份的签名——指数里只有 \(t\) 的<b>一次和二次</b>项，没有更高次。</p>
+      <p style="margin-bottom:0"><b>证明只用向量化 + 独立和。</b>写 \(X=AZ+\mu\)（\(Z\) 独立标准正态，\(\Sigma=AA^\top\)）：\(\psi_X(t)=\mathbb E[e^{t^\top(AZ+\mu)}]=e^{\mu^\top t}\,\mathbb E[e^{(A^\top t)^\top Z}]\)。因为 \(Z\) 各分量独立，期望拆成连乘 \(\prod_j\mathbb E[e^{(A^\top t)_j Z_j}]=\prod_j e^{(A^\top t)_j^2/2}=e^{\frac12\|A^\top t\|^2}=e^{\frac12 t^\top AA^\top t}=e^{\frac12 t^\top\Sigma t}\)。合起来即得。<b>注意：这个公式只要 \(\Sigma\) 是协方差矩阵就成立，哪怕 \(X\) 退化（\(\Sigma\) 不可逆、PDF 不存在）也照样有 MGF。</b></p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 亲眼看 MGF 在长尾下"炸掉"</div>
+      <p class="cap">MGF 的本体是积分 \(\int e^{tx}f(x)\,dx\)。这张图画的是它的<b>被积函数</b> \(e^{tx}f(x)\)（即"每个 \(x\) 对 MGF 贡献多少"）。<b>正态</b>（蓝）：钟形尾巴 \(e^{-x^2/2}\) 衰减飞快，被 \(e^{tx}\) 一推后仍然冲回 0，曲线下面积有限 → MGF 存在。<b>长尾（这里用柯西/学生 t）</b>（红）：尾巴只按幂律慢慢掉，被 \(e^{tx}\) 一乘<b>反而越冲越高</b>，面积发散 → MGF = ∞。拨动 \(t\)：\(t\) 越偏离 0，红线尾巴翘得越夸张。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">MGF 自变量 t <span class="val" id="mgf-t-v">0.40</span></label><input type="range" id="mgf-t" min="0" max="1.2" step="0.05" value="0.4"></div>
+      </div>
+      <div class="plotwrap"><div id="p-mgf" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="mgf-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 为什么"独立正态之和仍是正态"只要一行</div>
+      <p style="margin-bottom:0">设 \(X\sim N(\mu_1,\sigma_1^2)\)、\(Y\sim N(\mu_2,\sigma_2^2)\) 独立。\(X+Y\) 的 MGF = 两者 MGF 之积：\(e^{\mu_1 t+\frac12\sigma_1^2t^2}\cdot e^{\mu_2 t+\frac12\sigma_2^2t^2}=e^{(\mu_1+\mu_2)t+\frac12(\sigma_1^2+\sigma_2^2)t^2}\)，<b>这正是 \(N(\mu_1+\mu_2,\sigma_1^2+\sigma_2^2)\) 的 MGF</b>。因为 MGF 唯一确定分布，所以 \(X+Y\sim N(\mu_1+\mu_2,\sigma_1^2+\sigma_2^2)\)，证毕。多元版同理（指数里的二次型相加）。这就是 MGF "身份证"性质 + "独立和相乘"性质联手的威力——你将来推任何"正态的线性组合"都靠它。</p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>批判 · 别把"指数增长的函数没有特征函数"当成知识点</p>
+      <p style="margin-bottom:0">纪要那句"（如指数增长无界的函数）没有特征函数"听上去像在描述某类病态分布，其实是把两件不同的事粘在了一起：一个<b>密度</b>如果指数增长到无穷，它根本<b>不可积、压根不是密度</b>，谈不上"有没有特征函数"；而真正的分布（哪怕尾巴肥如柯西）<b>都有特征函数</b>。需要小心存在性的，永远是 <b>MGF</b>。把这句话在脑子里改成"<b>长尾分布没有 MGF，但都有特征函数</b>"，它就从一个含糊的口误，变成了一条能直接拿去判断长尾的<a class="inlink" href="#t-tail">实用判据</a>。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART II -->
+  <header class="part-head" id="part2">
+    <div class="pk">Ⅱ</div>
+    <h2 class="cjk">三大核心性质（Thm 5.13）：边际、条件、二次型</h2>
+    <p>多元正态之所以是统计学的"主力分布"，几乎全靠这三条性质——它们让"切一刀""压一压""量个远近"都<b>仍然落在正态/卡方的世界里</b>，于是可以一路算下去。这三条是本节后面一切（回归、马氏距离、置信椭球）的来源。先建立画面，再看公式，最后亲手验证它们。</p>
+  </header>
+
+  <!-- 2.1 marginal -->
+  <section class="topic-block" id="t-marginal">
+    <h3 class="topic cjk">2.1 边际：随手抽几个分量出来，仍是正态</h3>
+    <p class="topic-en">Any subset of a jointly normal vector is itself normal — just delete rows/columns.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承自 <a href="#t-vec">向量化</a>（边际 = 线性变换的特例 \(X_a=[\,I\ 0\,]X\)）</span>
+      <span class="rel general"><span class="dot"></span>是 <a href="#t-conditional">条件分布</a> 的搭档（联合 = 边际 × 条件）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 把三维的山，从正上方拍扁成一条曲线</div>
+      <p>有一座二维正态的钟形小山（变量 \(X_1,X_2\)）。如果我<b>只关心 \(X_1\)</b>、完全不管 \(X_2\) 取什么——几何上就是<b>把整座山沿 \(X_2\) 方向压扁、投影到 \(X_1\) 轴上</b>，得到的影子是一条<b>一维的钟形曲线</b>，而且恰好就是 \(N(\mu_1,\sigma_1^2)\)。换句话说，<b>边际分布只看你关心的那几个分量，其余的直接"积掉"</b>，结果仍是正态。</p>
+      <p style="margin-bottom:0">操作上更省事：求边际，<b>连积分都不用算</b>——直接从 \(\mu\) 里<b>挑出对应的几个分量</b>、从 \(\Sigma\) 里<b>挑出对应的行和列</b>，拼成一个小一号的 \(N(\mu_a,\Sigma_{aa})\) 就行。这就是"删行删列"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 边际（Thm 5.13(1), p53）</div>
+      <p>把 \(X\sim N_k(\mu,\Sigma)\) 拆成两块 \(X=\begin{pmatrix}X_a\\X_b\end{pmatrix}\)，相应地 \(\mu=\begin{pmatrix}\mu_a\\\mu_b\end{pmatrix}\)、\(\Sigma=\begin{pmatrix}\Sigma_{aa}&\Sigma_{ab}\\\Sigma_{ab}^\top&\Sigma_{bb}\end{pmatrix}\)。则</p>
+      <p style="margin-bottom:0">\[X_a\sim N\big(\mu_a,\ \Sigma_{aa}\big).\] 注意：边际<b>只用到 \(\Sigma_{aa}\)</b>，与"交叉块" \(\Sigma_{ab}\) 和"另一块" \(\Sigma_{bb}\) <b>全无关系</b>——你扔掉的分量怎么相关、怎么分布，都不影响你保留分量的边际。<b>反过来不成立</b>：两个变量各自是正态，<b>不等于</b>它们联合是正态（联合正态是更强的要求）。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 联合椭圆 + 两条"影子"边际曲线（拨 ρ）</div>
+      <p class="cap">中间是二元正态的联合密度等高线（椭圆）加抽样点。<b>上边缘</b>那条曲线是把点云投影到 \(X_1\) 轴得到的边际 \(N(\mu_1,\sigma_1^2)\)；<b>右边缘</b>那条是投影到 \(X_2\) 轴的边际。关键观察：<b>无论你把 \(\rho\) 调成多少（椭圆怎么斜），两条边际曲线的形状纹丝不动</b>——因为边际只取决于对角元 \(\sigma_1^2,\sigma_2^2\)，与相关性 \(\rho\) 无关。相关性藏在"联合"里，一旦投影成边际就被抹掉了。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="marg-rho-v">0.65</span></label><input type="range" id="marg-rho" min="-0.92" max="0.92" step="0.02" value="0.65"></div>
+      </div>
+      <div class="plotwrap"><div id="p-marg-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="marg-info" style="margin-top:6px"></p>
+    </div>
+    <div class="note cjk"><b>一句话记忆。</b>求边际 = "<b>删行删列</b>"，把不关心的分量从 \(\mu\) 和 \(\Sigma\) 里整行整列划掉，剩下的就是答案。它是后面"联合 = 边际 × 条件"分解的左半边。</div>
+  </section>
+
+  <!-- 2.2 conditional -->
+  <section class="topic-block" id="t-conditional">
+    <h3 class="topic cjk">2.2 条件：固定一部分，看另一部分——这就是线性回归的种子</h3>
+    <p class="topic-en">Condition on part of a Gaussian and you get another Gaussian whose mean is linear in the conditioning variable. That linear map is regression.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>与 <a href="#t-marginal">边际</a> 互补：联合 = 边际 × 条件</span>
+      <span class="rel general"><span class="dot"></span>通向 <a href="#closing">线性回归（第七章）</a>：\(E[Y|X]\) 的概率原型</span>
+      <span class="rel tool"><span class="dot"></span>用到 <a href="#t-psd">分块矩阵求逆</a>（Schur 补）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 在山上竖着切一刀，切面又是一条钟形曲线</div>
+      <p>还是那座二维的山。这次我<b>把 \(X_1\) 钉死在某个值 \(x_0\)</b>（比如"只看身高 = 185cm 的人"），问：此时 \(X_2\)（体重）怎么分布？几何上就是<b>在 \(X_1=x_0\) 处竖着切一刀</b>，切面的轮廓（再归一化）<b>又是一条一维钟形曲线</b>——所以条件分布 \(X_2|X_1=x_0\) 仍是正态。</p>
+      <p style="margin-bottom:0">两件事会变：<b>① 中心移动。</b>身高越高，体重的条件均值越大——这个"条件均值随 \(x_0\) <b>线性</b>移动"的规律，<b>画出来就是一条直线</b>。<b>这条直线，就是总体版的回归线 \(E[X_2|X_1]\)。</b> <b>② 变窄。</b>因为"已经知道了身高"提供了信息，体重的条件方差 \(\le\) 它的边际方差——知道得越多（\(|\rho|\) 越大），切面越瘦。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 条件（Thm 5.13(2), p53）——回归系数的真身</div>
+      <p>沿用 2.1 的分块。给定 \(X_a=x_a\)，</p>
+      <p>\[X_b\mid X_a=x_a\ \sim\ N\Big(\underbrace{\mu_b+\Sigma_{ab}^\top\Sigma_{aa}^{-1}(x_a-\mu_a)}_{\text{条件均值（随 }x_a\text{ 线性）}},\ \underbrace{\Sigma_{bb}-\Sigma_{ab}^\top\Sigma_{aa}^{-1}\Sigma_{ab}}_{\text{条件协方差（Schur 补，恒 }\le\Sigma_{bb}\text{）}}\Big).\]</p>
+      <p style="margin-bottom:0"><b>把它翻译成一元回归你就全懂了。</b>二维情形 \(\Sigma_{aa}=\sigma_1^2,\ \Sigma_{ab}=\rho\sigma_1\sigma_2,\ \Sigma_{bb}=\sigma_2^2\)，代入：条件均值 \(=\mu_2+\dfrac{\rho\sigma_1\sigma_2}{\sigma_1^2}(x_1-\mu_1)=\mu_2+\rho\dfrac{\sigma_2}{\sigma_1}(x_1-\mu_1)\)。这里的斜率 \(\boxed{\beta=\rho\sigma_2/\sigma_1=\Sigma_{ab}/\Sigma_{aa}=\mathrm{Cov}/\mathrm{Var}}\)——<b>正是你在计量里背的 OLS 斜率公式</b> \(\beta=\mathrm{Cov}(X,Y)/\mathrm{Var}(X)\)。条件方差 \(=\sigma_2^2(1-\rho^2)\)——\(\rho^2\) 就是 \(R^2\)，"被 \(X\) 解释掉的那部分方差"。<b>回归不是另起炉灶的方法，它就是在算多元正态的条件期望。</b></p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 拖动竖切位置 x₀，看条件切片 + 回归线（拨 ρ）</div>
+      <p class="cap">联合椭圆 + 抽样点之上：<b>竖直虚线</b>是你选的 \(X_1=x_0\)；沿这条线画出的曲线，是条件分布 \(X_2|X_1=x_0\) 的密度（切面）；线上的<b>实心点</b>是条件均值 \(E[X_2|X_1=x_0]\)。那条贯穿全图的<b>斜直线</b>，把所有 \(x_0\) 对应的条件均值串起来——<b>它就是总体回归线</b>，斜率 \(=\rho\sigma_2/\sigma_1\)。拨 \(x_0\)：切面沿回归线上下平移。拨 \(\rho\)：\(\rho\) 越大回归线越陡、切面越窄（条件方差 \(\sigma_2^2(1-\rho^2)\) 越小）；\(\rho=0\) 时回归线水平、切面 = 边际（"知道 \(X_1\) 毫无帮助"）。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="cond-rho-v">0.70</span></label><input type="range" id="cond-rho" min="-0.92" max="0.92" step="0.02" value="0.7"></div>
+        <div class="ctrl"><label class="cjk">竖切位置 x₀ <span class="val" id="cond-x0-v">1.20</span></label><input type="range" id="cond-x0" min="-2.6" max="2.6" step="0.1" value="1.2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-cond-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="cond-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D 图 · 那一刀切在山上的样子（拖动旋转）</div>
+      <p class="cap">把上面的"竖切"放进三维：钟形密度曲面 + 在 \(X_1=x_0\) 处的一道<b>切痕</b>（红线）。这道切痕的形状，就是条件分布的（未归一化）密度——<b>一条钟形曲线</b>。拨 \(x_0\)：切痕在山坡上左右移动，山高的地方切痕也高（条件密度峰值随你切在山的胖处/瘦处而变）。拨 \(\rho\)：山被拧斜，切痕的位置与高度随之改变。这就是"条件分布仍是正态"最直观的画面。</p>
+      <div class="plotwrap"><div id="p-cond-3d" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>给爱较真的你 · 这一节是本讲性价比最高的 30 行</p>
+      <p style="margin-bottom:0">你将来做的 IV、DID、面板，落到最底层几乎都是某种条件期望 \(E[Y\mid X]\)。这里你看到：<b>当 \((X,Y)\) 联合正态时，这个条件期望天然是 \(X\) 的线性函数</b>，斜率就是 \(\mathrm{Cov}/\mathrm{Var}\)。所以"线性回归"在正态世界里<b>不是一个近似、不是一个建模选择，而是一个恒等式</b>。反过来也提醒你一个盲点：现实数据<b>不</b>联合正态时，真正的 \(E[Y|X]\) 可能是弯的，你用 OLS 拟的那条直线只是<b>最优线性近似</b>（best linear predictor），不是条件均值本身。把"回归 = 条件期望"和"OLS = 最优线性近似"分清楚，你读因果推断的识别假设时会省很多事。</p>
+    </div>
+  </section>
+
+  <!-- 2.3 quadratic form -->
+  <section class="topic-block" id="t-quadratic">
+    <h3 class="topic cjk">2.3 二次型 → 卡方；以及"马氏距离"到底指谁</h3>
+    <p class="topic-en">The Σ⁻¹-weighted squared deviation is χ²; its square root is the Mahalanobis distance.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>由 <a href="#t-spectral">白化</a> 推出（\(z=\Sigma^{-1/2}(X-\mu)\sim N(0,I)\)）</span>
+      <span class="rel tool"><span class="dot"></span>给 <a href="#t-ellipsoid">椭球置信集</a> 提供门槛 \(\chi^2_{k,1-\alpha}\)</span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 2 与挑刺 4</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 先把椭圆云"掰成圆云"，再量普通距离</div>
+      <p>当变量相关、量纲还不同（身高用 cm、体重用 kg），用普通的<b>欧氏距离</b>判断"一个点离中心远不远"会出错：沿着相关方向，点本来就该散得开，欧氏距离却把它当成异常。<b>马氏距离</b>的思路是：先用 \(\Sigma^{-1/2}\) 把斜椭圆的点云<b>掰正、缩放成标准的圆云</b>（这一步叫<a class="inlink" href="#t-spectral">白化</a>），再在圆云里量普通的欧氏距离。这样得到的"远近"才公平——它<b>消除了相关性和量纲</b>。</p>
+      <p style="margin-bottom:0">而把这个距离<b>平方</b>，就得到教材里那个服从卡方的二次型 \(V=(X-\mu)^\top\Sigma^{-1}(X-\mu)\)。它衡量"这个点偏离中心多少个标准差（按 \(\Sigma\) 加权）的平方"，是后面画置信椭球、做异常检测的核心量。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 二次型分布 + 卡方就是伽马（Thm 5.13(3), p53）</div>
+      <p>对 \(X\sim N_k(\mu,\Sigma)\)（\(\Sigma\) 可逆），</p>
+      <p>\[V=(X-\mu)^\top\Sigma^{-1}(X-\mu)\ \sim\ \chi^2_k.\]</p>
+      <p style="margin-bottom:0"><b>为什么？</b>令 \(Z=\Sigma^{-1/2}(X-\mu)\)，则 \(Z\sim N(0,I_k)\)（<a class="inlink" href="#t-spectral">白化</a>），于是 \(V=Z^\top Z=\sum_{i=1}^k Z_i^2\) 正好是 \(k\) 个独立标准正态的<b>平方和</b>——这就是 \(\chi^2_k\) 的<b>定义</b>。而 \(\chi^2_k\) 又恰是 \(\mathrm{Gamma}(k/2,2)\) 的别名（形状 \(k/2\)、尺度 \(2\)）。所以三者一线串通：<b>正态平方求和 ⟶ \(\chi^2\) ⊂ Gamma</b>。特别地 \(\chi^2_2=\mathrm{Gamma}(1,2)=\mathrm{Exp}(1/2)\)——卡方-2 就是一条指数曲线。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 等马氏距离的轮廓是椭圆，不是圆（拨 ρ）</div>
+      <p class="cap">同一批相关数据上画两套"等距离线"：<b>红色椭圆</b> = 马氏距离相等的点（\(V=1,4,9\)，即 1σ/2σ/3σ 椭圆），它们贴合点云的真实走向；<b>灰色圆</b> = 欧氏距离相等的点，明显与数据形状不符。结论：在相关 + 不同量纲的世界里，"公平的等距离面"是<b>椭圆</b>，由 \(\Sigma^{-1}\) 定义。拨 \(\rho\)：椭圆随点云一起转，圆永远是圆——这正是欧氏距离"看不见相关性"的盲点。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="quad-rho-v">0.65</span></label><input type="range" id="quad-rho" min="-0.9" max="0.9" step="0.02" value="0.65"></div>
+      </div>
+      <div class="plotwrap"><div id="p-quad-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="quad-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 亲手验证 V ~ χ²₂，且 χ²₂ 就是一条指数曲线</div>
+      <p class="cap">点"重新抽样"：从 \(N_2(0,\Sigma)\) 抽 4000 个点，对每个算 \(V=(x)^\top\Sigma^{-1}(x)\)，把这 4000 个 \(V\) 值做成直方图（灰）。叠上两条理论曲线：<b style="color:var(--green)">\(\chi^2_2\) 密度</b>（实线）与 <b style="color:var(--gold)">\(\mathrm{Gamma}(1,2)\) 密度</b>（虚线）。你会看到<b>两条曲线完全重合</b>、且都贴合直方图——这就同时验证了两件事：① 二次型确实服从 \(\chi^2_2\)（挑刺 4 说的"服从卡方的是距离<b>平方</b>"）；② \(\chi^2_2\) 与伽马<b>不是没有交集，而是同一条曲线</b>（挑刺 2）。</p>
+      <div class="controls">
+        <button class="btn ghost" id="quad-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-quad-chi" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="quadchi-info" style="margin-top:6px"></p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 4 落地 · "距离"要开根号，"服从卡方"的是距离的<u>平方</u></p>
+      <p style="margin-bottom:0">把两个量分清楚，一辈子不踩坑：<b>马氏距离</b> \(d_M=\sqrt{(x-\mu)^\top\Sigma^{-1}(x-\mu)}\) 是真正的<b>度量</b>——它等于白化后的欧氏距离，满足非负、对称、<b>三角不等式</b>。而教材里服从 \(\chi^2_k\) 的那个量 \(V=d_M^2\) 是它的<b>平方</b>，<b>平方之后不再满足三角不等式</b>（欧氏距离平方也不满足，例如 \(\|a-c\|^2\le\|a-b\|^2+\|b-c\|^2\) 一般不成立）。纪要把"满足三角不等式"安在了那个平方量上，是把 \(d_M\) 和 \(d_M^2\) 揉成了一个。一句话：<b>谈"距离/度量/三角不等式"指 \(d_M\)；谈"服从卡方/置信椭球门槛"指 \(d_M^2=V\)。</b></p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 2 落地 · 卡方不是"和伽马没交集"，它<u>就是</u>伽马的一支</p>
+      <p style="margin-bottom:0">上面那张交互图已经用蒙特卡洛把这事画死了：\(\chi^2_2\) 的密度曲线和 \(\mathrm{Gamma}(1,2)\) 的密度曲线<b>逐点重合</b>。一般地 \(\chi^2_k=\mathrm{Gamma}(k/2,\,2)\)。所以正确的层级关系是<b>嵌套</b>而非并列：\(k\) 个标准正态平方求和 ⟹ \(\chi^2_k\)，而 \(\chi^2_k\) 是伽马家族里形状参数取 \(k/2\)、尺度取 \(2\) 的那一支。它和正态、伽马<b>非但有交集，还血缘极近</b>。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART III -->
+  <header class="part-head" id="part3">
+    <div class="pk">Ⅲ</div>
+    <h2 class="cjk">协方差矩阵的几何：为什么 Σ 必须半正定，它的形状从哪来</h2>
+    <p>前面三大性质都偷偷要求 \(\Sigma\) "够好"——可逆、能开平方根、二次型非负。这些要求合起来就是一个词：<b>（半）正定</b>。这一节把 \(\Sigma\) 当成一个<b>几何对象</b>来看：它的<b>特征向量</b>是椭圆的轴向，<b>特征值</b>是轴的长短平方，而"白化"就是把这套椭圆几何<b>掰回标准圆</b>的手术。</p>
+  </header>
+
+  <!-- 3.1 PSD / PD -->
+  <section class="topic-block" id="t-psd">
+    <h3 class="topic cjk">3.1 正定 / 半正定：协方差矩阵天生的"碗形"约束</h3>
+    <p class="topic-en">A covariance matrix is always PSD, because no linear combination can have negative variance.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>是 <a href="#t-marginal">三大性质</a> 成立的前提（要可逆 ⟹ 正定）</span>
+      <span class="rel tool"><span class="dot"></span>为 <a href="#t-spectral">谱分解</a> 铺路（PSD ⟺ 特征值 \(\ge0\)）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 方差不能为负，于是那只"碗"永远朝上</div>
+      <p>协方差矩阵不是随便一个对称矩阵——它必须<b>半正定（PSD）</b>。原因朴素到不能再朴素：<b>任何方向上的方差都不能是负数</b>。取任意一个权重向量 \(a\)，组合出一个新的标量随机量 \(a^\top X\)，它的方差是 \(\mathrm{Var}(a^\top X)=a^\top\Sigma a\)。方差恒 \(\ge0\)，所以 \(a^\top\Sigma a\ge0\) 对一切 \(a\) 成立——<b>这正是半正定的定义</b>。如果你"造"出一个对角元正常、但某个 \(a^\top\Sigma a<0\) 的矩阵，它就<b>不可能是任何真实数据的协方差矩阵</b>。</p>
+      <p style="margin-bottom:0">几何上，二次型 \(z=a^\top\Sigma a\)（把 \(a\) 当自变量）画出来是一只<b>碗</b>：半正定 ⟹ 碗口朝上、最低点在 0（碗底可能是一条平沟，对应某方向方差恰为 0，即变量间有完全线性关系，\(\Sigma\) 退化、不可逆）；<b>正定（PD）</b> ⟹ 碗是个标准的圆/椭圆抛物面、底只有一个点、\(\Sigma\) 可逆。三大性质要用 \(\Sigma^{-1}\)，所以默认 \(\Sigma\) <b>正定</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 三种等价判据（p52，考试常用）</div>
+      <div class="scrollx"><table class="tab cjk">
+        <tr><th>判据</th><th>正定 (PD)</th><th>半正定 (PSD)</th></tr>
+        <tr><td class="lbl">二次型</td><td>\(a^\top A a>0,\ \forall a\neq 0\)</td><td>\(a^\top A a\ge 0,\ \forall a\)</td></tr>
+        <tr><td class="lbl">特征值</td><td>全部 \(\lambda_i>0\)</td><td>全部 \(\lambda_i\ge 0\)</td></tr>
+        <tr><td class="lbl">顺序主子式</td><td>全部 \(>0\)（Sylvester）</td><td>所有主子式 \(\ge0\)（注意：是"所有"，不只"顺序"）</td></tr>
+        <tr><td class="lbl">分解</td><td>\(A=BB^\top\)，\(B\) 满秩</td><td>\(A=BB^\top\)，\(B\) 可不满秩</td></tr>
+      </table></div>
+      <p style="margin-bottom:0"><b>考试策略（呼应纪要）：低维</b>（2×2、3×3）直接算特征值或顺序主子式最快；<b>高维</b>很难手算特征值，就回到<b>二次型</b>或利用题目给的结构（如"它是某个 \(BB^\top\)"立即 PSD）。一个常见陷阱：<b>半正定</b>判定不能只查"顺序主子式 \(\ge0\)"——必须查<b>所有</b>主子式（顺序主子式全 \(\ge0\) 对 PSD 不充分，经典反例 \(\mathrm{diag}(0,-1)\) 的某些排列）。PD 才可以只用顺序主子式。</p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D 图 · 三种"碗"：正定 / 半正定退化 / 不定（切换 + 拖动）</div>
+      <p class="cap">画的是二次型曲面 \(z=a^\top A a\)（横轴是权重 \(a=(a_1,a_2)\)）。<b>正定</b>：标准碗，除底点外处处 \(z>0\)——合法协方差，\(\Sigma\) 可逆。<b>半正定（退化）</b>：碗底塌成一条<b>平沟</b>，沿沟方向 \(z=0\)（该方向方差为 0，变量完全线性相关），\(\Sigma\) 不可逆。<b>不定</b>：变成<b>马鞍面</b>，有方向 \(z<0\)——<b>这就不可能是协方差矩阵</b>（出现了"负方差"）。切换三种，旋转着看碗底的形状变化。</p>
+      <div class="controls">
+        <div class="seg" id="psd-seg">
+          <button class="on" data-mode="pd">正定（合法）</button>
+          <button data-mode="psd">半正定 · 退化</button>
+          <button data-mode="indef">不定（非法）</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-psd-3d" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+      <p class="cap" id="psd-info" style="margin-top:6px"></p>
+    </div>
+  </section>
+
+  <!-- 3.2 spectral / whitening -->
+  <section class="topic-block" id="t-spectral">
+    <h3 class="topic cjk">3.2 谱分解与白化：把斜椭圆的点云"掰正"成标准圆</h3>
+    <p class="topic-en">Σ = ΓΛΓᵀ gives the ellipse its axes; whitening Z = Σ⁻¹ᐟ²(X−μ) turns the tilted cloud into N(0, I).</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>建立在 <a href="#t-psd">PSD（特征值 \(\ge0\)）</a> 之上</span>
+      <span class="rel tool"><span class="dot"></span>是 <a href="#t-quadratic">二次型 → 卡方</a> 的引擎（\(Z^\top Z=\sum Z_i^2\)）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 椭圆的"长轴短轴 + 朝向"，全写在特征向量/特征值里</div>
+      <p>一个对称 PSD 矩阵 \(\Sigma\) 可以<b>谱分解</b>成 \(\Sigma=\Gamma\Lambda\Gamma^\top\)：\(\Gamma\) 的各列是<b>相互正交的特征向量</b>（椭圆的<b>轴方向</b>），\(\Lambda=\mathrm{diag}(\lambda_1,\dots,\lambda_k)\) 是<b>特征值</b>（沿各轴的<b>方差</b>，所以椭圆半轴长 \(\propto\sqrt{\lambda_i}\)）。一句话：<b>特征向量决定椭圆朝哪转，特征值决定它各方向多胖。</b></p>
+      <p style="margin-bottom:0"><b>白化（whitening）</b>就是反着用这套分解：定义 \(\Sigma^{-1/2}=\Gamma\Lambda^{-1/2}\Gamma^\top\)，令 \(Z=\Sigma^{-1/2}(X-\mu)\)。它做了三件事——<b>平移</b>（减 \(\mu\) 把中心挪到原点）、<b>旋转</b>（\(\Gamma^\top\) 把椭圆轴转到坐标轴）、<b>缩放</b>（\(\Lambda^{-1/2}\) 把各轴压成等长）。结果 \(Z\sim N(0,I)\)：一团<b>各向同性的标准圆云</b>。所有"相关 + 量纲"的麻烦，被这一步一次性洗掉。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 谱分解、平方根、白化（p52, p57）</div>
+      <p>\[\Sigma=\Gamma\Lambda\Gamma^\top,\quad \Gamma^\top\Gamma=I,\quad \Lambda=\mathrm{diag}(\lambda_1,\dots,\lambda_k),\ \lambda_i\ge0.\] 由此定义对称平方根与逆平方根 \[\Sigma^{1/2}=\Gamma\Lambda^{1/2}\Gamma^\top,\qquad \Sigma^{-1/2}=\Gamma\Lambda^{-1/2}\Gamma^\top\quad(\lambda_i>0).\]</p>
+      <p style="margin-bottom:0">白化变量 \(Z=\Sigma^{-1/2}(X-\mu)\) 满足 \(\mathbb E[Z]=0\)、\(\mathrm{Cov}(Z)=\Sigma^{-1/2}\Sigma\,\Sigma^{-1/2}=I\)，再由<a class="inlink" href="#t-vec">线性变换保正态</a>得 \(Z\sim N(0,I_k)\)。于是 \(\Sigma^{-1}=\Sigma^{-1/2}\Sigma^{-1/2}\)，马氏距离平方 \(V=(X-\mu)^\top\Sigma^{-1}(X-\mu)=Z^\top Z=\sum_i Z_i^2\sim\chi^2_k\)——<b>这就是 2.3 那条卡方结论的全部出处</b>。注意 \(\Sigma^{1/2}\) 不唯一（任何 \(\Sigma=AA^\top\) 的 \(A\) 都能白化），但<b>对称</b>平方根唯一。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · "原始斜云" ↔ "白化圆云"一键切换（拨 ρ）</div>
+      <p class="cap">同一批数据两种看法。<b>原始</b>：相关数据的斜椭圆点云，叠上<b>两条特征向量轴</b>（长度 \(\propto\sqrt{\lambda_i}\)）和 1σ/2σ 马氏椭圆——你能直接看到"长轴沿主特征向量、短轴沿次特征向量"。点"白化"：对每个点施加 \(Z=\Sigma^{-1/2}(x-\bar x)\)，椭圆云<b>当场被掰正、缩放成围绕原点的标准圆云</b>，叠上的椭圆也变成了正圆——这就是 \(N(0,I)\)。拨 \(\rho\) 改变原始椭圆的斜度；无论多斜，白化后永远是同一团圆云。</p>
+      <div class="controls">
+        <div class="seg" id="white-seg">
+          <button class="on" data-mode="raw">原始（斜椭圆）</button>
+          <button data-mode="white">白化后（标准圆）</button>
+        </div>
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="spec-rho-v">0.70</span></label><input type="range" id="spec-rho" min="-0.9" max="0.9" step="0.02" value="0.7"></div>
+      </div>
+      <div class="plotwrap"><div id="p-spec-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="spec-info" style="margin-top:6px"></p>
+    </div>
+    <div class="note cjk"><b>连接你熟的东西。</b>谱分解 \(\Sigma=\Gamma\Lambda\Gamma^\top\) 就是 <b>PCA</b> 的数学内核：主成分 = 特征向量、各主成分方差 = 特征值。"白化"在深度学习里也到处可见（batch/whitening normalization）。你看到的这张"掰正"动画，本质上就是 PCA + 标准化在二维的可视化。</div>
+  </section>
+
+  <!-- ============================================================ PART IV -->
+  <header class="part-head" id="part4">
+    <div class="pk">Ⅳ</div>
+    <h2 class="cjk">从数据反推参数：MLE 与均值的椭球置信集</h2>
+    <p>前三部分都假设 \(\mu,\Sigma\) 已知，讨论"分布长什么样"。现实里它们<b>未知</b>，要从样本估。这一节回到第五节的老朋友——极大似然——但这次参数是<b>向量和矩阵</b>。重点有两个：Σ 的 MLE 那个"<b>除以 n</b>"的细节（纪要恰好说反），以及多元均值的置信集为什么是个<b>椭球</b>。</p>
+  </header>
+
+  <!-- 4.1 MLE -->
+  <section class="topic-block" id="t-mle">
+    <h3 class="topic cjk">4.1 多元正态的 MLE：μ̂ = X̄，Σ̂ = W/n（注意：除以 n，有偏）</h3>
+    <p class="topic-en">The MLE divides the scatter matrix by n, not n−1 — so it is biased downward.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承自第五节 <a href="#spine">一元 MLE（\(\hat\mu=\bar x,\ \hat\sigma^2=\frac1n\sum(x_i-\bar x)^2\)）</a></span>
+      <span class="rel tool"><span class="dot"></span>用到 <a href="#t-spectral">trace 技巧 + 矩阵求导</a></span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 3</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 让"数据出现的概率"最大的那对 (μ, Σ)</div>
+      <p>极大似然的精神和第五节一模一样：在所有可能的 \((\mu,\Sigma)\) 里，挑一对让<b>已观测到的这批数据出现得最"不奇怪"</b>的。结果朴素得令人安心：均值的 MLE 就是<b>样本均值向量</b> \(\hat\mu=\bar X\)（把每个分量各自求平均）；协方差的 MLE 就是<b>样本散布矩阵除以 \(n\)</b>。</p>
+      <p style="margin-bottom:0"><b>但魔鬼在那个分母里。</b>MLE 给出的是 \(\widehat\Sigma=W/n\)——<b>除以 \(n\)</b>。这和你在统计软件里默认看到的"样本协方差"（除以 \(n-1\)）<b>不是同一个东西</b>。除以 \(n\) 的 MLE 系统性地<b>低估</b>了真实方差（因为它用估出来的 \(\bar X\) 而非真 \(\mu\) 去算离差，"自由度"少了一个却没补偿）。这正是纪要那句"MLE 注意自由度修正"<b>说反</b>的地方——MLE 恰恰<b>不</b>修正。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · MLE 推导骨架（p58–59）</div>
+      <p>对数似然（\(n\) 个独立样本）\[\ell(\mu,\Sigma)=-\tfrac{n}{2}\log|\Sigma|-\tfrac12\sum_{i=1}^n(x_i-\mu)^\top\Sigma^{-1}(x_i-\mu)+\text{const}.\] 对 \(\mu\) 求导置零立刻得 \(\hat\mu=\bar X\)。把 \(\mu=\bar X\) 代回，用 <b>trace 技巧</b>把求和写成 \(\sum_i(x_i-\bar X)^\top\Sigma^{-1}(x_i-\bar X)=\mathrm{tr}\!\big(\Sigma^{-1}W\big)\)，其中散布矩阵 \[W=\sum_{i=1}^n(x_i-\bar X)(x_i-\bar X)^\top.\]</p>
+      <p style="margin-bottom:0">于是 \(\ell=-\tfrac n2\log|\Sigma|-\tfrac12\mathrm{tr}(\Sigma^{-1}W)\)。对 \(\Sigma\) 求矩阵导数（用 \(\partial\log|\Sigma|/\partial\Sigma=\Sigma^{-1}\)、\(\partial\,\mathrm{tr}(\Sigma^{-1}W)/\partial\Sigma=-\Sigma^{-1}W\Sigma^{-1}\)）置零，解得 \[\boxed{\widehat\Sigma_{\text{MLE}}=\frac1n W=\frac1n\sum_{i=1}^n(x_i-\bar X)(x_i-\bar X)^\top}.\] 它有偏：\(\mathbb E[\widehat\Sigma]=\frac{n-1}{n}\Sigma\)。无偏估计是 \(S=\frac{1}{n-1}W\)，但 \(S\) <b>不是 MLE</b>。两者随 \(n\to\infty\) 一致（差别 \(\to0\)）。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 抽 n 个点，看真椭圆 vs MLE 拟合椭圆（拨 n，重抽）</div>
+      <p class="cap">从一个固定的真分布 \(N_2(\mu,\Sigma)\)（真椭圆 = <b style="color:var(--green)">绿色虚线</b>）抽 \(n\) 个样本点。用 MLE 估出 \(\hat\mu=\bar X\)、\(\widehat\Sigma=W/n\)，画出<b style="color:var(--accent)">蓝色实线</b>的 1σ 拟合椭圆。拨 \(n\)：\(n\) 小时蓝椭圆又抖又<b>偏小</b>（有偏 + 抽样波动）；\(n\) 大时它稳稳贴合绿椭圆。点"重抽"看波动。下方信息栏同时报出三个数：MLE 的 \(\widehat\Sigma\)（除以 \(n\)）、无偏的 \(S\)（除以 \(n-1\)）、以及理论偏倚因子 \((n-1)/n\)——你能直接读出 MLE 比 \(S\) 系统性地小一点点。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="mle-n-v">30</span></label><input type="range" id="mle-n" min="6" max="400" step="1" value="30"></div>
+        <button class="btn ghost" id="mle-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-mle-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="mle-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · 偏倚有多大？两个分母随 n 的对比</div>
+      <p class="cap">对每个样本量 \(n\)，重复抽样很多次，记录估计的方差对角元相对真值的<b>平均比值</b> \(\mathbb E[\hat\sigma^2]/\sigma^2\)。<b style="color:var(--accent)">蓝线（MLE，÷n）</b>稳定地压在 \(1\) <b>下方</b>，且贴着理论曲线 \((n-1)/n\)（<b style="color:var(--rust)">红虚线</b>）；<b style="color:var(--green)">绿线（无偏，÷(n−1)）</b>在 \(1\) 上下抖动、不系统偏离。结论一眼可见：<b>MLE 系统性低估，但偏倚以 \(1/n\) 速度消失</b>——小样本时该警惕，大样本时无所谓。这就是"有偏但一致"。</p>
+      <div class="plotwrap"><div id="p-mle-bias" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="bias-info" style="margin-top:6px"></p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 3 落地 · "MLE 做自由度修正"是反的；正确表述请这样背</p>
+      <p style="margin-bottom:0"><b>MLE 除以 \(n\)（有偏，偏小）；要无偏，得手动把分母改成 \(n-1\)，但那就不是 MLE 了。</b>记忆锚点：MLE 只管"让似然最大"，<b>不</b>替你操心无偏性；无偏性是另一套标准（矩估计/修正）才追求的目标。把这件事和第五节一元情形对齐——一元 MLE 是 \(\hat\sigma^2=\frac1n\sum(x_i-\bar x)^2\)（除以 \(n\)），多元只是把它升成矩阵 \(W/n\)，分母里那个 \(n\) 从头到尾没变过。纪要把方向写反，是因为把"软件默认的样本协方差（÷\(n-1\)）"和"MLE"混为一谈了。</p>
+    </div>
+  </section>
+
+  <!-- 4.2 ellipsoidal confidence set -->
+  <section class="topic-block" id="t-ellipsoid">
+    <h3 class="topic cjk">4.2 均值的椭球置信集：一群系数的"联合不确定性"长什么样</h3>
+    <p class="topic-en">The confidence region for a mean vector is an ellipsoid whose size shrinks like 1/√n; its shape is set by the Fisher information nΣ⁻¹.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>由 <a href="#t-quadratic">二次型 → 卡方</a> 直接得到（门槛 = \(\chi^2_{k,1-\alpha}\)）</span>
+      <span class="rel tool"><span class="dot"></span>形状 = <a href="#t-spectral">\(\Sigma\) 的谱分解</a>；大小 \(\propto1/\sqrt n\)</span>
+      <span class="rel general"><span class="dot"></span>通向 <a href="#closing">回归系数的联合置信域（计量/因果）</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 一维是区间，多维就是椭球</div>
+      <p>一元里，均值的置信"区间"是数轴上一段 \([\bar x\pm z\cdot\text{se}]\)。升到多维，\(\bar X\) 是个<b>向量</b>，它的不确定性不是各分量各管各的区间相乘（那会是个长方形、忽略了相关性），而是一个<b>椭球</b>——朝向和胖瘦由 \(\Sigma\) 决定。椭球比"长方形（逐分量区间）"更诚实：它知道如果两个分量正相关，那么"两个都偏大"比"一个偏大一个偏小"更可能，区域要顺着这个方向拉长。</p>
+      <p style="margin-bottom:0">椭球的<b>中心</b>是 \(\bar X\)；<b>朝向和长短轴</b>来自 \(\Sigma\) 的特征向量/特征值（和 3.2 同一套几何）；<b>整体大小</b>由两件事缩放：样本越多越小（\(\propto1/\sqrt n\)）、要求的置信度越高越大（门槛 \(\chi^2_{k,1-\alpha}\) 越大）。"信息越多，椭球越小"——而度量信息多少的，正是 <b>Fisher 信息阵 \(=n\Sigma^{-1}\)</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 椭球置信集 + Fisher 信息阵（p60）</div>
+      <p>已知 \(\Sigma\)、\(n\) 个样本，\(\bar X\sim N_k(\mu,\Sigma/n)\)，于是由二次型结论 \[n(\bar X-\mu)^\top\Sigma^{-1}(\bar X-\mu)\ \sim\ \chi^2_k.\] 把它反过来圈住 \(\mu\)，得到 \(1-\alpha\) 置信集 \[\boxed{\ \big\{\mu:\ n(\bar X-\mu)^\top\Sigma^{-1}(\bar X-\mu)\le\chi^2_{k,1-\alpha}\big\}\ }\] ——一个以 \(\bar X\) 为中心的<b>椭球</b>。</p>
+      <p style="margin-bottom:0"><b>Fisher 信息阵</b>由对数似然对 \(\mu\) 的二阶导（取负、取期望）给出：\(\mathcal I(\mu)=-\mathbb E\big[\partial^2\ell/\partial\mu\partial\mu^\top\big]=n\Sigma^{-1}\)。它的逆 \(\mathcal I^{-1}=\Sigma/n\) 正是 \(\bar X\) 的协方差——<b>信息阵越"大"（数据越多、\(\Sigma\) 越小），估计协方差越小，椭球越紧</b>。椭球的半轴沿 \(\Sigma\) 的特征向量，长度 \(\propto\sqrt{\lambda_i\,\chi^2_{k,1-\alpha}/n}\)。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 拨样本量 n 与置信度，看椭球怎么缩放（拨 n、α）</div>
+      <p class="cap">以 \(\bar X\) 为中心画均值 \(\mu\) 的置信椭球（这里 \(k=2\)，椭球即椭圆）。<b>拨 \(n\)</b>：\(n\) 增大，椭圆<b>整体按 \(1/\sqrt n\) 收缩</b>——数据越多，对 \(\mu\) 的定位越准。<b>拨置信度 \(1-\alpha\)</b>：要求越高（如 99%），门槛 \(\chi^2_{k,1-\alpha}\) 越大，椭圆<b>膨胀</b>（想更有把握，就得圈进更大范围）。椭圆的<b>朝向和长短轴比例</b>始终由 \(\Sigma\) 的特征结构锁定（与 \(n,\alpha\) 无关）——它们只改大小，不改形状。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="ell-n-v">40</span></label><input type="range" id="ell-n" min="5" max="300" step="1" value="40"></div>
+        <div class="ctrl"><label class="cjk">置信度 1−α <span class="val" id="ell-alpha-v">0.95</span></label><input type="range" id="ell-alpha" min="0.50" max="0.99" step="0.01" value="0.95"></div>
+      </div>
+      <div class="plotwrap"><div id="p-ell-2d" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="ell-info" style="margin-top:6px"></p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>给爱较真的你 · 这个椭球，你做计量时天天见</p>
+      <p style="margin-bottom:0">你回归跑出一组系数 \(\hat\beta\)，软件报的那个"协方差矩阵 \(\widehat{\mathrm{Cov}}(\hat\beta)\)"，作用和这里的 \(\Sigma/n\) 一模一样——它定义了 \(\hat\beta\) 的<b>联合置信椭球</b>。当你做<b>联合显著性检验</b>（Wald / F 检验，比如"这几个系数同时为 0 吗"），几何上就是在问"原点落在这个椭球里吗"，检验统计量正是 \((\hat\beta-\beta_0)^\top\widehat{\mathrm{Cov}}^{-1}(\hat\beta-\beta_0)\) 这种二次型，渐近服从 \(\chi^2\)。一个值得记的盲点：<b>看单个系数的边际区间都不显著，不代表它们联合也不显著</b>（反之亦然）——因为椭球不是各区间拼成的长方形，相关性会让两者背离。把"椭球 ≠ 区间盒子"刻进直觉，你读 \(t\) 检验和 \(F\) 检验冲突的论文时就不会困惑。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART V -->
+  <header class="part-head" id="part5">
+    <div class="pk">Ⅴ</div>
+    <h2 class="cjk">三个延伸：把这套语言接到你关心的世界</h2>
+    <p>多元正态不是终点，而是一组接口。这一节顺着课上聊到的三个方向各走一步：正态 + 独立增量长出<b>布朗运动</b>（随机过程的起点）；"内积诱导范数"把几何抽象成<b>希尔伯特空间</b>（机器学习里"相似度"的底座）；而当尾巴变肥、正态失效，就进入<b>长尾分布</b>与金融违约建模——也正好回收挑刺 1。</p>
+  </header>
+
+  <!-- 5.1 Brownian motion -->
+  <section class="topic-block" id="t-bm">
+    <h3 class="topic cjk">5.1 布朗运动：正态增量 + 独立增量 + 鞅——是哪三条，别数重</h3>
+    <p class="topic-en">Standard Brownian motion = martingale + stationary normal increments + independent increments. Drop independence and you get fractional BM.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>由 <a href="#t-vec">正态的可加性</a> 长出（增量服从正态）</span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 5</a>（"三性质"被数重一条）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 一个粒子的随机游走，放大看处处是正态小步</div>
+      <p>布朗运动 \(B_t\) 是把"随机游走"取连续极限得到的过程：从 0 出发，每一小段时间走一步<b>正态分布</b>的随机位移，步与步之间<b>互不影响</b>。它是金融里股价对数、物理里花粉颗粒抖动的标准模型，也是整个随机过程/随机微积分（Itô）的地基。</p>
+      <p style="margin-bottom:0">标准布朗运动由<b>三条</b>性质刻画——注意是<b>互不重复</b>的三条：① <b>鞅</b>：知道当前与全部历史后，对未来的最佳预测就是当前值（\(\mathbb E[B_T\mid\mathcal F_t]=B_t\)，"没有可预测的漂移"）；② <b>正态平稳增量</b>：\(B_t-B_s\sim N(0,\,t-s)\)（增量是正态，方差等于时间跨度）；③ <b>独立增量</b>：不相交时间段的增量<b>相互独立</b>。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>推导 · 为什么包络是 ±1.96√t（而不是 ±1.96t）</div>
+      <p style="margin-bottom:0" class="cjk">从 0 出发到时刻 \(t\)，\(B_t=\sum(\text{独立正态增量})\)。<b>独立</b> ⟹ 方差可加：\(\mathrm{Var}(B_t)=\sum(\text{各段时长})=t\) <b>→</b> 所以 \(B_t\sim N(0,t)\)，标准差 \(=\sqrt t\) <b>→</b> 95% 的路径落在 \(\pm1.96\sqrt t\) 之间。关键在那个<b>根号</b>：标准差随时间按 \(\sqrt t\)（而非 \(t\)）张开——这正是"独立增量 + 方差可加"的指纹。若增量<b>不独立</b>（分数布朗运动），方差不再简单可加，包络的展开速度就变成另一个幂次 \(t^{H}\)，\(H\neq1/2\)，出现<b>长程依赖</b>。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 模拟多条布朗路径 + √t 包络（拨步数、重抽）</div>
+      <p class="cap">每条彩色折线是一条布朗运动样本路径，从原点出发。叠加的<b>灰色喇叭口</b>是理论包络 \(\pm1.96\sqrt t\)——绝大多数路径落在其中，且<b>开口随时间按根号变宽</b>（不是直线张开）。点"重新抽样"换一批路径：你会看到路径<b>各走各的、互不预测</b>（独立增量），但整体散布始终被 \(\sqrt t\) 锁住。拨步数看离散近似如何逼近连续轨迹。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">时间步数 <span class="val" id="bm-n-v">240</span></label><input type="range" id="bm-n" min="40" max="600" step="20" value="240"></div>
+        <button class="btn ghost" id="bm-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-bm" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="bm-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D 图 · "独立增量"长什么样：两段不相交增量的散点</div>
+      <p class="cap">对每条路径，取两段<b>不相交</b>时间区间的增量 \(\Delta_1=B_1-B_0\) 与 \(\Delta_2=B_2-B_1\)，把 \((\Delta_1,\Delta_2)\) 画成散点。结果是一团<b>正圆形、无方向</b>的云（相关系数 \(\approx0\)）——这就是"独立增量"的视觉证据：知道前一段走了多少，对后一段毫无预测力。作为对照，若是有依赖的过程，这团云会被拉成斜椭圆。点上面的"重新抽样"会一起刷新。</p>
+      <div class="plotwrap"><div id="p-bm-indep" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="bmindep-info" style="margin-top:6px"></p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 5 落地 · "正态增量"和"增量服从正态"是同一条，别占两个名额</p>
+      <p style="margin-bottom:0">转写纪要列的"鞅、正态增量、增量服从正态分布"把<b>同一条性质数了两遍</b>，结果<b>挤掉了真正第三条——独立增量</b>。正确三件套是<b>鞅 + 正态平稳增量 + 独立增量</b>。独立这一条最不能丢：它是上面"方差可加 → \(\sqrt t\) 包络"的唯一来源，也是布朗运动区别于<b>分数布朗运动</b>（有长程依赖、\(H\neq1/2\)）的分水岭。你上传的 docx 版纪要其实列对了（鞅 / 正态增量 / 独立增量），是语音转写版把第三条听岔成了重复——这种"AI 把一条拆成两条、再悄悄丢掉一条"的错，最难靠通读发现，值得专门警惕。</p>
+    </div>
+  </section>
+
+  <!-- 5.2 Hilbert space / norms -->
+  <section class="topic-block" id="t-hilbert">
+    <h3 class="topic cjk">5.2 内积诱导范数：希尔伯特空间，与"相似度"的多种定义</h3>
+    <p class="topic-en">An inner product induces a norm; a complete inner-product space is a Hilbert space. Different norms encode different notions of "close".</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>把 <a href="#t-quadratic">马氏距离（白化欧氏）</a> 抽象成一般内积</span>
+      <span class="rel general"><span class="dot"></span>机器学习里"相似度 / 损失"的几何底座</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 先有"夹角"，长度和距离就免费送了</div>
+      <p>欧氏空间里我们习以为常的<b>长度、夹角、正交、投影</b>，其实都来自一个更基本的运算：<b>内积</b> \(\langle x,y\rangle\)。一旦定义了内积，长度就免费得到——\(\|x\|=\sqrt{\langle x,x\rangle}\)（这叫"内积<b>诱导</b>范数"）；夹角由 \(\cos\theta=\langle x,y\rangle/(\|x\|\|y\|)\) 得到；正交就是 \(\langle x,y\rangle=0\)。一个<b>完备的</b>内积空间（柯西列都收敛，没有"漏洞"）就叫 <b>希尔伯特空间</b>；只赋范、不一定有内积的完备空间叫<b>巴拿赫空间</b>。关系是：<b>希尔伯特 ⊂ 巴拿赫</b>（有内积 ⟹ 有范数，反之不一定）。</p>
+      <p style="margin-bottom:0"><b>为什么 ML 关心？</b>因为"两个东西有多像"<b>不是天经地义的，是你选的范数定义的</b>。马氏距离就是把普通内积换成 \(\langle x,y\rangle_\Sigma=x^\top\Sigma^{-1}y\)（一个加权内积）后的长度——3.2 的白化正是它的几何实现。换个内积/范数，"最近邻""最相似""损失最小"的答案就全变了。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 同一个"单位球"，在 L¹ / L² / L∞ 下是三种形状（切换）</div>
+      <p class="cap">"距离为 1 的点集"（单位球）在不同范数下长得完全不同：<b>L²</b>（欧氏）是<b>圆</b>；<b>L¹</b>（曼哈顿/出租车）是<b>菱形</b>；<b>L∞</b>（切比雪夫/最大坐标）是<b>正方形</b>。切换看形状突变。这不是数学游戏：用 L¹ 做正则（Lasso）之所以产生<b>稀疏解</b>，几何上就是因为这个菱形的"尖角"恰好戳在坐标轴上，最优解容易落在角上（某些系数被压成 0）；换成 L²（Ridge）的圆就没有角，不产生稀疏。<b>范数的形状，直接决定了模型的行为。</b></p>
+      <div class="controls">
+        <div class="seg" id="norm-seg">
+          <button data-mode="l1">L¹（菱形）</button>
+          <button class="on" data-mode="l2">L²（圆）</button>
+          <button data-mode="linf">L∞（方形）</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-norm" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="norm-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 把 7 认成 1 和认成 3，错得一样吗？——评价指标的盲点</div>
+      <p class="cap">课上那个例子值得画出来。假设真标签是数字 <b>7</b>，模型给出三种预测：1、3、9。<b>只看准确率（0-1 损失）</b>：三种全是"错"，损失都 = 1，<b>无法区分</b>谁错得更离谱。但若引入一个带"距离"的损失（这里用数值差的绝对值示意），就能分出层次：把 7 认成 9 比认成 1 "更接近"。<b>下图对比这两种度量。</b>启示直白——<b>只用准确率会对"错的程度"完全失明</b>；选什么范数/损失，等于选了模型该往哪个方向努力。该用距离型指标（RMSE、Wasserstein、排序损失…）的场合用了准确率，优化方向就从一开始跑偏了。</p>
+      <div class="plotwrap"><div id="p-metric" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="metric-info" style="margin-top:6px"></p>
+    </div>
+  </section>
+
+  <!-- 5.3 fat vs thin tails / default modeling -->
+  <section class="topic-block" id="t-tail">
+    <h3 class="topic cjk">5.3 长尾 vs 短尾：正态不够用的地方，与违约建模</h3>
+    <p class="topic-en">Normal tails decay like e^{−x²}; heavy tails decay polynomially. The difference decides whether your risk model survives extreme events.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>回收 <a href="#audit">挑刺 1</a>（MGF 发散 ⟺ 长尾）</span>
+      <span class="rel limit"><span class="dot"></span>标出 <a href="#t-vec">正态假设</a> 的<b>边界</b>（极端事件处失效）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 尾巴掉得有多快，决定"黑天鹅"有多常见</div>
+      <p>分布的"尾巴"是它在远离中心处剩下多少概率。<b>短尾（正态）</b>：尾巴按 \(e^{-x^2/2}\) <b>指数级（甚至更快）</b>衰减，极端值几乎不可能（"6 个标准差外"概率小到一辈子见不到一次）。<b>长尾 / 厚尾（柯西、学生 t、Pareto、对数正态）</b>：尾巴按<b>幂律</b> \(x^{-\alpha}\) 慢慢掉，极端事件<b>远比正态预测的频繁</b>。金融危机、地震、网络爆款——现实世界的"大事"密度远高于正态的预言，这正是 2008 年很多风险模型崩掉的根源（它们假设了短尾）。</p>
+      <p style="margin-bottom:0"><b>怎么一眼判长短尾？两个坐标变换的把戏：</b>① 把生存函数 \(P(X>x)\) 画在 <b>semilog</b>（纵轴取对数）上——<b>指数尾会变成直线</b>，比直线掉得快的是更短的尾（正态），掉得慢（上凸、迟迟不下来）的是<b>长尾</b>。② 画在 <b>log-log</b>（双对数）上——<b>幂律尾会变成直线</b>，斜率就是尾指数 \(-\alpha\)。这就是纪要里"用指数衰减区分长短尾"那句话的精确版。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 切换坐标轴，让正态与长尾"现原形"（线性 / semilog / log-log）</div>
+      <p class="cap">同时画<b style="color:var(--accent)">正态（短尾）</b>与<b style="color:var(--rust)">学生 t（长尾）</b>的尾部生存函数 \(P(X>x)\)。<b>线性轴</b>：两者看起来都贴着 0，难分高下。切到 <b>semilog</b>：正态<b>迅速向下俯冲（上凸）</b>，长尾却<b>拖着不下来</b>——差距暴露。切到 <b>log-log</b>：长尾变成一条<b>近似直线</b>（幂律的指纹），正态仍弯着头扎下去。这张图把"尾巴衰减速度"这件抽象的事，变成了"哪条线掉得快"的肉眼判断。</p>
+      <div class="controls">
+        <div class="seg" id="tail-seg">
+          <button class="on" data-scale="linear">线性轴</button>
+          <button data-scale="semilog">semilog（看指数尾）</button>
+          <button data-scale="loglog">log-log（看幂律尾）</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-tail" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="tail-info" style="margin-top:6px"></p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 违约损失：零售书 vs 对公书，为什么不能用同一个分布</div>
+      <p>组合的违约损失 \(L=\sum_i \mathbb 1\{\text{违约}_i\}\cdot\mathrm{LGD}_i\cdot\mathrm{EAD}_i\)，由三块拼成：<b>违约与否（PD）</b>、<b>违约损失率（LGD）</b>、<b>违约敞口（EAD）</b>。课上那个对比很关键——<b>同一家银行的两本账，损失分布形状可以天差地别</b>：</p>
+      <p><b>零售/个人信贷书</b>：单笔金额小、笔数巨多（信用卡、消费贷）。大量独立小额损失加总，由<b>中心极限定理</b>会被"抹平"成<b>近似对称、近似正态</b>的损失分布——这本书用正态/轻尾近似，问题不大。</p>
+      <p style="margin-bottom:0"><b>对公/项目贷款书</b>：单笔金额巨大、笔数很少（一笔大型基建贷可能就是组合的一大块）。一旦某个大户违约，损失是一个<b>巨大的、罕见的跳跃</b>——损失分布<b>高度右偏、厚尾</b>，绝不能用正态。下图模拟两本书的损失分布：零售书<b style="color:var(--accent)">（蓝）</b>是个紧凑的钟形；对公书<b style="color:var(--rust)">（红）</b>大部分时间损失很小，却拖着一条吓人的长尾。<b>巴塞尔协议</b>对资本金的要求，本质就是要银行为这条"长尾"备足缓冲——它的演进，正是从"正态世界"一步步向"长尾世界"靠拢。</p>
+      <div class="controls">
+        <button class="btn ghost" id="loss-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-loss" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap" id="loss-info" style="margin-top:6px"></p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>给爱较真的你 · 挑刺 1 在这里闭环</p>
+      <p style="margin-bottom:0">现在可以把开篇挑刺 1 收口了：<b>"MGF 在 0 附近发散"和"长尾"是同一件事的两种说法</b>。正态尾巴掉得飞快，\(\mathbb E[e^{tX}]\) 收敛，MGF 处处存在；柯西、Pareto 这类长尾，\(e^{tx}\) 涨得比尾巴掉得快，MGF 在 \(0\) 附近就爆成 \(+\infty\)——于是它们<b>连均值/方差都可能不存在</b>（柯西连期望都没有）。所以纪要那句"并非所有都有特征函数"，改成"<b>长尾分布没有 MGF</b>"才对，而且这句话立刻变得有用：<b>当你发现一个量的 MGF 不存在、或矩发散，就该警惕它是长尾，别再套正态</b>。这也是你做金融/风险建模时最该带在身上的一条直觉——先看尾巴，再选分布。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ CLOSING -->
+  <section class="topic-block" id="closing">
+    <h3 class="topic cjk">∎ 本节总览 · 以及它怎么通向第六、七章</h3>
+    <p class="topic-en">One picture to carry away, and the two doors this lecture opens.</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一张图记住整节</div>
+      <p>多元正态 \(N_k(\mu,\Sigma)\) 把"一维的钟"立成了"多维的山"，<b>朝向 + 胖瘦全写在 \(\Sigma\) 里</b>。整节就一条主干：<b>升维（标量→矩阵）→ 三大性质（边际/条件/二次型）→ \(\Sigma\) 的几何（半正定/谱分解/白化）→ 反推参数（MLE/椭球置信集）</b>，外加三个延伸把它接到随机过程、抽象空间、长尾世界。</p>
+      <p style="margin-bottom:0">如果只能带走<b>三句话</b>：① <b>条件分布就是线性回归</b>——\(E[X_b|X_a]\) 天然线性，斜率 \(=\Sigma_{ab}/\Sigma_{aa}=\mathrm{Cov}/\mathrm{Var}\)；② <b>马氏距离²服从 \(\chi^2\)，而 \(\chi^2\) 是伽马的一支</b>——它给了置信椭球的门槛；③ <b>Σ 的 MLE 除以 \(n\)（有偏），不是 \(n-1\)</b>。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>承上启下 · 两扇门</div>
+      <p class="cjk"><b>门一 · 第七章「线性回归」。</b>本节 2.2 的条件分布 \(X_b\mid X_a\sim N(\mu_b+\Sigma_{ab}^\top\Sigma_{aa}^{-1}(X_a-\mu_a),\ \cdot)\) 就是回归的<b>概率原型</b>——条件均值天然线性、斜率就是 \(\mathrm{Cov}/\mathrm{Var}\)、条件方差就是残差方差、\(\rho^2\) 就是 \(R^2\)。4.2 的椭球置信集，则直接长成回归系数的<b>联合置信域</b>与 Wald/F 检验。第七章你会看到这些公式换上 \(X,Y\) 的衣服重新登场。</p>
+      <p style="margin-bottom:0" class="cjk"><b>门二 · 第六章「贝叶斯推断」。</b>本节我们一直站在<b>频率派</b>立场：\(\mu,\Sigma\) 是<b>未知但固定</b>的常数，我们用 MLE 去点估、用置信集去框范围（"区间随机、参数固定"）。第六章会换一套世界观：把 \(\theta\) 本身当成<b>随机变量</b>，给它一个<b>先验</b>，用数据更新成<b>后验</b>（"参数随机、给定数据"）。一个漂亮的接口在等你：<b>MLE 恰好是"均匀先验下的最大后验（MAP）"</b>——频率派的极大似然，是贝叶斯的一个特例。本节的多元正态会在那里作为<b>共轭先验</b>的主角反复出现。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>最后一句 · 关于"盲点"</p>
+      <p style="margin-bottom:0">你坚持"没有认识是百分百对的"。这份讲义把这条原则<b>用在了你自己的工具（AI 纪要）上</b>——5 处挑刺不是为了挑剔机器，而是示范一种习惯：<b>越是看起来顺、像"知识点"的句子，越要回到一手定义去核对</b>。多元正态这一章尤其值得，因为它的坑都藏在"听起来差不多"的地方（特征函数≈MGF？卡方≈伽马的邻居？距离≈距离平方？）。你以后读论文、读模型文档、读 LLM 给的解释，带着今天这五条的"核对反射"，比多记十个公式都管用。下一节第七章见。</p>
+    </div>
+  </section>
+
+  <footer class="foot cjk">
+    <p style="margin:0"><b>统计补课 · 第六节 — 多元正态分布</b>（Chapter 5, p51–60：MGF/线性变换、三大性质 Thm 5.13、PSD 与谱分解、MLE 与椭球置信集；附三个延伸）。配套视频见课程播放列表第 14 集。本讲所有 3D 图由页面内置 <b>Canvas 引擎</b>绘制，<b>不依赖 WebGL</b>——不会再出现"WebGL is not supported by your browser"。</p>
+    <p style="margin:10px 0 0">表达通道：<b>直觉</b>·<b>公式</b>·<b>案例</b>·<b>2D 图</b>·<b>3D 图</b>·<b>交互</b>·<b>推导</b>·<b>盲点 ⚠</b>；关系标签：继承·推广·互补·工具·边界·盲点。挑刺 5 处对照教材原文，欢迎继续较真。</p>
+  </footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1E1C18',inkSoft:'#574F46',faint:'#8C857A',line:'#E4D8C2',lineStrong:'#D2C2A4',
+  accent:'#2C53A0',accentSoft:'#DCE6F6',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:50,r:16,t:16,b:42},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.13,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var PURPLE_SCALE=[[0,'#F1DEEA'],[0.5,'#C77FA6'],[1,'#6E2A50']];
+var TEAL_SCALE=[[0,'#DCEDEB'],[0.5,'#5AA39D'],[1,'#1F6B66']];
+var BLUE_SCALE=[[0,'#E5F0F7'],[0.5,'#5C9BC4'],[1,'#0E4F73']];
+var GOLD_SCALE=[[0,'#F6ECD3'],[0.5,'#D9B25A'],[1,'#8A6A1F']];
+
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function variance(a,ddof){ddof=ddof||0;var m=mean(a),s=0,i;for(i=0;i<a.length;i++)s+=(a[i]-m)*(a[i]-m);return s/(a.length-ddof);}
+function sd(a,ddof){return Math.sqrt(variance(a,ddof));}
+
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normCdf(x,m,s){m=m||0;s=(s===undefined?1:s);return 0.5*(1+erf((x-m)/(s*Math.SQRT2)));}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+function normInv(p){
+  if(p<=0)return -1e9;if(p>=1)return 1e9;
+  var a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  var b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  var c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  var d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  var plow=0.02425,phigh=1-plow,q,r;
+  if(p<plow){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p<=phigh){q=p-0.5;r=q*q;return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+function lgamma(x){
+  var g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lgamma(1-x);
+  x-=1;var a=c[0],t=x+g+0.5,i;
+  for(i=1;i<g+2;i++)a+=c[i]/(x+i);
+  return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+}
+function gammaPdf(x,k,theta){if(x<=0)return 0;return Math.exp((k-1)*Math.log(x)-x/theta-k*Math.log(theta)-lgamma(k));}
+function chi2pdf(x,k){return gammaPdf(x,k/2,2);}
+function chi2inv2(p){return -2*Math.log(1-p);}
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+function rexp(rate){rate=rate||1;return -Math.log(1-Math.random())/rate;}
+function sampleNorm(n,m,s){var o=[],i;for(i=0;i<n;i++)o.push((m||0)+(s===undefined?1:s)*randn());return o;}
+function rt(nu){var z=randn(),v=0,i;for(i=0;i<nu;i++){var g=randn();v+=g*g;}return z/Math.sqrt(v/nu);}
+
+/* ===== 2x2 symmetric matrix toolkit: M=[[a,b],[b,d]] ===== */
+function cov2(s1,s2,rho){var c=rho*s1*s2;return {a:s1*s1,b:c,d:s2*s2};}
+function det2(M){return M.a*M.d-M.b*M.b;}
+function inv2(M){var dt=det2(M)||1e-12;return {a:M.d/dt,b:-M.b/dt,d:M.a/dt};}
+function symEig2(M){
+  var tr=M.a+M.d,dt=M.a*M.d-M.b*M.b,disc=Math.sqrt(Math.max(0,tr*tr/4-dt));
+  var l1=tr/2+disc,l2=tr/2-disc,v1;
+  if(Math.abs(M.b)>1e-12)v1=[M.b,l1-M.a];else v1=(M.a>=M.d)?[1,0]:[0,1];
+  var n1=Math.hypot(v1[0],v1[1])||1;v1=[v1[0]/n1,v1[1]/n1];
+  return {l1:Math.max(l1,1e-12),l2:Math.max(l2,1e-12),v1:v1,v2:[-v1[1],v1[0]]};
+}
+function chol2(M){var la=Math.sqrt(Math.max(M.a,1e-12));var lc=M.b/la;var ld=Math.sqrt(Math.max(M.d-lc*lc,1e-12));return {la:la,lc:lc,ld:ld};}
+function applyL(L,z0,z1){return [L.la*z0, L.lc*z0+L.ld*z1];}
+function ellipsePts(mux,muy,L,s,N){N=N||96;var xs=[],ys=[],i;for(i=0;i<=N;i++){var th=2*Math.PI*i/N;var p=applyL(L,Math.cos(th)*s,Math.sin(th)*s);xs.push(mux+p[0]);ys.push(muy+p[1]);}return {x:xs,y:ys};}
+function whiten(E,dx,dy){var c1=E.v1[0]*dx+E.v1[1]*dy,c2=E.v2[0]*dx+E.v2[1]*dy;var a1=c1/Math.sqrt(E.l1),a2=c2/Math.sqrt(E.l2);return [a1*E.v1[0]+a2*E.v2[0],a1*E.v1[1]+a2*E.v2[1]];}
+function circlePts(cx,cy,r,N){N=N||96;var xs=[],ys=[],i;for(i=0;i<=N;i++){var th=2*Math.PI*i/N;xs.push(cx+r*Math.cos(th));ys.push(cy+r*Math.sin(th));}return {x:xs,y:ys};}
+
+function histTrace(data,nb,lo,hi,color,name,opacity){
+  return {type:'histogram',x:data,histnorm:'probability density',name:name||'',
+    marker:{color:color,line:{color:'rgba(255,255,255,.5)',width:0.5}},opacity:(opacity===undefined?0.72:opacity),
+    xbins:{start:lo,end:hi,size:(hi-lo)/(nb||30)}};
+}
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],
+    throwOnError:false,strict:false});
+}
+
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={bridge:C.accentSoft,gen:'#F4E9CF',test:'#DFEDE2',tool:'#E5E1F2',warn:'#F3E0DA'};
+var NODE_STROKE={bridge:C.accent,gen:C.gold,test:C.green,tool:C.violet,warn:C.rust};
+var NODE_TXT={bridge:C.accent,gen:'#8a6a1f',test:C.green,tool:C.violet,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+ {id:'bridge',x:36,y:356,w:192,h:108,ty:'bridge',t:['上一节 · 第五节','标量 MLE / Fisher'],sub:['一个 θ、一对 (μ,σ²)','似然山是一维的丘'],href:'#spine'},
+ {id:'vec',x:256,y:150,w:178,h:58,ty:'gen',t:['1.1 向量化','标量 → 矩阵'],href:'#t-vec'},
+ {id:'mgf',x:256,y:474,w:178,h:58,ty:'warn',t:['1.2 MGF / 特征函数 ⚠','身份证'],href:'#t-mgf'},
+ {id:'marginal',x:476,y:58,w:178,h:58,ty:'test',t:['2.1 边际','删行删列'],href:'#t-marginal'},
+ {id:'conditional',x:476,y:250,w:178,h:64,ty:'tool',t:['2.2 条件','= 回归种子'],href:'#t-conditional'},
+ {id:'quadratic',x:476,y:452,w:178,h:64,ty:'test',t:['2.3 二次型→卡方 ⚠','马氏距离'],href:'#t-quadratic'},
+ {id:'psd',x:696,y:150,w:178,h:58,ty:'tool',t:['3.1 半正定','协方差的约束'],href:'#t-psd'},
+ {id:'spectral',x:696,y:330,w:178,h:64,ty:'tool',t:['3.2 谱分解 · 白化','掰正椭圆'],href:'#t-spectral'},
+ {id:'bm',x:696,y:524,w:178,h:64,ty:'warn',t:['5.1 布朗运动 ⚠','正态+独立增量'],href:'#t-bm'},
+ {id:'mle',x:916,y:88,w:178,h:64,ty:'test',t:['4.1 MLE ⚠','Σ̂=W/n（有偏）'],href:'#t-mle'},
+ {id:'ellipsoid',x:916,y:280,w:178,h:64,ty:'tool',t:['4.2 椭球置信集','Fisher = nΣ⁻¹'],href:'#t-ellipsoid'},
+ {id:'hilbert',x:916,y:472,w:178,h:58,ty:'gen',t:['5.2 希尔伯特空间','内积诱导范数'],href:'#t-hilbert'},
+ {id:'tail',x:916,y:622,w:178,h:58,ty:'warn',t:['5.3 长尾 vs 短尾 ⚠','违约建模'],href:'#t-tail'},
+ {id:'bridge2',x:1130,y:296,w:158,h:120,ty:'bridge',t:['下一步','第六 / 七章'],sub:['条件分布 → 回归','频率派 → 贝叶斯'],href:'#closing'}
+];
+var MAP_EDGES=[
+ ['bridge','vec','gen'],['bridge','mgf','derive'],
+ ['vec','marginal','supply'],['vec','conditional','supply'],['vec','quadratic','supply'],
+ ['marginal','psd','gen'],['psd','spectral','derive'],['spectral','quadratic','tool'],
+ ['marginal','mle','derive'],['mle','ellipsoid','derive'],['quadratic','ellipsoid','tool'],
+ ['conditional','bridge2','gen'],['ellipsoid','bridge2','gen'],
+ ['mgf','tail','supply'],['quadratic','bm','gen'],['bm','hilbert','supply']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong;
+    var p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(a.x>b.x+b.w-2){p1=anchor(a,'l');p2=anchor(b,'r');}
+    else if(Math.abs(b.x-a.x)<14){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+(n.sub?26:n.h/2+5);
+    n.t.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':13.5,'font-weight':600,fill:NODE_TXT[n.ty]});
+      tx.textContent=line;g.appendChild(tx);
+    });
+    if(n.sub){n.sub.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:n.y+62+i*19,'text-anchor':'middle','font-size':12,fill:C.inkSoft});
+      tx.textContent=line;g.appendChild(tx);
+    });}
+    N.appendChild(g);
+  });
+}
+
+/* ===================== nav + sliders ===================== */
+function wireSliderFill(){
+  var rs=document.querySelectorAll('input[type=range]'),i;
+  for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}
+}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+function seg(id,cb){var box=document.getElementById(id);if(!box)return;
+  box.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('button'):null;if(!b||!box.contains(b))return;
+    var bs=box.querySelectorAll('button'),i;for(i=0;i<bs.length;i++)bs[i].classList.remove('on');b.classList.add('on');if(cb)cb();});}
+function segData(id,key){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute('data-'+key):null;}
+
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      }});
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else{ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function ed(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',ed);cv.addEventListener('pointercancel',ed);cv.addEventListener('pointerleave',ed);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+/* ============================================================ local helpers */
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function bellSurface(muX,muY,M,gx,gy){var Mi=inv2(M),dt=det2(M),k=1/(2*Math.PI*Math.sqrt(Math.max(dt,1e-9)));
+  return gy.map(function(y){return gx.map(function(x){var dx=x-muX,dy=y-muY;var q=Mi.a*dx*dx+2*Mi.b*dx*dy+Mi.d*dy*dy;return k*Math.exp(-0.5*q);});});}
+
+/* ============================================================ PART I */
+function plotVec2D(){
+  var div=document.getElementById('p-vec-2d');if(!div)return;
+  var rEl=document.getElementById('vec2d-rho'),rv=document.getElementById('vec2d-rho-v'),
+      runB=document.getElementById('vec2d-run'),info=document.getElementById('vec2d-info');
+  var s1=1.25,s2=0.95,n=320,pts=null,lastRho=null;
+  function resample(rho){var M=cov2(s1,s2,rho),L=chol2(M),xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(L,randn(),randn());xs.push(p[0]);ys.push(p[1]);}pts={x:xs,y:ys};lastRho=rho;}
+  function run(){var rho=+rEl.value;rv.textContent=rho.toFixed(2);
+    var M=cov2(s1,s2,rho),L=chol2(M);if(pts===null||lastRho!==rho)resample(rho);
+    var e1=ellipsePts(0,0,L,1),e2=ellipsePts(0,0,L,2);
+    Plotly.react(div,[
+      {type:'scatter',mode:'markers',x:pts.x,y:pts.y,marker:{color:'rgba(44,83,160,0.32)',size:4.5},name:'抽样点',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:e1.x,y:e1.y,line:{color:C.accent,width:2.4},name:'1σ 椭圆'},
+      {type:'scatter',mode:'lines',x:e2.x,y:e2.y,line:{color:C.accent,width:1.4,dash:'dot'},name:'2σ 椭圆'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:11}},
+      xaxis:{title:{text:'X₁',font:{size:12}},range:[-4,4],zeroline:true,gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'X₂',font:{size:12}},range:[-3.4,3.4],scaleanchor:'x',scaleratio:1,zeroline:true,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='ρ = <b>'+rho.toFixed(2)+'</b>：Σ = [['+(s1*s1).toFixed(2)+', '+(rho*s1*s2).toFixed(2)+'], ['+(rho*s1*s2).toFixed(2)+', '+(s2*s2).toFixed(2)+']]。椭圆长轴朝向随 ρ 偏转（ρ&gt;0 偏右上、ρ&lt;0 偏左上）；|ρ|→1 时椭圆压扁成一条线（近乎线性绑定）。';
+  }
+  rEl.addEventListener('input',run);if(runB)runB.addEventListener('click',function(){resample(+rEl.value);run();});run();
+}
+
+function sceneVec3D(){
+  var div=document.getElementById('p-vec-3d');if(!div)return;
+  var rEl=document.getElementById('vec3d-rho'),rv=document.getElementById('vec3d-rho-v'),info=document.getElementById('vec3d-info');
+  var gx=lin(-3.2,3.2,42),gy=lin(-3.2,3.2,42);
+  var sc=Scene3D(div,{xr:[-3.2,3.2],yr:[-3.2,3.2],zr:[0,1.02],xlabel:'X₁',ylabel:'X₂',zlabel:'密度(归一)',yaw:-0.7,pitch:0.86});
+  function build(){if(!sc)return;var rho=clamp(+rEl.value,-0.9,0.9);rv.textContent=rho.toFixed(2);
+    var M=cov2(1,1,rho),Mi=inv2(M);
+    var Z=gy.map(function(y){return gx.map(function(x){var q=Mi.a*x*x+2*Mi.b*x*y+Mi.d*y*y;return Math.exp(-0.5*q);});});
+    sc.setObjects([{type:'surface',X:gx,Y:gy,Z:Z,scale:BLUE_SCALE,alpha:0.96,wire:true}]);
+    if(info)info.innerHTML='ρ = <b>'+rho.toFixed(2)+'</b>：山脊沿对角线方向拉长、垂直方向压扁，整座钟被拧了一个角度。ρ=0 时是轴对称的圆钟。';
+  }
+  rEl.addEventListener('input',build);build();
+}
+
+function plotMGF(){
+  var div=document.getElementById('p-mgf');if(!div)return;
+  var tEl=document.getElementById('mgf-t'),tv=document.getElementById('mgf-t-v'),info=document.getElementById('mgf-info');
+  function run(){var t=+tEl.value;tv.textContent=t.toFixed(2);
+    var xs=lin(-6,9,400),cap=8;
+    var fn=xs.map(function(x){return Math.min(Math.exp(t*x)*normPdf(x,0,1),cap);});
+    var fc=xs.map(function(x){return Math.min(Math.exp(t*x)*(1/(Math.PI*(1+x*x))),cap);});
+    var mgfNorm=Math.exp(t*t/2);
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:xs,y:fn,fill:'tozeroy',fillcolor:'rgba(44,83,160,0.14)',line:{color:C.accent,width:2.4},name:'正态 e^{tx}·φ(x)'},
+      {type:'scatter',mode:'lines',x:xs,y:fc,line:{color:C.rust,width:2.4},name:'长尾(柯西) e^{tx}·f(x)'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'x',font:{size:12}},range:[-6,9],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'被积函数 e^{tx}·f(x)',font:{size:11}},range:[0,cap],gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='t = <b>'+t.toFixed(2)+'</b>。<b style="color:'+C.accent+'">正态</b>被积函数面积有限，MGF = e^{t²/2} = <b>'+mgfNorm.toFixed(2)+'</b>（处处存在）。<b style="color:'+C.rust+'">柯西</b>被积函数右尾'+(t>0.02?'已翘起、面积发散':'随 t 增大将发散')+' → MGF = ∞（不存在）。把 t 拨离 0，看红线尾巴冲破天花板（虚高处已截断）。';
+  }
+  tEl.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART II */
+function plotMarg2D(){
+  var div=document.getElementById('p-marg-2d');if(!div)return;
+  var rEl=document.getElementById('marg-rho'),rv=document.getElementById('marg-rho-v'),info=document.getElementById('marg-info');
+  var s1=1.2,s2=0.9,n=300;
+  function run(){var rho=+rEl.value;rv.textContent=rho.toFixed(2);
+    var M=cov2(s1,s2,rho),L=chol2(M),xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(L,randn(),randn());xs.push(p[0]);ys.push(p[1]);}
+    var e1=ellipsePts(0,0,L,1),e2=ellipsePts(0,0,L,2);
+    var gx=lin(-4,4,120),m1=1/(s1*Math.sqrt(2*Math.PI));
+    var topy=gx.map(function(x){return 2.7+1.05*normPdf(x,0,s1)/m1;});
+    var gy=lin(-3.2,3.2,120),m2=1/(s2*Math.sqrt(2*Math.PI));
+    var rightx=gy.map(function(y){return 3.0+1.05*normPdf(y,0,s2)/m2;});
+    Plotly.react(div,[
+      {type:'scatter',mode:'markers',x:xs,y:ys,marker:{color:'rgba(44,83,160,0.30)',size:4},name:'联合抽样',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:e1.x,y:e1.y,line:{color:C.accent,width:2},name:'1σ',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:e2.x,y:e2.y,line:{color:C.accent,width:1.2,dash:'dot'},name:'2σ',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:gx,y:topy,line:{color:C.green,width:2.4},name:'X₁ 边际'},
+      {type:'scatter',mode:'lines',x:rightx,y:gy,line:{color:C.gold,width:2.4},name:'X₂ 边际'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'X₁',font:{size:12}},range:[-4,4.4],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'X₂',font:{size:12}},range:[-3.4,4.0],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='ρ = <b>'+rho.toFixed(2)+'</b>：中间椭圆随 ρ 转向，但<b style="color:'+C.green+'">上边 X₁ 边际</b>恒为 N(0,'+(s1*s1).toFixed(2)+')、<b style="color:'+C.gold+'">右边 X₂ 边际</b>恒为 N(0,'+(s2*s2).toFixed(2)+')——形状不随 ρ 变。相关性只活在联合里，投影成边际就被抹掉。';
+  }
+  rEl.addEventListener('input',run);run();
+}
+
+function plotCond2D(){
+  var div=document.getElementById('p-cond-2d');if(!div)return;
+  var rEl=document.getElementById('cond-rho'),rv=document.getElementById('cond-rho-v'),
+      xEl=document.getElementById('cond-x0'),xv=document.getElementById('cond-x0-v'),info=document.getElementById('cond-info');
+  var s1=1.2,s2=1.0,n=260,base=null,lastRho=null;
+  function run(){var rho=+rEl.value,x0=+xEl.value;rv.textContent=rho.toFixed(2);xv.textContent=x0.toFixed(2);
+    var M=cov2(s1,s2,rho),L=chol2(M);
+    if(base===null||lastRho!==rho){var xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(L,randn(),randn());xs.push(p[0]);ys.push(p[1]);}base={x:xs,y:ys};lastRho=rho;}
+    var slope=rho*s2/s1,m2=slope*x0,sdc=s2*Math.sqrt(Math.max(1e-6,1-rho*rho));
+    var e1=ellipsePts(0,0,L,1),e2=ellipsePts(0,0,L,2);
+    var gy=lin(m2-3.4*sdc,m2+3.4*sdc,90),peak=1/(sdc*Math.sqrt(2*Math.PI));
+    var condx=gy.map(function(y){return x0+1.3*normPdf(y,m2,sdc)/peak;});
+    Plotly.react(div,[
+      {type:'scatter',mode:'markers',x:base.x,y:base.y,marker:{color:'rgba(44,83,160,0.22)',size:4},name:'联合抽样',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:e1.x,y:e1.y,line:{color:C.accent,width:1.6},name:'1σ',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:e2.x,y:e2.y,line:{color:C.accent,width:1,dash:'dot'},name:'2σ',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:[-3.5,3.5],y:[slope*-3.5,slope*3.5],line:{color:C.rust,width:2.6},name:'回归线 E[X₂|X₁]'},
+      {type:'scatter',mode:'lines',x:[x0,x0],y:[-3.6,3.6],line:{color:C.violet,width:1.6,dash:'dash'},name:'X₁ = x₀',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:condx,y:gy,line:{color:C.gold,width:2.6},name:'条件密度 X₂|x₀'},
+      {type:'scatter',mode:'markers',x:[x0],y:[m2],marker:{color:C.rust,size:10,line:{color:'#fff',width:1.5}},name:'条件均值',hoverinfo:'skip'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.14,x:0,font:{size:10}},
+      xaxis:{title:{text:'X₁',font:{size:12}},range:[-3.8,4.2],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'X₂',font:{size:12}},range:[-3.7,3.7],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='给定 X₁=x₀='+x0.toFixed(2)+'：X₂ | x₀ ~ N(<b>'+m2.toFixed(2)+'</b>, '+(sdc*sdc).toFixed(2)+')。条件均值 = ρ·(σ₂/σ₁)·x₀ = <b>'+slope.toFixed(2)+'·x₀</b>（红线斜率=Cov/Var）；条件方差 = σ₂²(1−ρ²) = '+(sdc*sdc).toFixed(2)+'（比边际 '+(s2*s2).toFixed(2)+' 小，ρ²='+(rho*rho).toFixed(2)+' 即 R²）。ρ=0 时回归线水平、条件=边际。';
+  }
+  rEl.addEventListener('input',run);xEl.addEventListener('input',run);run();
+}
+
+function sceneCond3D(){
+  var div=document.getElementById('p-cond-3d');if(!div)return;
+  var rEl=document.getElementById('cond-rho'),xEl=document.getElementById('cond-x0');
+  var gx=lin(-3,3,40),gy=lin(-3,3,40);
+  var sc=Scene3D(div,{xr:[-3,3],yr:[-3,3],zr:[0,1.02],xlabel:'X₁',ylabel:'X₂',zlabel:'密度(归一)',yaw:-0.74,pitch:0.8});
+  function build(){if(!sc)return;var rho=clamp(+rEl.value,-0.9,0.9),x0=clamp(+xEl.value,-2.6,2.6);
+    var M=cov2(1.1,1.1,rho),Mi=inv2(M);
+    var Z=gy.map(function(y){return gx.map(function(x){var q=Mi.a*x*x+2*Mi.b*x*y+Mi.d*y*y;return Math.exp(-0.5*q);});});
+    var sline=gy.map(function(y){var q=Mi.a*x0*x0+2*Mi.b*x0*y+Mi.d*y*y;return [x0,y,Math.exp(-0.5*q)];});
+    sc.setObjects([{type:'surface',X:gx,Y:gy,Z:Z,scale:BLUE_SCALE,alpha:0.82,wire:true},{type:'line',color:C.rust,width:4,pts:sline}]);
+  }
+  rEl.addEventListener('input',build);xEl.addEventListener('input',build);build();
+}
+
+function plotQuadEllipse(){
+  var div=document.getElementById('p-quad-2d');if(!div)return;
+  var rEl=document.getElementById('quad-rho'),rv=document.getElementById('quad-rho-v'),info=document.getElementById('quad-info');
+  var s1=1.2,s2=0.85,n=280;
+  function run(){var rho=+rEl.value;rv.textContent=rho.toFixed(2);
+    var M=cov2(s1,s2,rho),L=chol2(M),xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(L,randn(),randn());xs.push(p[0]);ys.push(p[1]);}
+    var tr=[{type:'scatter',mode:'markers',x:xs,y:ys,marker:{color:'rgba(87,79,70,0.32)',size:4},name:'数据',hoverinfo:'skip'}];
+    [1,2,3].forEach(function(s,k){var e=ellipsePts(0,0,L,s);tr.push({type:'scatter',mode:'lines',x:e.x,y:e.y,line:{color:C.rust,width:k===0?2.4:1.5,dash:k===0?'solid':'dot'},name:'马氏 '+s+'σ',showlegend:k===0,hoverinfo:'skip'});});
+    [1,2,3].forEach(function(r,k){var c=circlePts(0,0,r);tr.push({type:'scatter',mode:'lines',x:c.x,y:c.y,line:{color:'rgba(140,133,122,0.7)',width:1.4,dash:'dash'},name:'欧氏 r='+r,showlegend:k===0,hoverinfo:'skip'});});
+    Plotly.react(div,tr,baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'X₁',font:{size:12}},range:[-4,4],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'X₂',font:{size:12}},range:[-3.4,3.4],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='ρ = <b>'+rho.toFixed(2)+'</b>：<b style="color:'+C.rust+'">马氏等距线（椭圆）</b>贴合点云走向，是"公平"的等远近面；<b style="color:#8C857A">欧氏等距线（圆）</b>无视相关与量纲。换 ρ：椭圆随云转，圆永远是圆。';
+  }
+  rEl.addEventListener('input',run);run();
+}
+
+function plotQuadChi(){
+  var div=document.getElementById('p-quad-chi');if(!div)return;
+  var runB=document.getElementById('quad-run'),info=document.getElementById('quadchi-info');
+  function run(){var N=4000,M=cov2(1.3,0.8,0.5),Mi=inv2(M),L=chol2(M),V=[],i;
+    for(i=0;i<N;i++){var p=applyL(L,randn(),randn());V.push(Mi.a*p[0]*p[0]+2*Mi.b*p[0]*p[1]+Mi.d*p[1]*p[1]);}
+    var xs=lin(0.02,12,200),chi=xs.map(function(x){return chi2pdf(x,2);}),gam=xs.map(function(x){return gammaPdf(x,1,2);});
+    Plotly.react(div,[
+      histTrace(V,34,0,12,'rgba(87,79,70,0.42)','V 的直方图',0.75),
+      {type:'scatter',mode:'lines',x:xs,y:chi,line:{color:C.green,width:2.8},name:'χ²₂ 密度'},
+      {type:'scatter',mode:'lines',x:xs,y:gam,line:{color:C.gold,width:2,dash:'dash'},name:'Gamma(1,2) 密度'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'V = (x)ᵀΣ⁻¹(x)',font:{size:12}},range:[0,12],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='N=4000 个 V 的样本均值 ≈ <b>'+mean(V).toFixed(2)+'</b>（χ²₂ 理论均值 = k = 2）。<b style="color:'+C.green+'">χ²₂</b> 与 <b style="color:'+C.gold+'">Gamma(1,2)</b> 两条曲线完全重合 → 卡方是伽马的一支（挑刺 2）；服从卡方的是距离<b>平方</b> V（挑刺 4）。';
+  }
+  if(runB)runB.addEventListener('click',run);run();
+}
+
+/* ============================================================ PART III */
+function sceneQuadForm(){
+  var div=document.getElementById('p-psd-3d');if(!div)return;
+  var info=document.getElementById('psd-info');
+  function build(){var mode=segData('psd-seg','mode')||'pd';
+    var gx=lin(-1.5,1.5,40),gy=lin(-1.5,1.5,40),A,zr,scale,txt;
+    if(mode==='pd'){A={a:1,b:0.45,d:1};zr=[0,6.5];scale=BLUE_SCALE;txt='<b>正定</b>：除底点(0,0)外处处 z=aᵀΣa &gt; 0 → 任何方向方差为正 → 合法协方差，Σ 可逆。特征值 λ₁,λ₂ 均&gt;0。';}
+    else if(mode==='psd'){A={a:1,b:1,d:1};zr=[0,9];scale=TEAL_SCALE;txt='<b>半正定（退化）</b>：A=[[1,1],[1,1]]，z=(a₁+a₂)²。沿 a₁=−a₂ 方向 z≡0（碗底是一条<b>平沟</b>）→ 该方向方差为 0、变量完全线性相关、Σ <b>不可逆</b>。特征值 λ=2, 0。';}
+    else {A={a:1,b:0,d:-1};zr=[-2.3,2.3];scale=PURPLE_SCALE;txt='<b>不定</b>：A=[[1,0],[0,−1]]，z=a₁²−a₂² 是<b>马鞍面</b>，存在方向 z&lt;0 → 出现"负方差" → <b>不可能是协方差矩阵</b>。特征值一正一负。';}
+    var Z=gy.map(function(y){return gx.map(function(x){return A.a*x*x+2*A.b*x*y+A.d*y*y;});});
+    var sc=Scene3D(div,{xr:[-1.5,1.5],yr:[-1.5,1.5],zr:zr,xlabel:'a₁',ylabel:'a₂',zlabel:'aᵀΣa',yaw:-0.72,pitch:0.7});
+    if(sc)sc.setObjects([{type:'surface',X:gx,Y:gy,Z:Z,scale:scale,alpha:0.95,wire:true}]);
+    if(info)info.innerHTML=txt;
+  }
+  seg('psd-seg',build);build();
+}
+
+function plotWhiten(){
+  var div=document.getElementById('p-spec-2d');if(!div)return;
+  var rEl=document.getElementById('spec-rho'),rv=document.getElementById('spec-rho-v'),info=document.getElementById('spec-info');
+  var s1=1.4,s2=0.7,n=320,raw=null,lastRho=null;
+  function run(){var rho=+rEl.value;rv.textContent=rho.toFixed(2);
+    var mode=segData('white-seg','mode')||'raw';
+    var M=cov2(s1,s2,rho),L=chol2(M),E=symEig2(M);
+    if(raw===null||lastRho!==rho){var xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(L,randn(),randn());xs.push(p[0]);ys.push(p[1]);}raw={x:xs,y:ys};lastRho=rho;}
+    var tr,info2;
+    if(mode==='raw'){
+      var e1=ellipsePts(0,0,L,1),e2=ellipsePts(0,0,L,2),a1=Math.sqrt(E.l1),a2=Math.sqrt(E.l2);
+      tr=[{type:'scatter',mode:'markers',x:raw.x,y:raw.y,marker:{color:'rgba(44,83,160,0.30)',size:4},name:'原始数据',hoverinfo:'skip'},
+        {type:'scatter',mode:'lines',x:e1.x,y:e1.y,line:{color:C.accent,width:2},name:'1σ',hoverinfo:'skip'},
+        {type:'scatter',mode:'lines',x:e2.x,y:e2.y,line:{color:C.accent,width:1.2,dash:'dot'},name:'2σ',hoverinfo:'skip'},
+        {type:'scatter',mode:'lines',x:[0,E.v1[0]*a1],y:[0,E.v1[1]*a1],line:{color:C.rust,width:3.4},name:'特征向量 √λ₁'},
+        {type:'scatter',mode:'lines',x:[0,E.v2[0]*a2],y:[0,E.v2[1]*a2],line:{color:C.gold,width:3.4},name:'特征向量 √λ₂'}];
+      info2='原始：相关数据的斜椭圆。<b style="color:'+C.rust+'">长轴</b>沿主特征向量(λ₁='+E.l1.toFixed(2)+')，<b style="color:'+C.gold+'">短轴</b>沿次特征向量(λ₂='+E.l2.toFixed(2)+')，半轴长 ∝ √λ。';
+    } else {
+      var wx=[],wy=[],i;for(i=0;i<raw.x.length;i++){var z=whiten(E,raw.x[i],raw.y[i]);wx.push(z[0]);wy.push(z[1]);}
+      var c1=circlePts(0,0,1),c2=circlePts(0,0,2);
+      tr=[{type:'scatter',mode:'markers',x:wx,y:wy,marker:{color:'rgba(62,124,78,0.34)',size:4},name:'白化后 Z',hoverinfo:'skip'},
+        {type:'scatter',mode:'lines',x:c1.x,y:c1.y,line:{color:C.green,width:2},name:'单位圆',hoverinfo:'skip'},
+        {type:'scatter',mode:'lines',x:c2.x,y:c2.y,line:{color:C.green,width:1.2,dash:'dot'},name:'2σ 圆',hoverinfo:'skip'}];
+      info2='白化后 Z=Σ⁻¹ᐟ²(X−X̄)：无论原椭圆多斜，都被掰正、缩放成围绕原点的<b>标准圆云</b> ~ N(0,I)，相关与量纲一并洗掉。';
+    }
+    Plotly.react(div,tr,baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:10.5}},
+      xaxis:{title:{text:mode==='raw'?'X₁':'Z₁',font:{size:12}},range:[-4.2,4.2],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:mode==='raw'?'X₂':'Z₂',font:{size:12}},range:[-3.6,3.6],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML=info2;
+  }
+  seg('white-seg',run);rEl.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART IV */
+function plotMLE(){
+  var div=document.getElementById('p-mle-2d');if(!div)return;
+  var nEl=document.getElementById('mle-n'),nv=document.getElementById('mle-n-v'),runB=document.getElementById('mle-run'),info=document.getElementById('mle-info');
+  var mu=[0.5,-0.3],Mtrue=cov2(1.3,0.9,0.55),Ltrue=chol2(Mtrue);
+  function run(){var n=+nEl.value;nv.textContent=n;
+    var xs=[],ys=[],i;for(i=0;i<n;i++){var p=applyL(Ltrue,randn(),randn());xs.push(mu[0]+p[0]);ys.push(mu[1]+p[1]);}
+    var mx=mean(xs),my=mean(ys),a=0,b=0,d=0;for(i=0;i<n;i++){a+=(xs[i]-mx)*(xs[i]-mx);b+=(xs[i]-mx)*(ys[i]-my);d+=(ys[i]-my)*(ys[i]-my);}
+    var Mmle={a:a/n,b:b/n,d:d/n},Munb={a:a/(n-1)};
+    var et=ellipsePts(mu[0],mu[1],Ltrue,1),em=ellipsePts(mx,my,chol2(Mmle),1);
+    Plotly.react(div,[
+      {type:'scatter',mode:'markers',x:xs,y:ys,marker:{color:'rgba(87,79,70,0.34)',size:4.5},name:'样本',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:et.x,y:et.y,line:{color:C.green,width:2.4,dash:'dash'},name:'真 1σ 椭圆'},
+      {type:'scatter',mode:'lines',x:em.x,y:em.y,line:{color:C.accent,width:2.6},name:'MLE 拟合 1σ'},
+      {type:'scatter',mode:'markers',x:[mu[0]],y:[mu[1]],marker:{color:C.green,size:10,symbol:'x'},name:'真 μ',hoverinfo:'skip'},
+      {type:'scatter',mode:'markers',x:[mx],y:[my],marker:{color:C.accent,size:9},name:'μ̂=X̄',hoverinfo:'skip'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:10}},
+      xaxis:{title:{text:'X₁',font:{size:12}},range:[-4.2,5],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'X₂',font:{size:12}},range:[-3.8,3.4],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='n='+n+'：σ̂₁²(MLE, ÷n)=<b>'+Mmle.a.toFixed(3)+'</b>，σ₁²(无偏, ÷(n−1))='+Munb.a.toFixed(3)+'，真值 '+(Mtrue.a).toFixed(2)+'。理论偏倚因子 (n−1)/n = <b>'+((n-1)/n).toFixed(3)+'</b>——MLE 系统性略小。n 越大蓝椭圆越贴合绿椭圆。';
+  }
+  nEl.addEventListener('input',run);if(runB)runB.addEventListener('click',run);run();
+}
+
+function plotMLEbias(){
+  var div=document.getElementById('p-mle-bias');if(!div)return;
+  var info=document.getElementById('bias-info');
+  var ns=[4,5,6,8,10,13,18,25,40,70,120,220],R=500,mle=[],unb=[],theo=[];
+  ns.forEach(function(n){var sm=0,su=0,r;for(r=0;r<R;r++){var dd=sampleNorm(n,0,1),m=mean(dd),ss=0,i;for(i=0;i<n;i++)ss+=(dd[i]-m)*(dd[i]-m);sm+=ss/n;su+=ss/(n-1);}mle.push(sm/R);unb.push(su/R);theo.push((n-1)/n);});
+  Plotly.react(div,[
+    {type:'scatter',mode:'lines',x:ns,y:theo,line:{color:C.rust,width:1.8,dash:'dash'},name:'理论 (n−1)/n'},
+    {type:'scatter',mode:'lines+markers',x:ns,y:mle,line:{color:C.accent,width:2.6},marker:{size:5},name:'MLE（÷n）'},
+    {type:'scatter',mode:'lines+markers',x:ns,y:unb,line:{color:C.green,width:2.6},marker:{size:5},name:'无偏（÷(n−1)）'},
+    {type:'scatter',mode:'lines',x:[ns[0],ns[ns.length-1]],y:[1,1],line:{color:C.faint,width:1.2,dash:'dot'},name:'真值 σ²',hoverinfo:'skip'}
+  ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:10.5}},
+    xaxis:{title:{text:'样本量 n（对数轴）',font:{size:12}},type:'log',gridcolor:C.line,linecolor:C.lineStrong},
+    yaxis:{title:{text:'E[σ̂²] / σ²',font:{size:12}},range:[0.6,1.12],gridcolor:C.line,linecolor:C.lineStrong}
+  }),CONF);
+  if(info)info.innerHTML='<b style="color:'+C.accent+'">MLE（÷n）</b>稳定地压在 1 下方、贴着理论曲线 (n−1)/n；<b style="color:'+C.green+'">无偏（÷(n−1)）</b>在 1 上下抖动不系统偏离。偏倚以 1/n 速度消失——小样本警惕，大样本无所谓（有偏但一致）。';
+}
+
+function plotEllip(){
+  var div=document.getElementById('p-ell-2d');if(!div)return;
+  var nEl=document.getElementById('ell-n'),nv=document.getElementById('ell-n-v'),
+      aEl=document.getElementById('ell-alpha'),av=document.getElementById('ell-alpha-v'),info=document.getElementById('ell-info');
+  var Sig=cov2(1.4,1.0,0.5),xbar=[0,0];
+  function run(){var n=+nEl.value,conf=+aEl.value;nv.textContent=n;av.textContent=conf.toFixed(2);
+    var Mn={a:Sig.a/n,b:Sig.b/n,d:Sig.d/n},L=chol2(Mn),s=Math.sqrt(chi2inv2(conf));
+    var e=ellipsePts(xbar[0],xbar[1],L,s),refs=[];
+    [Math.max(5,Math.round(n/3)),n*3].forEach(function(nn,k){var Mr={a:Sig.a/nn,b:Sig.b/nn,d:Sig.d/nn},er=ellipsePts(0,0,chol2(Mr),s);refs.push({type:'scatter',mode:'lines',x:er.x,y:er.y,line:{color:'rgba(140,133,122,0.55)',width:1.2,dash:'dot'},name:k===0?'n='+nn+'（÷3）':'n='+nn+'（×3）',hoverinfo:'skip'});});
+    Plotly.react(div,refs.concat([
+      {type:'scatter',mode:'lines',x:e.x,y:e.y,fill:'toself',fillcolor:'rgba(44,83,160,0.12)',line:{color:C.accent,width:2.6},name:(conf*100).toFixed(0)+'% 置信椭球'},
+      {type:'scatter',mode:'markers',x:[xbar[0]],y:[xbar[1]],marker:{color:C.accent,size:9},name:'X̄',hoverinfo:'skip'}
+    ]),baseLayout({showlegend:true,legend:{orientation:'h',y:1.12,x:0,font:{size:10}},
+      xaxis:{title:{text:'μ₁',font:{size:12}},range:[-1.7,1.7],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'μ₂',font:{size:12}},range:[-1.45,1.45],scaleanchor:'x',scaleratio:1,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='n='+n+'，置信度 '+(conf*100).toFixed(0)+'%：门槛 χ²₂,'+conf.toFixed(2)+' = <b>'+chi2inv2(conf).toFixed(2)+'</b>，椭球面积 ∝ χ²/n。<b>n↑</b> 椭球按 1/√n 收缩（灰点线 = n/3 与 3n 对照）；<b>置信度↑</b> 椭球膨胀。朝向/长短轴比例由 Σ 锁定。Fisher 信息阵 = nΣ⁻¹。';
+  }
+  nEl.addEventListener('input',run);aEl.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART V */
+var BM_state=null;
+function bmSimulate(){var nEl=document.getElementById('bm-n');var n=nEl?+nEl.value:240;var Mp=7,paths=[],i,j,t=lin(0,1,n+1),dt=1/n;
+  for(i=0;i<Mp;i++){var w=[0],s=0;for(j=1;j<=n;j++){s+=Math.sqrt(dt)*randn();w.push(s);}paths.push(w);}
+  var K=600,d1=[],d2=[],h=Math.floor(n/2);for(i=0;i<K;i++){var a=0,b=0,m;for(m=0;m<h;m++)a+=Math.sqrt(dt)*randn();for(m=0;m<n-h;m++)b+=Math.sqrt(dt)*randn();d1.push(a);d2.push(b);}
+  BM_state={t:t,paths:paths,d1:d1,d2:d2,n:n};
+}
+function plotBM(){var div=document.getElementById('p-bm');if(!div)return;var info=document.getElementById('bm-info');
+  if(!BM_state)bmSimulate();var t=BM_state.t,paths=BM_state.paths;
+  var up=t.map(function(x){return 1.96*Math.sqrt(x);}),dn=t.map(function(x){return -1.96*Math.sqrt(x);});
+  var tr=[{type:'scatter',mode:'lines',x:t.concat(t.slice().reverse()),y:up.concat(dn.slice().reverse()),fill:'toself',fillcolor:'rgba(140,133,122,0.16)',line:{width:0},name:'±1.96√t 包络',hoverinfo:'skip'}];
+  var cols=[C.accent,C.rust,C.green,C.gold,C.violet,C.teal,'#9C6ABF'];
+  paths.forEach(function(w,i){tr.push({type:'scatter',mode:'lines',x:t,y:w,line:{color:cols[i%cols.length],width:1.5},showlegend:false,hoverinfo:'skip'});});
+  Plotly.react(div,tr,baseLayout({showlegend:true,legend:{orientation:'h',y:1.1,x:0,font:{size:10.5}},
+    xaxis:{title:{text:'时间 t',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+    yaxis:{title:{text:'Bₜ',font:{size:12}},range:[-2.6,2.6],gridcolor:C.line,linecolor:C.lineStrong}
+  }),CONF);
+  if(info)info.innerHTML='步数 '+BM_state.n+'：每条路径独立游走，整体散布被 <b>±1.96√t</b>（灰口）锁住——开口随时间按<b>根号</b>张开（非直线）。这正是"独立增量 → 方差可加 → Var(Bₜ)=t"的指纹。';
+}
+function plotBMindep(){var div=document.getElementById('p-bm-indep');if(!div)return;var info=document.getElementById('bmindep-info');
+  if(!BM_state)bmSimulate();var d1=BM_state.d1,d2=BM_state.d2;
+  var m1=mean(d1),m2=mean(d2),sa=0,sb=0,sab=0,i;for(i=0;i<d1.length;i++){sa+=(d1[i]-m1)*(d1[i]-m1);sb+=(d2[i]-m2)*(d2[i]-m2);sab+=(d1[i]-m1)*(d2[i]-m2);}var corr=sab/Math.sqrt((sa*sb)||1);
+  Plotly.react(div,[
+    {type:'scatter',mode:'markers',x:d1,y:d2,marker:{color:'rgba(44,83,160,0.34)',size:4.5},name:'增量对',hoverinfo:'skip'}
+  ],baseLayout({
+    xaxis:{title:{text:'Δ₁ = B₀.₅ − B₀',font:{size:12}},range:[-2.4,2.4],zeroline:true,gridcolor:C.line,linecolor:C.lineStrong},
+    yaxis:{title:{text:'Δ₂ = B₁ − B₀.₅',font:{size:12}},range:[-2.4,2.4],scaleanchor:'x',scaleratio:1,zeroline:true,gridcolor:C.line,linecolor:C.lineStrong}
+  }),CONF);
+  if(info)info.innerHTML='两段不相交增量 (Δ₁,Δ₂) 散点：样本相关系数 ≈ <b>'+corr.toFixed(3)+'</b>（≈0）。云是<b>正圆、无方向</b> → 前一段走多少对后一段毫无预测力，这正是<b>独立增量</b>的视觉证据。若有依赖会拉成斜椭圆。';
+}
+function wireBM(){var runB=document.getElementById('bm-run'),nEl=document.getElementById('bm-n'),nv=document.getElementById('bm-n-v');
+  function refresh(){if(nv&&nEl)nv.textContent=nEl.value;bmSimulate();try{plotBM();plotBMindep();}catch(e){}}
+  if(runB)runB.addEventListener('click',refresh);
+  if(nEl)nEl.addEventListener('input',refresh);
+}
+
+function plotNorm(){var div=document.getElementById('p-norm');if(!div)return;var info=document.getElementById('norm-info');
+  function run(){var mode=segData('norm-seg','mode')||'l2',xs,ys,txt,col;
+    if(mode==='l2'){var c=circlePts(0,0,1,240);xs=c.x;ys=c.y;txt='<b>L²（欧氏）</b>：单位球是<b>圆</b>。Ridge 正则用它，无尖角 → 不产生稀疏。';col=C.accent;}
+    else if(mode==='l1'){xs=[1,0,-1,0,1];ys=[0,1,0,-1,0];txt='<b>L¹（曼哈顿）</b>：单位球是<b>菱形</b>。Lasso 用它，尖角戳在坐标轴上 → 最优解易落在角上 → <b>稀疏</b>（某些系数 = 0）。';col=C.rust;}
+    else {xs=[1,1,-1,-1,1];ys=[1,-1,-1,1,1];txt='<b>L∞（切比雪夫）</b>：单位球是<b>正方形</b>（max|坐标| = 1）。';col=C.green;}
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:xs,y:ys,fill:'toself',fillcolor:'rgba(44,83,160,0.10)',line:{color:col,width:2.8},name:'单位球 ‖x‖=1'}
+    ],baseLayout({showlegend:false,
+      xaxis:{title:{text:'x₁',font:{size:12}},range:[-1.6,1.6],zeroline:true,gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'x₂',font:{size:12}},range:[-1.6,1.6],scaleanchor:'x',scaleratio:1,zeroline:true,gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML=txt+' 范数的形状，直接决定模型行为。';
+  }
+  seg('norm-seg',run);run();
+}
+
+function plotMetric(){var div=document.getElementById('p-metric');if(!div)return;var info=document.getElementById('metric-info');
+  var labels=['预测 1','预测 3','预测 9'];
+  Plotly.react(div,[
+    {type:'bar',x:labels,y:[1,1,1],marker:{color:'rgba(140,133,122,0.6)'},name:'0-1 损失（准确率视角）'},
+    {type:'bar',x:labels,y:[6,4,2],marker:{color:C.accent},name:'距离损失 |差值|'}
+  ],baseLayout({barmode:'group',showlegend:true,legend:{orientation:'h',y:1.14,x:0,font:{size:10.5}},
+    xaxis:{title:{text:'真值 = 7，三种错误预测',font:{size:12}},gridcolor:C.line,linecolor:C.lineStrong},
+    yaxis:{title:{text:'损失',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong}
+  }),CONF);
+  if(info)info.innerHTML='<b style="color:#8C857A">0-1 损失</b>对三种错误一视同仁（都 = 1），<b>对"错的程度"完全失明</b>；<b style="color:'+C.accent+'">距离损失</b>能分出"认成 9 比认成 1 更接近"。选错度量，优化方向从一开始就偏。';
+}
+
+function plotTail(){var div=document.getElementById('p-tail');if(!div)return;var info=document.getElementById('tail-info');
+  function run(){var scale=segData('tail-seg','scale')||'linear';
+    var xs=lin(0.05,8,300);
+    var sn=xs.map(function(x){return 1-normCdf(x,0,1);});
+    var st=xs.map(function(x){return 0.5*(1-x/Math.sqrt(2+x*x));});
+    var lay={showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'x',font:{size:12}},gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'生存函数 P(X>x)',font:{size:11}},gridcolor:C.line,linecolor:C.lineStrong}};
+    if(scale==='semilog'){lay.yaxis.type='log';lay.xaxis.range=[0,8];}
+    else if(scale==='loglog'){lay.yaxis.type='log';lay.xaxis.type='log';lay.xaxis.range=[Math.log10(0.05),Math.log10(8)];}
+    else {lay.xaxis.range=[0,8];lay.yaxis.range=[0,0.55];}
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:xs,y:sn,line:{color:C.accent,width:2.8},name:'正态（短尾）'},
+      {type:'scatter',mode:'lines',x:xs,y:st,line:{color:C.rust,width:2.8},name:'学生 t₂（长尾）'}
+    ],baseLayout(lay),CONF);
+    var txt={linear:'线性轴：两者都贴着 0，难分高下——尾巴的差别被压在一起看不清。',
+      semilog:'semilog（纵轴对数）：<b style="color:'+C.accent+'">正态</b>迅速向下俯冲（上凸，尾巴掉得飞快）；<b style="color:'+C.rust+'">学生 t</b>拖着不下来 → 长尾暴露。指数尾在此图会是直线。',
+      loglog:'log-log（双对数）：<b style="color:'+C.rust+'">学生 t</b> 变成近似<b>直线</b>（幂律的指纹，斜率 = 尾指数）；<b style="color:'+C.accent+'">正态</b>仍弯头扎下去。'}[scale];
+    if(info)info.innerHTML=txt;
+  }
+  seg('tail-seg',run);run();
+}
+
+function plotLoss(){var div=document.getElementById('p-loss');if(!div)return;var info=document.getElementById('loss-info');
+  function run(){var S=3000,i,j;
+    var retail=[],lgdR=0.5,pdR=0.03,NR=400;
+    for(i=0;i<S;i++){var k=0;for(j=0;j<NR;j++)if(Math.random()<pdR)k++;retail.push(lgdR*k);}
+    var corpE=[120,90,70,50,30,20,15,5],lgdC=0.6,pdC=0.03,corp=[];
+    for(i=0;i<S;i++){var L=0;for(j=0;j<corpE.length;j++)if(Math.random()<pdC)L+=lgdC*corpE[j];corp.push(L);}
+    var hi=80;
+    Plotly.react(div,[
+      histTrace(retail,40,0,hi,'rgba(44,83,160,0.5)','零售书（多笔小额）',0.7),
+      histTrace(corp,40,0,hi,'rgba(176,68,43,0.5)','对公书（少笔大额）',0.7)
+    ],baseLayout({barmode:'overlay',showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'组合总损失 L',font:{size:12}},range:[0,hi],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'概率密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    if(info)info.innerHTML='总敞口相同(=400)。<b style="color:'+C.accent+'">零售</b>：均值 '+mean(retail).toFixed(1)+'，紧凑近似对称（CLT 抹平），99% 分位 '+quantile(retail,0.99).toFixed(1)+'。<b style="color:'+C.rust+'">对公</b>：均值 '+mean(corp).toFixed(1)+' 相近，但大量时候损失≈0、偶尔一笔大户违约就<b>跳到很高</b> → 右偏厚尾，99% 分位 <b>'+quantile(corp,0.99).toFixed(1)+'</b>（远高于零售）。巴塞尔资本金要兜的正是这条尾巴。';
+  }
+  var runB=document.getElementById('loss-run');if(runB)runB.addEventListener('click',run);run();
+}
+
+/* ============================================================ BOOT */
+function initPlots(){
+  var fns=[plotVec2D,plotMGF,plotMarg2D,plotCond2D,plotQuadEllipse,plotQuadChi,plotWhiten,plotMLE,plotMLEbias,plotEllip,plotBM,plotBMindep,plotNorm,plotMetric,plotTail,plotLoss];
+  fns.forEach(function(f){try{f();}catch(e){if(window.console)console.warn('plot err',f.name,e);}});
+}
+function init3D(){
+  var fns=[sceneVec3D,sceneCond3D,sceneQuadForm];
+  fns.forEach(function(f){try{f();}catch(e){if(window.console)console.warn('3d err',f.name,e);}});
+}
+function boot(){
+  try{buildMap();}catch(e){if(window.console)console.warn('map',e);}
+  try{wireSliderFill();}catch(e){}
+  try{wireNav();}catch(e){}
+  try{wireMenu();}catch(e){}
+  try{wireBM();}catch(e){}
+  init3D();
+  var mk=0;(function tryMath(){try{if(window.renderMathInElement||window.katex){renderMath();return;}}catch(e){}if(mk++<40)setTimeout(tryMath,120);})();
+  var pk=0;(function tryPlots(){if(window.Plotly){initPlots();return;}if(pk++<60)setTimeout(tryPlots,120);})();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+</body>
+</html>

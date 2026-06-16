@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>limsup / liminf 逐点详解 · 第一节补充</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC; --paper-2:#F4ECDC; --card:#FFFDF8;
+  --ink:#211E1A; --ink-soft:#5A544B; --ink-faint:#8C857A;
+  --line:#E4D8C2; --line-strong:#D2C2A4;
+  --sup:#C0492F;        /* limsup · 朱红 · 也是页面主色 */
+  --sup-soft:#F3E0DA;
+  --inf:#2E7D52;        /* liminf · 森林绿 */
+  --inf-soft:#DCEBE0;
+  --evt:#5B7186;        /* 事件行 Aₙ · 中性蓝灰（与红绿正交）*/
+  --evt-soft:#E2E7ED;
+  --scan:#C8881E;       /* 扫描线 / 选中 ω · 琥珀金 */
+  --scan-soft:#F6E8C8;
+  --shadow:0 1px 2px rgba(40,30,15,.05), 0 8px 30px rgba(40,30,15,.06);
+  --shadow-lg:0 10px 50px rgba(40,30,15,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:18px}
+body{
+  margin:0; color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 85% -5%, #FFF8E9 0%, rgba(255,248,233,0) 60%),
+    radial-gradient(900px 500px at -10% 8%, #F3EAD7 0%, rgba(243,234,215,0) 55%),
+    var(--paper);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+.wrap{max-width:1060px; margin:0 auto; padding:0 clamp(16px,4vw,40px) 140px}
+
+/* hero */
+.hero{padding:54px 0 14px; border-bottom:1px solid var(--line); margin-bottom:8px}
+.eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--sup); margin:0 0 12px}
+h1{font-family:"Fraunces"; font-weight:600; font-size:clamp(30px,5.4vw,52px); line-height:1.04;
+  letter-spacing:-.01em; margin:0 0 .3em}
+.hero .sub{color:var(--ink-soft); font-size:18.5px; max-width:75ch; margin:0}
+.hero .sub b{color:var(--ink)}
+
+/* type */
+h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(23px,3.4vw,32px); line-height:1.1;
+  letter-spacing:-.005em; margin:64px 0 4px}
+h2 .no{color:var(--line-strong); font-variant-numeric:tabular-nums; margin-right:.4em}
+h3{font-family:"Fraunces"; font-weight:600; font-size:20px; margin:30px 0 6px}
+.lede{color:var(--ink-soft); font-size:16px; font-style:italic; margin:0 0 18px; max-width:80ch}
+p{margin:0 0 1.05em}
+strong,b{color:var(--ink); font-weight:600}
+a.inlink{color:var(--sup); text-decoration:none; border-bottom:1px solid var(--sup-soft)}
+a.inlink:hover{border-bottom-color:var(--sup)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--scan-soft) 55%); padding:0 1px}
+.muted{color:var(--ink-soft)}
+ul.clean{margin:.4em 0 1.1em; padding-left:1.25em}
+ul.clean li{margin:.34em 0}
+
+/* color chips for the three objects */
+.chip{display:inline-flex; align-items:center; gap:6px; font-family:"Fraunces"; font-weight:600;
+  font-size:13px; padding:1px 9px 1px 7px; border-radius:20px; border:1px solid var(--line-strong);
+  background:var(--card); white-space:nowrap; vertical-align:baseline}
+.chip .sw{width:10px; height:10px; border-radius:3px}
+.chip.evt{color:var(--evt)} .chip.evt .sw{background:var(--evt)}
+.chip.sup{color:var(--sup)} .chip.sup .sw{background:var(--sup)}
+.chip.inf{color:var(--inf)} .chip.inf .sw{background:var(--inf)}
+.chip.scan{color:#9a6a14} .chip.scan .sw{background:var(--scan)}
+
+/* cards */
+.card{border:1px solid var(--line); border-radius:14px; background:var(--card);
+  padding:18px 20px; margin:16px 0; box-shadow:var(--shadow); position:relative; overflow:hidden}
+.card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--line-strong)}
+.card.idea::before{background:var(--ink)}
+.card.live::before{background:var(--scan)}
+.card.d3::before{background:var(--evt)}
+.card-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600;
+  font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin:0 0 10px; color:var(--ink-soft)}
+.card.idea .card-label{color:var(--ink)}
+.card.live .card-label{color:#9a6a14}
+.card.d3 .card-label{color:var(--evt)}
+.card-label .ic{font-style:normal; font-size:14px}
+
+/* mental-model two-line box */
+.model{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0}
+@media(max-width:720px){ .model{grid-template-columns:1fr} }
+.model .m{border:1px solid var(--line-strong); border-radius:12px; padding:14px 16px; background:var(--card)}
+.model .m.s{border-color:var(--sup); background:linear-gradient(180deg,var(--sup-soft),var(--card) 70%)}
+.model .m.i{border-color:var(--inf); background:linear-gradient(180deg,var(--inf-soft),var(--card) 70%)}
+.model .m h4{font-family:"Fraunces"; margin:0 0 6px; font-size:16px}
+.model .m.s h4{color:var(--sup)} .model .m.i h4{color:var(--inf)}
+.model .m .q{font-size:14.5px; color:var(--ink-soft)}
+.model .m .tag{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.04em;
+  display:inline-block; margin-top:8px; padding:2px 8px; border-radius:6px; background:var(--paper-2); color:var(--ink-soft)}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:6px 0 4px}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none;
+  padding:7px 12px; cursor:pointer; color:var(--ink-soft); border-right:1px solid var(--line)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--evt); color:#fff}
+.slider-row{display:flex; align-items:center; gap:12px; margin:8px 0 2px}
+.slider-row label{font-family:"Fraunces"; font-size:13px; color:var(--ink-soft); white-space:nowrap}
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; max-width:520px; height:5px;
+  border-radius:4px; background:var(--line-strong); outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:18px; height:18px;
+  border-radius:50%; background:var(--card); border:3px solid var(--scan); cursor:pointer; box-shadow:var(--shadow)}
+input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; background:var(--card);
+  border:3px solid var(--scan); cursor:pointer}
+
+/* plot containers */
+.plotwrap{margin:10px 0 2px}
+.plot{width:100%; display:block}
+.readout{font-family:"Fraunces"; font-size:14px; color:var(--ink-soft); text-align:center; margin:4px 0 6px}
+.cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.cap b{color:var(--ink)}
+
+/* verdict card */
+.verdict{display:grid; grid-template-columns:auto 1fr 1fr; gap:0; border:1px solid var(--line-strong);
+  border-radius:12px; overflow:hidden; margin:10px 0; font-size:14.5px}
+.verdict .vc{padding:12px 14px; border-right:1px solid var(--line)}
+.verdict .vc:last-child{border-right:none}
+.verdict .vh{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-faint); margin-bottom:5px}
+.verdict .big{font-family:"Fraunces"; font-weight:600; font-size:17px}
+.verdict .omega{background:var(--scan-soft)}
+.verdict .omega .big{color:#9a6a14}
+.verdict .vsup .big.yes{color:var(--sup)} .verdict .vinf .big.yes{color:var(--inf)}
+.verdict .big.no{color:var(--ink-faint)}
+.verdict .sm{font-size:12.5px; color:var(--ink-soft); margin-top:3px}
+
+/* fate legend */
+.fates{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0}
+.fate{border:1px solid var(--line-strong); border-radius:10px; padding:8px 12px; font-size:13.5px;
+  background:var(--card); flex:1 1 200px; min-width:180px}
+.fate b{font-family:"Fraunces"}
+.fate.f1{border-left:4px solid var(--inf)} .fate.f1 b{color:var(--inf)}
+.fate.f2{border-left:4px solid var(--sup)} .fate.f2 b{color:var(--sup)}
+.fate.f3{border-left:4px solid var(--ink-faint)} .fate.f3 b{color:var(--ink-faint)}
+
+/* critique box */
+.crit{border:1px solid #D9B3A8; background:linear-gradient(180deg,#FBEFEA,#FFFDF8 60%);
+  border-radius:12px; padding:16px 18px; margin:18px 0; box-shadow:var(--shadow)}
+.crit .who{font-family:"Fraunces"; font-weight:600; color:var(--sup); display:flex; align-items:center;
+  gap:8px; margin:0 0 10px; font-size:14.5px}
+.crit p{font-size:15px; margin:0 0 .7em}
+.crit p:last-child{margin-bottom:0}
+
+/* table */
+table.tab{width:100%; border-collapse:collapse; font-size:14px; margin:12px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:8px 10px; text-align:center}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+table.tab td.s{color:var(--sup); font-weight:600}
+table.tab td.i{color:var(--inf); font-weight:600}
+table.tab td.x{color:var(--ink-faint)}
+
+.foot{margin-top:80px; padding-top:22px; border-top:1px solid var(--line); color:var(--ink-faint);
+  font-size:13px; font-family:"Fraunces"}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">第一节 · §1.2 补充 · 逐点重做</p>
+    <h1 class="cjk">limsup 与 liminf：<br>盯住<span style="color:var(--scan)">一个点</span>，数它出现几次</h1>
+    <p class="sub cjk">你卡住的那张图，问题一半在概念、<b>一半在原文档的配色</b>。这份重做只干一件事：把抽象的 $\bigcap\bigcup$／$\bigcup\bigcap$ 翻译成一句大白话——<b>挑一个样本点 $\omega$，去数它在多少个事件 $A_n$ 里露过面</b>。数清楚了，limsup 和 liminf 就是两条筛选规则而已。下面每张图都让你<b>亲手拖一个点</b>去验证。</p>
+  </div>
+
+
+  <h2 class="cjk"><span class="no">0</span>先把三样东西的颜色钉死</h2>
+  <p class="lede cjk">读图前，先认清楚画面上有哪三类对象。原文档最大的坑就是把前两类用了几乎一样的颜色。</p>
+
+  <p class="cjk">
+    <span class="chip evt"><span class="sw"></span>事件行 Aₙ</span>　
+    <span class="chip sup"><span class="sw"></span>limsup（无限次发生）</span>　
+    <span class="chip inf"><span class="sw"></span>liminf（最终一直发生）</span>　
+    <span class="chip scan"><span class="sw"></span>你选的那个点 ω</span>
+  </p>
+
+  <ul class="clean cjk">
+    <li><span class="chip evt"><span class="sw"></span>事件行</span>：横轴是样本空间 $\Omega=[0,1]$，每一行对应一个事件 $A_n$。某一段被涂成蓝灰色，意思是<b>"这一段里的样本点 $\omega$ 属于这个 $A_n$"</b>。一行就是一个集合。自下而上 $n=1,2,3,\dots$。</li>
+    <li><span class="chip sup"><span class="sw"></span>limsup</span> 与 <span class="chip inf"><span class="sw"></span>liminf</span>：是<b>对整条序列做完运算后得到的两个结论集合</b>，画在顶部两条独立的"总结带"里。带里被涂色的部分＝属于该集合，留白＝不属于。它们和事件行是<b>不同层级</b>的东西——一个是"原料"，一个是"成品"。</li>
+  </ul>
+
+  <h2 class="cjk"><span class="no">1</span>把定义翻译成人话</h2>
+  <p class="lede cjk">两个公式长得吓人，但它们各自只是在问关于"<span style="color:var(--scan)">单个点</span>"的一个 yes/no 问题。</p>
+
+  <p class="cjk">课本写的是：</p>
+  <div class="card form" style="--c:var(--line-strong)">
+    <p class="cjk" style="margin:0 0 .5em">$\displaystyle \limsup_{n}A_n=\bigcap_{n=1}^{\infty}\bigcup_{k\ge n}A_k\qquad\text{（先并，再交）}$</p>
+    <p class="cjk" style="margin:0">$\displaystyle \liminf_{n}A_n=\bigcup_{n=1}^{\infty}\bigcap_{k\ge n}A_k\qquad\text{（先交，再并）}$</p>
+  </div>
+  <p class="cjk">别盯着 $\bigcap\bigcup$ 发呆。换个问法：<b>固定一个样本点 $\omega$</b>，把它扔进序列里走一遍，只问两件事——</p>
+
+  <div class="model">
+    <div class="m s">
+      <h4 class="cjk">ω ∈ limsup ？</h4>
+      <p class="q cjk">问：$\omega$ 被<b>无穷多个</b> $A_n$ 包含吗？<br>（出席次数是不是无限？）</p>
+      <p class="q cjk" style="margin-top:8px">只要它<b>出席无穷多次</b>就算——中间缺席多少次都无所谓。哪怕越来越稀疏，只要永远停不下来。</p>
+      <span class="tag cjk">无限次发生 · infinitely often (i.o.)</span>
+    </div>
+    <div class="m i">
+      <h4 class="cjk">ω ∈ liminf ？</h4>
+      <p class="q cjk">问：是否<b>存在某个 $N$</b>，使得 $n\ge N$ 之后<b>每一个</b> $A_n$ 都包含 $\omega$？<br>（是不是最终一直在？）</p>
+      <p class="q cjk" style="margin-top:8px">出席可以<b>来得晚</b>，但一旦来了就<b>再也不许走</b>。只能有限次缺席。</p>
+      <span class="tag cjk">最终一直发生 · eventually always</span>
+    </div>
+  </div>
+
+  <p class="cjk">就这么两条筛选规则。对横轴上<b>每一个</b> $\omega$ 分别问这两个问题，把"答 yes 的点"收集起来，就分别得到 limsup 和 liminf 这两个集合。公式里的 $\bigcup_{k\ge n}A_k$ 不过是"从第 $n$ 行往后，谁出席过就算上"——出席的并集；外面再套 $\bigcap_n$ 是"对所有起点 $n$ 都成立"，逼出"无论从多晚开始数，后面都还有它" ＝ 无限次。liminf 的 $\bigcap_{k\ge n}$ 是"从第 $n$ 行往后<b>全勤</b>"，外面 $\bigcup_n$ 是"<b>存在</b>某个这样的起点" ＝ 最终全勤。</p>
+
+  <div class="card idea">
+    <div class="card-label cjk"><span class="ic">◆</span>一句话记住</div>
+    <p class="cjk" style="margin:0"><b style="color:var(--sup)">limsup＝无限次</b>：缺席随便，出席无穷次就行。<b style="color:var(--inf)">liminf＝最终一直</b>：迟到可以，溜走不行。</p>
+    <p class="cjk" style="margin:.6em 0 0">"最终一直在"的点，当然"无限次在"；反过来不一定。所以永远有 <b>liminf ⊆ limsup</b>。两者<b>相等</b>时，才说集合极限 $\lim_n A_n$ 存在。它们中间的<b>差集 limsup∖liminf</b>，就是那些<b style="color:var(--scan)">反复横跳</b>的点：来了又走、走了又来，无穷次。</p>
+  </div>
+
+  <h2 class="cjk"><span class="no">2</span>四种序列，逐点的命运</h2>
+  <p class="lede cjk">原文档那四个按钮，本质是在演示"点的命运"有几种可能。我把每种序列里有代表性的点拎出来，套上面两条规则走一遍。</p>
+
+  <h3 class="cjk">① 振荡：奇行点左半、偶行点右半</h3>
+  <p class="cjk">设奇数行 $A_n=[0,\,0.45]$，偶数行 $A_n=[0.55,\,1]$。这正是你看到的"<b>左、右、左、右</b>交错"的来源——<u>那是事件行 $A_n$ 在奇偶之间横跳，不是 liminf</u>（详见最后的批判便签）。挑三个点看：</p>
+  <ul class="clean cjk">
+    <li><b>$\omega=0.2$（左半）</b>：只在<b>奇数行</b>出席 → 奇数行有无穷多个 → <span style="color:var(--sup)">无限次，进 limsup</span>；但每个偶数行都缺席（无穷多次缺席）→ <span style="color:var(--inf)">做不到"最终一直"，不进 liminf</span>。</li>
+    <li><b>$\omega=0.8$（右半）</b>：对称地，只在偶数行出席 → 同样<b>进 limsup、不进 liminf</b>。</li>
+    <li><b>$\omega=0.5$（正中间）</b>：奇行只到 $0.45$、偶行从 $0.55$ 起，<b>没有任何一行覆盖它</b> → 出席 0 次 → <b>两个都不进</b>。这就是为什么 limsup 那条带<b>中间是空的</b>——$(0.45,0.55)$ 这段是谁都没碰过的死区。</li>
+  </ul>
+  <p class="cjk">结论：$\text{limsup}=[0,0.45]\cup[0.55,1]$（两段，中间空），$\text{liminf}=\varnothing$（全空，所以你"看不到"绿色）。两者天差地别 → <b>极限不存在</b>。</p>
+
+  <h3 class="cjk">② 递增 →∪　③ 递减 →∩</h3>
+  <p class="cjk">单调序列是最省心的特例，因为<b>点的命运不会反复</b>。递增 $A_1\subseteq A_2\subseteq\cdots$：一个点一旦在某行 $A_N$ 里出现，之后<b>每一行都还在</b>（集合只增不减）→ "无限次"和"最终一直"<b>自动等价</b> → limsup＝liminf＝$\bigcup_n A_n$。递减 $A_1\supseteq A_2\supseteq\cdots$ 对称：一旦掉出去就再也回不来 → 极限＝$\bigcap_n A_n$。<b>两条结论带完全重合，极限存在。</b>这就是它俩"无聊"的原因——没有横跳的点，limsup 和 liminf 没有分歧。</p>
+
+  <h3 class="cjk">④ 持续基底 ＋ 偶发块（你最卡的那个）</h3>
+  <p class="cjk">这张图难，是因为它把<b>三种命运的点塞进了同一画面</b>。设每一行都含基底 $[0,0.5]$，而<b>仅偶数行</b>额外含一个块 $[0.70,0.82]$。三类居民：</p>
+  <div class="fates">
+    <div class="fate f1 cjk"><b>永久居民</b>　$\omega\in[0,0.5]$<br>每一行都出席 → 既无限次、又最终一直 → <b>同时进 liminf 和 limsup</b>。</div>
+    <div class="fate f2 cjk"><b>横跳访客</b>　$\omega\in[0.70,0.82]$<br>只在偶数行出席 → 无穷多次（进 limsup），但奇数行全缺席 → 进不了 liminf。<b>这就是 limsup 比 liminf 多出来的那块。</b></div>
+    <div class="fate f3 cjk"><b>过客 / 永不来</b>　$\omega\in(0.5,0.70)\cup(0.82,1)$<br>从不被任何行覆盖 → 出席 0 次 → <b>两个都不进</b>。</div>
+  </div>
+  <p class="cjk">于是 $\text{liminf}=[0,0.5]$（只有永久居民），$\text{limsup}=[0,0.5]\cup[0.70,0.82]$（永久居民＋横跳访客）。<b>差集恰好是 $[0.70,0.82]$ 这群横跳访客。</b>它把"无限次 ≠ 最终一直"演示得最干净：基底告诉你 liminf 长什么样，偶发块告诉你 limsup 多出来的是什么，死区告诉你"出席 0 次"被两边同时拒之门外。</p>
+
+  <table class="tab cjk">
+    <tr><th>序列</th><th>代表点</th><th>它的出席规律</th><th>∈ limsup?</th><th>∈ liminf?</th></tr>
+    <tr><td class="lbl" rowspan="3">① 振荡</td><td>0.2</td><td>仅奇数行</td><td class="s">是（无限次）</td><td class="x">否</td></tr>
+    <tr><td>0.8</td><td>仅偶数行</td><td class="s">是（无限次）</td><td class="x">否</td></tr>
+    <tr><td>0.5</td><td>从不出席</td><td class="x">否</td><td class="x">否</td></tr>
+    <tr><td class="lbl">② 递增</td><td>0.5</td><td>从某行起每行都在</td><td class="s">是</td><td class="i">是</td></tr>
+    <tr><td class="lbl">③ 递减</td><td>0.3</td><td>每行都在</td><td class="s">是</td><td class="i">是</td></tr>
+    <tr><td class="lbl" rowspan="3">④ 基底+偶发</td><td>0.3 基底</td><td>每行都在</td><td class="s">是</td><td class="i">是</td></tr>
+    <tr><td>0.76 偶发</td><td>仅偶数行</td><td class="s">是（无限次）</td><td class="x">否</td></tr>
+    <tr><td>0.6 死区</td><td>从不出席</td><td class="x">否</td><td class="x">否</td></tr>
+  </table>
+  <p class="cap cjk">看竖着的两列：<b>limsup 列</b>只要"出席无穷多次"就打勾，<b>liminf 列</b>必须"最终一直在"才打勾。差别全在<b style="color:var(--scan)">横跳访客</b>那几行——他俩是 limsup 收、liminf 不收。下面用交互亲手验证这张表的每一行。</p>
+
+  <h2 class="cjk"><span class="no">3</span>交互一 · 拖一个点，亲手数它出席几次</h2>
+  <p class="lede cjk">这是治你那张图的主药。横轴 $\omega\in[0,1]$，自下而上 $n=1\dots 24$ 是事件行。拖<span style="color:var(--scan)">琥珀色竖线</span>选一个 $\omega$：包含它的行会被<b>点亮成实色</b>，不含的行<b>变暗</b>。右侧判定卡实时回答两个问题。</p>
+
+  <div class="card live">
+    <div class="card-label cjk"><span class="ic">▦</span>交互 · 单点扫描</div>
+    <div class="controls">
+      <div class="seg" id="scanSeg">
+        <button data-k="osc" class="on">① 振荡</button>
+        <button data-k="grow">② 递增</button>
+        <button data-k="shrink">③ 递减</button>
+        <button data-k="noise">④ 基底+偶发</button>
+      </div>
+    </div>
+    <div class="slider-row">
+      <label class="cjk">选点 ω</label>
+      <input type="range" id="scanOmega" min="0" max="1000" value="200">
+      <span class="readout" id="scanOmegaVal" style="margin:0; min-width:70px; text-align:left">ω = 0.200</span>
+    </div>
+    <div class="plotwrap"><div id="scanPlot" class="plot"></div></div>
+    <div id="scanVerdict"></div>
+    <p class="cap cjk" id="scanCap"></p>
+  </div>
+
+  <div class="card idea">
+    <div class="card-label cjk"><span class="ic">◆</span>怎么读这张图（三步）</div>
+    <ul class="clean cjk" style="margin:0">
+      <li>看<b>琥珀竖线穿过的亮行有几条</b>，并想象 $n$ 一直涨下去——这个数会停下来（有限）还是停不下来（无限）？停不下来 → <b style="color:var(--sup)">∈ limsup</b>。</li>
+      <li>看<b>从某一行往上是不是全亮、再无暗行</b>——若有一个"从此全勤"的起点 → <b style="color:var(--inf)">∈ liminf</b>。只要往上还夹着暗行，就不算。</li>
+      <li>把竖线推到顶部两条总结带：它在 limsup 带是涂红还是留白？在 liminf 带是涂绿还是留白？应当和上面两步的判断<b>完全一致</b>。</li>
+    </ul>
+  </div>
+
+  <h2 class="cjk"><span class="no">4</span>交互二 · 把"出席次数"画成增长曲线</h2>
+  <p class="lede cjk">上一张图要你"想象 $n$ 涨下去"，这张直接画出来。纵轴是<b>前 $N$ 行里 $\omega$ 的累计出席次数</b>，横轴是 $N$。同一序列里挑几个代表点，看它们的曲线形状——形状本身就把命运写明白了。</p>
+
+  <div class="card live">
+    <div class="card-label cjk"><span class="ic">▦</span>交互 · 累计出席计数</div>
+    <div class="controls">
+      <div class="seg" id="countSeg">
+        <button data-k="osc">① 振荡</button>
+        <button data-k="grow">② 递增</button>
+        <button data-k="shrink">③ 递减</button>
+        <button data-k="noise" class="on">④ 基底+偶发</button>
+      </div>
+    </div>
+    <div class="plotwrap"><div id="countPlot" class="plot"></div></div>
+    <p class="cap cjk" id="countCap"></p>
+  </div>
+
+  <div class="card idea">
+    <div class="card-label cjk"><span class="ic">◆</span>三种形状 = 三种命运</div>
+    <div class="fates">
+      <div class="fate f1 cjk"><b>满速直线（斜率 1）</b><br>每行都 +1，无界增长。既无限次又最终一直 → <b>liminf ∩ limsup</b>。</div>
+      <div class="fate f2 cjk"><b>半速阶梯（斜率 ½）</b><br>隔行 +1，仍然无界、但永远夹着平台。无限次却非最终一直 → <b>只进 limsup</b>。</div>
+      <div class="fate f3 cjk"><b>封顶平台（最终水平）</b><br>涨到某处不再动，出席总数有限 → <b>两个都不进</b>。</div>
+    </div>
+    <p class="cjk" style="margin:.4em 0 0; font-size:14.5px"><b>判据极简：</b>曲线<b>冲向无穷</b> → ∈ limsup；曲线最终<b>满斜率（每行必 +1）</b> → ∈ liminf；曲线<b>封顶</b> → 都不是。注意半速阶梯虽然越走越"稀"（密度趋于 ½ 甚至更小），但只要不封顶，就仍是<b style="color:var(--sup)">无限次</b>——这正是最反直觉、也最该记住的一点。</p>
+  </div>
+
+  <h2 class="cjk"><span class="no">5</span>3D · 尾并集 Bₙ 逐层收缩，逼出 limsup</h2>
+  <p class="lede cjk">坦白说，limsup／liminf 本质是 $(\omega,n)$ 的二维事，硬上 3D 多半是装饰。这里上 3D 只为讲清一件二维平铺看不清的事：公式 $\limsup_n A_n=\bigcap_{n}\big(\bigcup_{k\ge n}A_k\big)$ 是<b>两层嵌套</b>——先对每个起点 $n$ 把"第 $n$ 行往后所有事件"<b>并</b>成 $B_n=\bigcup_{k\ge n}A_k$，再把这些 $B_n$ 全<b>交</b>起来。关键事实：<b>$B_n$ 随 $n$ 增大单调收缩</b>（起点越靠后，能并进来的越少），它的极限就是 limsup。</p>
+
+  <div class="card d3">
+    <div class="card-label cjk"><span class="ic">◳</span>3D · 尾并集坍缩（专用序列）</div>
+    <p class="cjk" style="font-size:14.5px; margin:0 0 6px">前面四种序列是用来<b>认规则</b>的；这第五种是用来<b>看机制</b>的。它含三种块：<b style="color:var(--inf)">基底 $[0,0.3]$</b>（每行都有）、<b style="color:var(--scan)">横跳块 $[0.6,0.7]$</b>（仅偶数行）、<b style="color:var(--ink-faint)">衰减块 $[0.82,0.95]$</b>（只在前 6 行昙花一现）。</p>
+    <div class="slider-row">
+      <label class="cjk">起点 n（高亮 ≥ n 的楼层，底部投影 Bₙ）</label>
+      <input type="range" id="stackN" min="1" max="12" value="1">
+      <span class="readout" id="stackNVal" style="margin:0; min-width:54px; text-align:left">n = 1</span>
+    </div>
+    <div class="plotwrap"><div id="stackPlot" class="plot"></div></div>
+    <div class="readout cjk" id="stackInfo"></div>
+    <p class="cap cjk">每一层楼板是一个事件 $A_k$（深度越深＝$k$ 越大）。拖滑块抬高起点 $n$：<b>灰掉</b>第 $n$ 层以下、<b>点亮</b>第 $n$ 层及以上，底部那条<b>投影带</b>就是把点亮楼层全<b>并</b>起来的 $B_n$。从 $n=1$ 推到 $n=7$，会看到右边那块<b style="color:var(--ink-faint)">衰减块在第 7 层被甩掉</b>——因为它只出现有限次，没资格留到极限里。$n\ge 7$ 后投影带不再变，<b>稳定在 $\text{limsup}=[0,0.3]\cup[0.6,0.7]$</b>。</p>
+  </div>
+
+  <div class="card idea">
+    <div class="card-label cjk"><span class="ic">◆</span>对偶的一句话</div>
+    <p class="cjk" style="margin:0">liminf 是把上面整个反过来：先求<b>尾交集</b> $C_n=\bigcap_{k\ge n}A_k$（第 $n$ 行往后<b>全勤</b>的点），$C_n$ 随 $n$ <b>单调膨胀</b>，它的极限（并）就是 liminf。所以 <b style="color:var(--sup)">limsup＝交-并（先并后交，从大处收）</b>、<b style="color:var(--inf)">liminf＝并-交（先交后并，从小处涨）</b>。两个方向相向而行，夹出的缝隙就是那些横跳的点。</p>
+  </div>
+
+  <h2 class="cjk"><span class="no">6</span>判定流程图 · 一张图收束</h2>
+  <p class="lede cjk">任取一个 $\omega$，沿箭头走两个判断，就落到三类归属之一。这张图是前面所有交互的"答案钥匙"。</p>
+  <div class="plotwrap">
+  <svg viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;font-family:'Fraunces',serif">
+    <defs>
+      <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#8C857A"/></marker>
+    </defs>
+    <!-- start -->
+    <rect x="355" y="8" width="210" height="44" rx="10" fill="#FFFDF8" stroke="#C8881E" stroke-width="2"/>
+    <text x="460" y="29" text-anchor="middle" font-size="15" font-weight="600" fill="#9a6a14">任取一个样本点 ω</text>
+    <text x="460" y="45" text-anchor="middle" font-size="12" fill="#5A544B">数它在多少个 Aₙ 里出席</text>
+    <line x1="460" y1="52" x2="460" y2="78" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <!-- decision 1 -->
+    <polygon points="460,82 600,140 460,198 320,140" fill="#FFF8E9" stroke="#5B7186" stroke-width="2"/>
+    <text x="460" y="132" text-anchor="middle" font-size="14" font-weight="600" fill="#3a4856">被无穷多个 Aₙ 覆盖？</text>
+    <text x="460" y="152" text-anchor="middle" font-size="12.5" fill="#5A544B">（出席无限次？）</text>
+    <!-- NO branch left -->
+    <line x1="320" y1="140" x2="190" y2="140" stroke="#8C857A" stroke-width="1.6"/>
+    <line x1="190" y1="140" x2="190" y2="168" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="250" y="132" text-anchor="middle" font-size="13" font-weight="600" fill="#8C857A">否</text>
+    <rect x="60" y="170" width="260" height="58" rx="10" fill="#F1EEE8" stroke="#B8AE9C" stroke-width="1.6"/>
+    <text x="190" y="194" text-anchor="middle" font-size="14" font-weight="600" fill="#7a7264">∉ limsup ，∉ liminf</text>
+    <text x="190" y="214" text-anchor="middle" font-size="12.5" fill="#5A544B">出席有限次的过客 / 死区</text>
+    <!-- YES branch down -->
+    <line x1="460" y1="198" x2="460" y2="226" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="478" y="218" font-size="13" font-weight="600" fill="#C0492F">是</text>
+    <rect x="350" y="228" width="220" height="46" rx="10" fill="#F3E0DA" stroke="#C0492F" stroke-width="2"/>
+    <text x="460" y="250" text-anchor="middle" font-size="15" font-weight="600" fill="#C0492F">∈ limsup（无限次发生）</text>
+    <text x="460" y="267" text-anchor="middle" font-size="12" fill="#8a3a28">已锁定上极限，再分下极限</text>
+    <line x1="460" y1="274" x2="460" y2="300" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <!-- decision 2 -->
+    <polygon points="460,304 612,366 460,428 308,366" fill="#FFF8E9" stroke="#5B7186" stroke-width="2"/>
+    <text x="460" y="358" text-anchor="middle" font-size="14" font-weight="600" fill="#3a4856">从某个 N 起，</text>
+    <text x="460" y="376" text-anchor="middle" font-size="14" font-weight="600" fill="#3a4856">之后每个 Aₙ 都覆盖它？</text>
+    <text x="460" y="394" text-anchor="middle" font-size="12.5" fill="#5A544B">（最终全勤？）</text>
+    <!-- dec2 NO left -->
+    <line x1="308" y1="366" x2="232" y2="366" stroke="#8C857A" stroke-width="1.6"/>
+    <line x1="232" y1="366" x2="232" y2="392" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="270" y="358" text-anchor="middle" font-size="13" font-weight="600" fill="#8C857A">否</text>
+    <rect x="92" y="394" width="280" height="58" rx="10" fill="#FBF1DE" stroke="#C8881E" stroke-width="1.8"/>
+    <text x="232" y="418" text-anchor="middle" font-size="14" font-weight="600" fill="#9a6a14">∈ limsup ∖ liminf</text>
+    <text x="232" y="438" text-anchor="middle" font-size="12.5" fill="#5A544B">反复横跳：来了又走，无穷次</text>
+    <!-- dec2 YES right -->
+    <line x1="612" y1="366" x2="688" y2="366" stroke="#8C857A" stroke-width="1.6"/>
+    <line x1="688" y1="366" x2="688" y2="392" stroke="#8C857A" stroke-width="1.6" marker-end="url(#ar)"/>
+    <text x="650" y="358" text-anchor="middle" font-size="13" font-weight="600" fill="#2E7D52">是</text>
+    <rect x="548" y="394" width="290" height="58" rx="10" fill="#DCEBE0" stroke="#2E7D52" stroke-width="1.8"/>
+    <text x="693" y="418" text-anchor="middle" font-size="14" font-weight="600" fill="#2E7D52">∈ liminf ⊆ limsup</text>
+    <text x="693" y="438" text-anchor="middle" font-size="12.5" fill="#3a5a44">核心居民：迟到可以，溜走不行</text>
+  </svg>
+  </div>
+  <p class="cap cjk">两次判断、三个出口。<b>左下</b>是被两边拒收的（出席有限）；<b>右下绿</b>是 liminf（也在 limsup 里）；<b>中下琥珀</b>是只在 limsup 不在 liminf 的横跳点。当某序列里"中下琥珀"和"左下灰"都为空，liminf＝limsup，<b>极限存在</b>。</p>
+
+  <h2 class="cjk"><span class="no">7</span>批判便签 · 原文档到底坑在哪</h2>
+  <p class="lede cjk">你不该为看不懂那张图自责。它的<b>框架是对的</b>，但呈现层有三个实打实的坑，其中一个直接制造了你"绿带交错"的困惑。</p>
+
+  <div class="crit">
+    <p class="who cjk"><span>⚠</span>坑一 · 配色撞车（这是你"绿带"困惑的真正源头）</p>
+    <p class="cjk">原 §1.2 把<b>事件行 $A_n$</b> 涂成青色 <code style="background:#DCEDEB;padding:0 4px;border-radius:3px">#1F6B66</code>，把 <b>liminf 总结带</b>涂成绿色 <code style="background:#DCEBE0;padding:0 4px;border-radius:3px">#3E7C4E</code>。这两个颜色在屏幕上<b>几乎分不出</b>。于是你问"$n=1\to22$ 里绿带为什么交错"——<b>你看的根本不是 liminf，是事件行 $A_n$ 在奇偶之间左右横跳</b>。两个语义完全不同层级的对象（一个是输入的事件、一个是算出的结论）用了近乎同色，这是设计失误，不是你的理解力问题。本重做把事件行改成<b>中性蓝灰</b>，和红/绿正交，三类对象一眼分得开。</p>
+  </div>
+
+  <div class="crit">
+    <p class="who cjk"><span>⚠</span>坑二 · "一条带"误导成"一条线"</p>
+    <p class="cjk">limsup／liminf 被画成顶部<b>一条水平带</b>，很容易被读成"limsup 是一条线 / 一个值"。其实它是横轴 $[0,1]$ 上的一个<b>子集</b>：带里<b>涂色＝属于</b>、<b>留白＝不属于</b>。你说的"limsup 就一条、中间空的"——那"一条"是<b>容器（整条带）</b>，真正的 limsup 是里头涂红的<b>两段</b> $[0,0.45]$ 和 $[0.55,1]$，中间留白是因为 $(0.45,0.55)$ 这段谁都没碰过。看的是同一张图，但"带 vs 带里的色块"必须分清。</p>
+  </div>
+
+  <div class="crit">
+    <p class="who cjk"><span>⚠</span>坑三 · 只给成品，省了唯一关键的过程</p>
+    <p class="cjk">原图是"成品视角"：把算好的 limsup／liminf 直接摆给你，<b>跳过了"对每个点数出席次数"这唯一重要的中间步骤</b>。结果你能看到结论、却没法自己推出结论——因为推导过程被藏起来了。本重做把这个过程提成<b>可拖动的主交互</b>（第 3、4 节）：你亲手选点、亲眼数次数、当场看判定，结论就不再是天上掉下来的。</p>
+  </div>
+
+  <p class="cjk"><b>一句公道话：</b>原文档"四种序列 + 看两带是否重合来判极限存在"的设计思路是标准且正确的，这份重做没有推翻它，只是把<b>配色、层级、和被省略的过程</b>补上。概念本身没毛病——是"怎么把它画出来"出了问题。</p>
+
+<script>
+/* ============ 颜色与序列定义 ============ */
+var EVT='#5B7186', SUP='#C0492F', INF='#2E7D52', SCAN='#C8881E',
+    PAPER='#FBF4E6', PANEL='#FDFAF2', LINE='#D2C2A4', INK='#5A544B', FAINT='#9a948a';
+
+var SEQ = {
+  osc:    { rows:function(n){ return (n%2===1)?[[0,0.45]]:[[0.55,1]]; }, sup:[[0,0.45],[0.55,1]], inf:[] },
+  grow:   { rows:function(n){ return [[0, 0.6-0.6/(n+1)]]; },           sup:[[0,0.6]],            inf:[[0,0.6]] },
+  shrink: { rows:function(n){ return [[0, 0.4+0.55/n]]; },              sup:[[0,0.4]],            inf:[[0,0.4]] },
+  noise:  { rows:function(n){ var r=[[0,0.5]]; if(n%2===0) r.push([0.70,0.82]); return r; },
+            sup:[[0,0.5],[0.70,0.82]], inf:[[0,0.5]] }
+};
+
+function inIvs(ivs,x){ for(var i=0;i<ivs.length;i++){ if(x>=ivs[i][0] && x<=ivs[i][1]) return true; } return false; }
+
+/* 返回出席模式 pat ∈ every / eventually / odd / even / finite / never */
+function classifyPat(mode,x){
+  if(mode==='osc'){ if(x<=0.45) return 'odd'; if(x>=0.55) return 'even'; return 'never'; }
+  if(mode==='grow'){ if(x<0.6) return (x<=0?'every':'eventually'); return 'never'; }
+  if(mode==='shrink'){ if(x<=0.4) return 'every'; return 'finite'; }
+  if(x<=0.5) return 'every'; if(x>=0.70 && x<=0.82) return 'even'; return 'never';
+}
+function fates(pat){
+  var inf = (pat==='every'||pat==='eventually');
+  var sup = inf || (pat==='odd'||pat==='even');
+  return {sup:sup, inf:inf};
+}
+var PAT_TXT = {
+  every:'每一行都出席', eventually:'迟到，但从某行起再没缺席', odd:'只在奇数行出席',
+  even:'只在偶数行出席', finite:'出席有限次后再不出现', never:'从不出席（死区）'
+};
+var PAT_FATE = {  /* 命运配色：绿=进liminf，琥珀=只进limsup，灰=都不进 */
+  every:INF, eventually:INF, odd:SCAN, even:SCAN, finite:FAINT, never:FAINT
+};
+
+/* 通用：区间数组 -> rect 串 */
+function ivRects(ivs, xp, y, h, fill, op){
+  var s=''; for(var i=0;i<ivs.length;i++){ var a=xp(ivs[i][0]), b=xp(ivs[i][1]);
+    s+='<rect x="'+a.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(b-a).toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+fill+'" fill-opacity="'+op+'"/>'; }
+  return s;
+}
+function txt(x,y,s,anchor,size,fill,weight){
+  return '<text x="'+x+'" y="'+y+'" text-anchor="'+(anchor||'start')+'" font-family="Fraunces,serif" font-size="'+(size||12)+'" fill="'+(fill||INK)+'"'+(weight?' font-weight="'+weight+'"':'')+'>'+s+'</text>';
+}
+
+/* ============ 交互一：单点扫描 ============ */
+var SC_W=720, SC_H=476, SC_L=70, SC_RM=18, SC_N=24;
+var SC_AXW = SC_W - SC_RM - SC_L;
+function scXp(w){ return SC_L + w*SC_AXW; }
+var SC_AT=92, SC_AB=448, SC_RG=(SC_AB-SC_AT)/SC_N;          /* 行区 */
+function scYrow(n){ return SC_AT + (SC_N-n)*SC_RG; }        /* n=24在顶, n=1在底 */
+var SC_B1=30, SC_B2=52, SC_BH=16;                           /* limsup / liminf 两总结带 */
+
+var MODE_CAP = {
+  osc:'振荡：奇数行只占左块 [0,0.45]、偶数行只占右块 [0.55,1]，两块各自被无穷多行覆盖，所以 limsup 把两块都收（中间 [0.45,0.55] 谁都不占，留白）；可没有任何点能"从某行起再不缺席"——左块的点每逢偶行就缺席、右块的点每逢奇行就缺席，所以 liminf 全空。',
+  grow:'递增：覆盖区间从左往右一路长大、逼近 [0,0.6)。任何 x&lt;0.6 早晚被覆盖且此后再不退出（最终全勤），x≥0.6 永远在外。于是 limsup＝liminf＝[0,0.6)，两带完全重合 → 极限存在。',
+  shrink:'递减：覆盖区间从大缩到 [0,0.4]。x≤0.4 每行都在（全勤）；0.4&lt;x 只在前有限行出现、之后被甩出（有限次）。limsup＝liminf＝[0,0.4]，两带重合 → 极限存在。',
+  noise:'基底+偶发：基底 [0,0.5] 每行都在（既无限次又全勤，红绿都收）；偶发块 [0.70,0.82] 只在偶数行冒头（无限次、但奇数行总缺席，只进红不进绿）；其余是死区。这就是 limsup 比 liminf 多出一块 [0.70,0.82] 的来历——那块正是"反复横跳"的点。'
+};
+
+function svgScan(mode, x){
+  var S = SEQ[mode];
+  var s = '<svg viewBox="0 0 '+SC_W+' '+SC_H+'" xmlns="http://www.w3.org/2000/svg" class="plot">';
+  /* 顶部 Ω 轴刻度 */
+  s += '<line x1="'+SC_L+'" y1="24" x2="'+(SC_W-SC_RM)+'" y2="24" stroke="'+LINE+'" stroke-width="1"/>';
+  var ticks=[0,0.25,0.5,0.75,1];
+  for(var t=0;t<ticks.length;t++){ var tx=scXp(ticks[t]);
+    s += '<line x1="'+tx.toFixed(1)+'" y1="20" x2="'+tx.toFixed(1)+'" y2="24" stroke="'+LINE+'" stroke-width="1"/>';
+    s += txt(tx, 16, ticks[t].toFixed(2), 'middle', 10.5, FAINT);
+  }
+  s += txt(SC_W-SC_RM+2, 27, 'ω', 'start', 12, INK, '600');
+
+  /* 两条总结带：先铺浅轨，再涂色块 */
+  function band(yTop, ivs, col, lab){
+    s += '<rect x="'+SC_L+'" y="'+yTop+'" width="'+SC_AXW+'" height="'+SC_BH+'" fill="#efe7d4"/>';
+    s += ivRects(ivs, scXp, yTop, SC_BH, col, 0.85);
+    s += '<rect x="'+SC_L+'" y="'+yTop+'" width="'+SC_AXW+'" height="'+SC_BH+'" fill="none" stroke="'+LINE+'" stroke-width="1"/>';
+    s += txt(SC_L-6, yTop+SC_BH-3.5, lab, 'end', 11, col, '600');
+  }
+  band(SC_B1, S.sup, SUP, 'limsup');
+  band(SC_B2, S.inf, INF, 'liminf');
+  /* 两带空集提示 */
+  if(S.inf.length===0) s += txt(scXp(0.5), SC_B2+SC_BH-4, '∅（全空：没有点能从此全勤）', 'middle', 10.5, FAINT);
+
+  /* 分隔 + 行区纵向说明 */
+  s += '<line x1="'+SC_L+'" y1="78" x2="'+(SC_W-SC_RM)+'" y2="78" stroke="'+LINE+'" stroke-width="1" stroke-dasharray="3 3"/>';
+  s += txt(SC_L-6, scYrow(1)+3, 'n=1', 'end', 10, FAINT);
+  s += txt(SC_L-6, scYrow(SC_N)+3, 'n='+SC_N, 'end', 10, FAINT);
+  s += '<text x="18" y="'+((SC_AT+SC_AB)/2)+'" text-anchor="middle" font-family="Fraunces" font-size="11" fill="'+FAINT+'" transform="rotate(-90 18 '+((SC_AT+SC_AB)/2)+')">事件行 Aₙ（↑ n 增大）</text>';
+
+  /* 每一行事件 */
+  var barH = SC_RG*0.62, c24=0;
+  for(var n=1;n<=SC_N;n++){
+    var ivs=S.rows(n), y=scYrow(n)-barH/2, lit=inIvs(ivs,x);
+    if(lit) c24++;
+    s += ivRects(ivs, scXp, y, barH, EVT, lit?1:0.15);
+    if(lit){ for(var i=0;i<ivs.length;i++){ var a=scXp(ivs[i][0]); 
+      s += '<rect x="'+a.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(scXp(ivs[i][1])-a).toFixed(1)+'" height="'+barH.toFixed(1)+'" fill="none" stroke="#3a4a5c" stroke-width="0.6"/>'; } }
+  }
+
+  /* 扫描竖线 + 命中亮点 */
+  var sx=scXp(x);
+  s += '<line x1="'+sx.toFixed(1)+'" y1="26" x2="'+sx.toFixed(1)+'" y2="'+(SC_AB+4)+'" stroke="'+SCAN+'" stroke-width="2"/>';
+  s += '<path d="M'+(sx-5).toFixed(1)+' 26 L'+(sx+5).toFixed(1)+' 26 L'+sx.toFixed(1)+' 33 Z" fill="'+SCAN+'"/>';
+  for(var n2=1;n2<=SC_N;n2++){ if(inIvs(S.rows(n2),x)){ var yc=scYrow(n2);
+    s += '<circle cx="'+sx.toFixed(1)+'" cy="'+yc.toFixed(1)+'" r="2.6" fill="'+SCAN+'"/>'; } }
+  /* 扫描线在两带的命中点（以点分类器为准，与右侧判定卡完全一致，含开/闭端点）*/
+  var vf = fates(classifyPat(mode,x));
+  if(vf.sup) s += '<circle cx="'+sx.toFixed(1)+'" cy="'+(SC_B1+SC_BH/2)+'" r="3" fill="#fff" stroke="'+SUP+'" stroke-width="1.6"/>';
+  if(vf.inf) s += '<circle cx="'+sx.toFixed(1)+'" cy="'+(SC_B2+SC_BH/2)+'" r="3" fill="#fff" stroke="'+INF+'" stroke-width="1.6"/>';
+
+  s += '</svg>';
+  return {svg:s, c24:c24};
+}
+
+function updateScan(){
+  var mode = document.querySelector('#scanSeg button.on').getAttribute('data-k');
+  var raw = +document.getElementById('scanOmega').value, x = raw/1000;
+  document.getElementById('scanOmegaVal').textContent = 'ω = '+x.toFixed(3);
+  var r = svgScan(mode, x);
+  document.getElementById('scanPlot').innerHTML = r.svg;
+
+  var pat = classifyPat(mode,x), f = fates(pat);
+  var supSm, infSm;
+  if(f.sup) supSm = '无穷多行覆盖它（前 '+SC_N+' 行已命中 '+r.c24+' 次），停不下来';
+  else      supSm = (r.c24>0? '只被有限多行覆盖（前 '+SC_N+' 行 '+r.c24+' 次后再不出现）' : '从不被覆盖');
+  if(pat==='every')          infSm = '从第 1 行起每行全勤，无一缺席';
+  else if(pat==='eventually')infSm = '前段可有空缺，但从某行起再不缺席';
+  else                       infSm = '存在无穷多缺席行，凑不出"从此全勤"的起点';
+
+  document.getElementById('scanVerdict').innerHTML =
+    '<div class="verdict">'+
+      '<div class="vc omega"><div class="vh">选中 ω</div><div class="big">'+x.toFixed(3)+'</div><div class="sm">'+PAT_TXT[pat]+'</div></div>'+
+      '<div class="vc vsup"><div class="vh">∈ limsup？（无限次 i.o.）</div><div class="big '+(f.sup?'yes':'no')+'">'+(f.sup?'是':'否')+'</div><div class="sm">'+supSm+'</div></div>'+
+      '<div class="vc vinf"><div class="vh">∈ liminf？（最终全勤）</div><div class="big '+(f.inf?'yes':'no')+'">'+(f.inf?'是':'否')+'</div><div class="sm">'+infSm+'</div></div>'+
+    '</div>';
+  document.getElementById('scanCap').innerHTML = MODE_CAP[mode];
+}
+
+/* ============ 交互二：累计出席计数 ============ */
+var CT_W=720, CT_H=384, CT_L=52, CT_RM=158, CT_TM=22, CT_BM=348, CT_NMAX=24;
+function ctXp(N){ return CT_L + (N/CT_NMAX)*(CT_W-CT_RM-CT_L); }
+var CPTS = {
+  osc:    [ {x:0.20, lab:'ω=0.20 · 奇行'}, {x:0.80, lab:'ω=0.80 · 偶行'}, {x:0.50, lab:'ω=0.50 · 死区'} ],
+  grow:   [ {x:0.00, lab:'ω=0.00 · 全程'}, {x:0.45, lab:'ω=0.45 · 迟到'}, {x:0.65, lab:'ω=0.65 · 在外'} ],
+  shrink: [ {x:0.20, lab:'ω=0.20 · 全勤'}, {x:0.60, lab:'ω=0.60 · 2行'},  {x:0.90, lab:'ω=0.90 · 1行'} ],
+  noise:  [ {x:0.30, lab:'ω=0.30 · 基底'}, {x:0.76, lab:'ω=0.76 · 偶发'}, {x:0.60, lab:'ω=0.60 · 死区'} ]
+};
+var FATE_TAG = { every:'∈ liminf（亦∈limsup）', eventually:'∈ liminf（亦∈limsup）',
+  odd:'只 ∈ limsup', even:'只 ∈ limsup', finite:'都不进', never:'都不进' };
+var CT_CAP = {
+  osc:'两条<b style="color:var(--scan)">琥珀半速线</b>（左块点、右块点各自被无限多行覆盖，却互相缺席）＋ 一条<b style="color:var(--ink-faint)">灰平线</b>（中间死区）。<b>没有绿线</b> → 没有任何点能"最终全勤"，故 liminf＝∅。',
+  grow:'两条<b style="color:var(--inf)">绿线</b>（一条从原点满速，一条迟到后转满速）＋ 一条<b style="color:var(--ink-faint)">灰平线</b>。<b>没有琥珀线</b> → 凡是无限次的点都最终全勤，于是 limsup＝liminf，极限存在。',
+  shrink:'一条<b style="color:var(--inf)">绿满速线</b> ＋ 两条<b style="color:var(--ink-faint)">灰封顶线</b>（分别在第 2、第 1 行后停住）。同样<b>没有琥珀线</b> → limsup＝liminf。',
+  noise:'三色齐全：<b style="color:var(--inf)">绿满速</b>（基底每行 +1）／<b style="color:var(--scan)">琥珀半速</b>（偶发块隔行 +1）／<b style="color:var(--ink-faint)">灰平线</b>（死区）。绿≠琥珀，那条半速线对应的 $[0.70,0.82]$ 正是<b>只进 limsup 的横跳带</b>。'
+};
+
+function svgCount(mode){
+  var pts = CPTS[mode];
+  /* 计算每点累计曲线 + 全局最大计数 */
+  var curves=[], yMax=1;
+  for(var p=0;p<pts.length;p++){
+    var arr=[0], c=0;
+    for(var n=1;n<=CT_NMAX;n++){ if(inIvs(SEQ[mode].rows(n), pts[p].x)) c++; arr.push(c); }
+    var pat=classifyPat(mode, pts[p].x);
+    curves.push({pat:pat, col:PAT_FATE[pat], arr:arr, lab:pts[p].lab});
+    if(c>yMax) yMax=c;
+  }
+  yMax = Math.max(yMax, 6);
+  function ctYp(v){ return CT_BM - (v/yMax)*(CT_BM-CT_TM); }
+
+  var s = '<svg viewBox="0 0 '+CT_W+' '+CT_H+'" xmlns="http://www.w3.org/2000/svg" class="plot">';
+  /* 网格 + 轴 */
+  var yt=[]; var stepY = (yMax<=12)?2:4; for(var v=0;v<=yMax;v+=stepY) yt.push(v);
+  for(var i=0;i<yt.length;i++){ var yy=ctYp(yt[i]);
+    s += '<line x1="'+CT_L+'" y1="'+yy.toFixed(1)+'" x2="'+(CT_W-CT_RM)+'" y2="'+yy.toFixed(1)+'" stroke="'+LINE+'" stroke-width="'+(yt[i]===0?1:0.5)+'" '+(yt[i]===0?'':'stroke-dasharray="2 3"')+'/>';
+    s += txt(CT_L-6, yy+3.5, yt[i], 'end', 10.5, FAINT);
+  }
+  var xt=[0,4,8,12,16,20,24];
+  for(var j=0;j<xt.length;j++){ var xx=ctXp(xt[j]);
+    s += '<line x1="'+xx.toFixed(1)+'" y1="'+CT_TM+'" x2="'+xx.toFixed(1)+'" y2="'+CT_BM+'" stroke="'+LINE+'" stroke-width="0.4" stroke-dasharray="2 3"/>';
+    s += txt(xx, CT_BM+15, xt[j], 'middle', 10.5, FAINT);
+  }
+  s += txt((CT_L+CT_W-CT_RM)/2, CT_H-4, '行数 N（看前 N 行）', 'middle', 11.5, INK);
+  s += '<text x="14" y="'+((CT_TM+CT_BM)/2)+'" text-anchor="middle" font-family="Fraunces" font-size="11.5" fill="'+INK+'" transform="rotate(-90 14 '+((CT_TM+CT_BM)/2)+')">累计出席次数</text>';
+
+  /* 满速参照线（slope=1，淡） */
+  var refTop = Math.min(CT_NMAX, yMax);
+  s += '<line x1="'+ctXp(0)+'" y1="'+ctYp(0)+'" x2="'+ctXp(refTop)+'" y2="'+ctYp(refTop)+'" stroke="'+FAINT+'" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>';
+  s += txt(ctXp(refTop)-2, ctYp(refTop)-4, '满速参照(每行+1)', 'end', 9.5, FAINT);
+
+  /* 曲线 + 端点 */
+  for(var k=0;k<curves.length;k++){ var cv=curves[k], d='';
+    for(var n2=0;n2<=CT_NMAX;n2++){ d += (n2===0?'M':'L')+ctXp(n2).toFixed(1)+' '+ctYp(cv.arr[n2]).toFixed(1)+' '; }
+    s += '<path d="'+d+'" fill="none" stroke="'+cv.col+'" stroke-width="2.4" stroke-linejoin="round"/>';
+    var ex=ctXp(CT_NMAX), ey=ctYp(cv.arr[CT_NMAX]);
+    s += '<circle cx="'+ex.toFixed(1)+'" cy="'+ey.toFixed(1)+'" r="3.4" fill="'+cv.col+'"/>';
+  }
+
+  /* 右侧图例 */
+  var lx=CT_W-CT_RM+14, ly=CT_TM+10;
+  s += txt(lx, ly, '三个代表点', 'start', 12, INK, '600'); ly+=8;
+  for(var m=0;m<curves.length;m++){ ly+=22; var cv2=curves[m];
+    s += '<line x1="'+lx+'" y1="'+ly+'" x2="'+(lx+22)+'" y2="'+ly+'" stroke="'+cv2.col+'" stroke-width="3"/>';
+    s += '<circle cx="'+(lx+24)+'" cy="'+ly+'" r="2.6" fill="'+cv2.col+'"/>';
+    s += txt(lx, ly-7, cv2.lab, 'start', 11, INK);
+    s += txt(lx+32, ly+3.5, FATE_TAG[cv2.pat], 'start', 10, cv2.col, '600');
+  }
+  ly+=26;
+  s += '<line x1="'+lx+'" y1="'+ly+'" x2="'+(CT_W-12)+'" y2="'+ly+'" stroke="'+LINE+'" stroke-width="1"/>'; ly+=16;
+  s += txt(lx, ly, '冲向无穷 → ∈limsup', 'start', 10, SUP); ly+=14;
+  s += txt(lx, ly, '最终满斜率 → ∈liminf', 'start', 10, INF); ly+=14;
+  s += txt(lx, ly, '封顶/水平 → 都不进', 'start', 10, FAINT);
+
+  s += '</svg>';
+  return s;
+}
+
+function updateCount(){
+  var mode = document.querySelector('#countSeg button.on').getAttribute('data-k');
+  document.getElementById('countPlot').innerHTML = svgCount(mode);
+  document.getElementById('countCap').innerHTML = CT_CAP[mode];
+}
+
+/* ============ 3D：尾并集 Bₙ 坍缩（专用序列 A5）============ */
+var ST_W=720, ST_H=474, ST_OX=72, ST_OY=336, ST_PW=300, ST_SKX=14, ST_SKY=19;
+var DECAY='#9a6b52', GRAYBLK='#cdc6b6', GRAYLN='#d8cfbc';
+function A5(k){ var r=[[0,0.30,'base']]; if(k%2===0) r.push([0.60,0.70,'jump']); if(k<=6) r.push([0.82,0.95,'decay']); return r; }
+function colBlk(t){ return t==='base'?INF : (t==='jump'?SCAN : DECAY); }
+function Bn(n){ var ae=false, ad=false; for(var k=n;k<=12;k++){ if(k%2===0) ae=true; if(k<=6) ad=true; }
+  var r=[[0,0.30,'base']]; if(ae) r.push([0.60,0.70,'jump']); if(ad) r.push([0.82,0.95,'decay']); return r; }
+function stSx(w,k){ return ST_OX + (k-1)*ST_SKX + w*ST_PW; }
+function stSy(k){ return ST_OY - (k-1)*ST_SKY; }
+
+function svgStack(nStar){
+  var s = '<svg viewBox="0 0 '+ST_W+' '+ST_H+'" xmlns="http://www.w3.org/2000/svg" class="plot">';
+  var bh=7;
+  /* 远→近绘制 12 层楼板 */
+  for(var k=12;k>=1;k--){
+    var lit = (k>=nStar), x0=stSx(0,k), x1=stSx(1,k), y=stSy(k);
+    /* 楼板边线 */
+    s += '<line x1="'+x0.toFixed(1)+'" y1="'+y.toFixed(1)+'" x2="'+x1.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="'+(lit?'#b9ae97':GRAYLN)+'" stroke-width="1"/>';
+    /* 块 */
+    var ivs=A5(k);
+    for(var i=0;i<ivs.length;i++){ var a=stSx(ivs[i][0],k), b=stSx(ivs[i][1],k);
+      s += '<rect x="'+a.toFixed(1)+'" y="'+(y-bh).toFixed(1)+'" width="'+(b-a).toFixed(1)+'" height="'+bh+'" fill="'+(lit?colBlk(ivs[i][2]):GRAYBLK)+'" fill-opacity="'+(lit?0.96:0.5)+'" stroke="'+(lit?'#0003':'none')+'" stroke-width="0.4"/>'; }
+    /* 起点楼层高亮框 */
+    if(k===nStar) s += '<rect x="'+(x0-4).toFixed(1)+'" y="'+(y-bh-3).toFixed(1)+'" width="'+(ST_PW+8).toFixed(1)+'" height="'+(bh+6)+'" fill="none" stroke="'+SCAN+'" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    /* 楼层号（左端，稀疏） */
+    if(k===1||k===6||k===7||k===12||k===nStar)
+      s += txt(x0-7, y-1, 'k='+k, 'end', 9.5, (k===nStar?SCAN:FAINT), (k===nStar?'600':''));
+  }
+  /* "起点 n" 引线标注 */
+  var ny=stSy(nStar);
+  s += txt(stSx(1,nStar)+8, ny-1, '← 起点 n='+nStar, 'start', 11, SCAN, '600');
+
+  /* 投影带 Bₙ（头朝前，无斜切） */
+  var py=ST_OY+48, pxa=ST_OX, pxb=ST_OX+ST_PW;
+  s += '<line x1="'+pxa+'" y1="'+(py-22)+'" x2="'+pxa+'" y2="'+(py+10)+'" stroke="'+LINE+'" stroke-width="1" stroke-dasharray="2 3"/>';
+  s += '<rect x="'+pxa+'" y="'+(py-13)+'" width="'+ST_PW+'" height="13" fill="#efe7d4"/>';
+  var B=Bn(nStar);
+  for(var j=0;j<B.length;j++){ var ba=pxa+B[j][0]*ST_PW, bb=pxa+B[j][1]*ST_PW;
+    s += '<rect x="'+ba.toFixed(1)+'" y="'+(py-13)+'" width="'+(bb-ba).toFixed(1)+'" height="13" fill="'+colBlk(B[j][2])+'" fill-opacity="0.9"/>'; }
+  s += '<rect x="'+pxa+'" y="'+(py-13)+'" width="'+ST_PW+'" height="13" fill="none" stroke="'+LINE+'" stroke-width="1"/>';
+  s += txt(pxa-7, py-3, 'Bₙ', 'end', 12, INK, '600');
+  /* 投影带刻度 */
+  var pt=[0,0.5,1]; for(var t=0;t<pt.length;t++){ var ptx=pxa+pt[t]*ST_PW;
+    s += '<line x1="'+ptx.toFixed(1)+'" y1="'+py+'" x2="'+ptx.toFixed(1)+'" y2="'+(py+4)+'" stroke="'+LINE+'" stroke-width="1"/>';
+    s += txt(ptx, py+15, pt[t].toFixed(1), 'middle', 10, FAINT); }
+  s += txt(pxa+ST_PW/2, py+30, 'B_n = ⋃_{k≥n} A_k（把所有点亮楼层并起来）', 'middle', 11.5, INK);
+
+  /* 右上图例：三种块 */
+  var lx=ST_W-156, ly=34;
+  s += txt(lx, ly, '三种块', 'start', 12, INK, '600');
+  var leg=[['base','基底 [0,0.3]','每行都有 → 进 liminf'],['jump','横跳 [0.6,0.7]','仅偶行 → 只进 limsup'],['decay','衰减 [0.82,0.95]','仅前 6 行 → 极限丢弃']];
+  for(var m=0;m<leg.length;m++){ ly+=24;
+    s += '<rect x="'+lx+'" y="'+(ly-9)+'" width="16" height="9" fill="'+colBlk(leg[m][0])+'" fill-opacity="0.95"/>';
+    s += txt(lx+22, ly-1, leg[m][1], 'start', 10.5, INK, '600');
+    s += txt(lx, ly+12, leg[m][2], 'start', 9.5, FAINT); ly+=8; }
+  ly+=14; s += '<line x1="'+lx+'" y1="'+ly+'" x2="'+(ST_W-12)+'" y2="'+ly+'" stroke="'+LINE+'" stroke-width="1"/>'; ly+=16;
+  s += txt(lx, ly, 'n 越大，Bₙ 只会变小', 'start', 10.5, INK); ly+=14;
+  s += txt(lx, ly, '极限 = limsup', 'start', 11, SUP, '600'); ly+=14;
+  s += txt(lx, ly, '= [0,0.3] ∪ [0.6,0.7]', 'start', 10.5, SUP);
+
+  s += '</svg>';
+  return s;
+}
+
+function updateStack(){
+  var n = +document.getElementById('stackN').value;
+  document.getElementById('stackNVal').textContent = 'n = '+n;
+  document.getElementById('stackPlot').innerHTML = svgStack(n);
+  var hasDecay = (n<=6);
+  var body = '<b>起点 n = '+n+'：</b>尾并集 B<sub>'+n+'</sub> = '+
+    '<span style="color:'+INF+'">[0,&nbsp;0.3]</span> ∪ <span style="color:'+SCAN+'">[0.6,&nbsp;0.7]</span>'+
+    (hasDecay? ' ∪ <span style="color:'+DECAY+'">[0.82,&nbsp;0.95]</span>' : '');
+  if(hasDecay) body += '　—— 衰减块还在（因为 k='+n+'…6 里仍有"含衰减块"的楼层）。';
+  else body += '　—— <b style="color:'+DECAY+'">衰减块已消失</b>：起点已越过第 6 层，再没有楼层贡献它，它被极限<b>永久丢弃</b>。';
+  if(n>=7) body += ' 此后 Bₙ 不再变化，已锁定 limsup。';
+  document.getElementById('stackInfo').innerHTML = body;
+}
+
+/* ============ 绑定与初始化 ============ */
+function bindSeg(segId, cb){
+  var seg=document.getElementById(segId);
+  seg.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      seg.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+      btn.classList.add('on'); cb();
+    });
+  });
+}
+function renderKatex(){
+  if(window.renderMathInElement) renderMathInElement(document.body, {
+    delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+    throwOnError:false
+  });
+}
+function __init(){
+  bindSeg('scanSeg', updateScan);
+  bindSeg('countSeg', updateCount);
+  document.getElementById('scanOmega').addEventListener('input', updateScan);
+  document.getElementById('stackN').addEventListener('input', updateStack);
+  updateScan(); updateCount(); updateStack();
+  renderKatex();              /* DOMContentLoaded fires after deferred KaTeX, so it is ready here */
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', __init);
+else __init();
+window.addEventListener('load', renderKatex);   /* 兜底：万一首次渲染时 KaTeX 尚未就绪 */
+</script>
+</div>
+</body>
+</html>

@@ -1,0 +1,1683 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第十三节 · Ch7 p23–39：一切都在改写同一个矩阵 MᵀM —— 把一套 OLS 改装成五件武器：最优设计（D/A-最优、推点到 ±1）· 正交⇒独立 · 模型设定误差（遗漏偏差 vs 多选方差）· 岭回归 MᵀM+λI（L2 球约束、LOOCV 捷径）· 广义最小二乘 MᵀW⁻¹M（白化、Gauss-Markov 7.9）· 贝叶斯回归 MᵀM+V⁻¹（后验、截距不缩、标准化、预测 +1/用 z）—— 并揭晓：岭回归 = 正态先验下的贝叶斯）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly（仅用于 2D 的 SVG 轨迹；本页所有 3D 全部由内置 Canvas 引擎手绘透视投影，绝不调用 WebGL） -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F2EFE6;
+  --card:#FFFDF8;
+  --ink:#1B1A1F;
+  --ink-soft:#4C4A55;
+  --ink-faint:#86838F;
+  --line:#E2DECF;
+  --line-strong:#CFC9B6;
+  --accent:#2E3C72;        /* 第十三节主色：藏青 / 靛蓝（制图墨水的颜色）。这一节做的事，是把第十一/十二节那台 OLS 机器拆开，露出核心齿轮 MᵀM，再用五种方式给它"改装"——像工程师在蓝图上反复改一张图纸，所以用一支深靛蓝的绘图墨。 */
+  --accent-soft:#DFE1F0;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(25,22,40,.05), 0 8px 30px rgba(25,22,40,.06);
+  --shadow-lg:0 10px 50px rgba(25,22,40,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #DFE1F0 0%, rgba(223,225,240,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1680px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,64px) 56px; max-width:1230px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.toc a.star-link .num{color:var(--accent)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(15,12,20,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:90ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px; max-width:95ch}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F6F2E9)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* prose bullet list inside mod cards */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#EAECF6; border:1px solid #C2C6E0; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+
+/* plot containers */
+.plot{width:100%; height:380px}
+.plot.tall{height:450px}
+.plot.d3{height:520px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #B7BCDB; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+b.bad{color:var(--rust)} b.ok{color:var(--green)}
+.scrollx{overflow-x:auto}
+.code{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size:13px; background:#1C1B22; color:#E7E2EE;
+  border-radius:10px; padding:13px 15px; overflow-x:auto; line-height:1.55; margin:10px 0}
+.code .c{color:#928BA0} .code .k{color:#9BB4E0} .code .s{color:#9FC08A}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(207,201,182,.16) 27px, rgba(207,201,182,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:940px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.05)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+/* small inline architecture diagram */
+.archwrap{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:10px; box-shadow:var(--shadow); overflow:auto; margin:10px 0}
+.archwrap svg{display:block; width:100%; min-width:560px; height:auto}
+
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(46,60,114,.04))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:90ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-meta{font-size:12.5px; color:var(--ink-faint); margin-top:6px}
+.foot-sub{font-style:italic; color:var(--ink-soft); margin-top:-4px !important}
+.foot-fine{font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+.part-kicker{display:inline-block; font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:4px 11px; border-radius:999px}
+.btnrow{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 4px}
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px; font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+.closing-block{background:linear-gradient(180deg, rgba(46,60,114,.05), rgba(0,0,0,0)); border:1px solid var(--line); border-top:3px solid var(--accent)}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第十三节<small>一个矩阵 MᵀM，五处改写：设计 · 误差 · 岭 · GLS · 贝叶斯 — Ch7 p23–39</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图（六类关系）</a>
+    <a href="#spine"><span class="num">0</span>本节主线：一切都在改写 MᵀM</a>
+    <a class="trap-link" href="#audit"><span class="num">0</span>先给 AI 纪要挑刺 ⚠</a>
+
+    <h4>Ⅰ · 收数据前：把 M 设计好</h4>
+    <a class="sub star-link" href="#t-fisher"><span class="num">1.1</span>(MᵀM)⁻¹ 是"不确定性的形状" ★ 2D</a>
+    <a class="sub star-link" href="#t-design"><span class="num">1.2</span>最优设计：D/A-最优，推点到 ±1 ★ 3D+2D</a>
+    <a class="sub star-link" href="#t-orth"><span class="num">1.3</span>正交 ⇒ 独立（承接 p23）★ 交互</a>
+
+    <h4>Ⅱ · M 的列选错：模型设定误差</h4>
+    <a class="sub star-link" href="#t-omit"><span class="num">2.1</span>遗漏变量偏差，与正交如何救你 ★ 交互</a>
+    <a class="sub trap-link" href="#t-tradeoff"><span class="num">2.2</span>多选 vs 少选：偏差换方差 ⚠</a>
+
+    <h4>Ⅲ · MᵀM 病态：岭回归</h4>
+    <a class="sub star-link" href="#t-ridge"><span class="num">3.1</span>岭回归：MᵀM → MᵀM+λI ★ 3D+2D</a>
+    <a class="sub star-link" href="#t-loocv"><span class="num">3.2</span>选 λ：LOOCV 与定理7.8 捷径 ★ 交互</a>
+
+    <h4>Ⅳ · 误差尺子非 I：广义最小二乘</h4>
+    <a class="sub star-link" href="#t-gls"><span class="num">4.1</span>GLS：度量从 I 换成 W⁻¹ ★ 2D</a>
+    <a class="sub" href="#t-whiten"><span class="num">4.2</span>白化 + Gauss-Markov 7.9（BLUE）</a>
+
+    <h4>Ⅴ · 带着先验：贝叶斯回归</h4>
+    <a class="sub star-link" href="#t-bayes"><span class="num">5.1</span>后验=先验×似然：精度 MᵀM+V⁻¹ ★ 3D+2D</a>
+    <a class="sub star-link" href="#t-equiv"><span class="num">5.2</span>揭晓：岭回归 = 正态先验贝叶斯 ★★</a>
+    <a class="sub trap-link" href="#t-bstd"><span class="num">5.3</span>截距不缩 + 标准化到 [−1,1] ⚠</a>
+    <a class="sub star-link" href="#t-bpred"><span class="num">5.4</span>后验预测：那个 "+1" 与用 z ★ 交互</a>
+
+    <h4>收尾</h4>
+    <a href="#closing"><span class="num">∎</span>一页总图 · 一个矩阵五处改写</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <!-- ============================================================ HERO -->
+  <p class="h-eyebrow">用数据说话 · 直觉式交互讲义 · 第十三节</p>
+  <h1 class="title cjk">一个矩阵，五处改写：<br>把一套 OLS 拆开，露出核心齿轮 MᵀM</h1>
+  <p class="lead cjk">第十一、十二节，我们把 OLS 看穿了：\(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\) 是<b>把 \(Y\) 投影到列空间</b>，它无偏、协方差是 \((M^{\top}M)^{-1}\sigma^2\)、是 BLUE，并且在误差正态时整朵 \(\hat\beta\) 是<b>正态云</b>。这一节（课件 Ch7 <b>p23–39</b>）表面上像一堆互不相干的新名词——<b>最优设计、模型设定误差、岭回归、广义最小二乘、贝叶斯回归</b>——但它们其实是<b>同一件事的五个变体</b>。把每个公式里"要求逆的那个矩阵"挑出来，你会看到一条<b class="kw">脊柱</b>：<br><b class="kw">①</b> 最优设计 = 在收数据前<b>挑 \(M\)</b>，让 \(M^{\top}M\) 尽量"胖"（行列式/迹最优）；<b class="kw">②</b> 模型设定误差 = \(M\) 的<b>列选错</b>时会怎样（漏列⇒偏差、多列⇒方差）；<b class="kw">③</b> 岭回归 = 把 \(M^{\top}M\) <b>垫高</b>成 \(M^{\top}M+\lambda I\)；<b class="kw">④</b> 广义最小二乘 = 把度量从 \(I\) <b>换成 \(W^{-1}\)</b>，于是 \(M^{\top}M\to M^{\top}W^{-1}M\)；<b class="kw">⑤</b> 贝叶斯 = 后验精度 \(M^{\top}M+V^{-1}\)。<br>而最漂亮的一笔——也是 AI 纪要<b>完全漏掉</b>的——是 <b class="kw">③ 与 ⑤ 是同一个东西</b>：当先验取 \(V^{-1}=\lambda I\) 时，贝叶斯后验均值 \((M^{\top}M+\lambda I)^{-1}M^{\top}y\) <b>逐字等于</b>岭估计。岭回归不是一个临时补丁，它就是"<b>给 \(\beta\) 一个以 0 为中心的正态先验</b>"。<br>每个知识点都配齐 <b>直觉 · 公式 · 案例 · 2D · 3D · 交互</b>，并标出彼此的 <b>继承 / 推广 / 互补 / 工具 / 对偶 / 盲点</b>。看到一个新方法，先做一件事：<b>把它的"核心矩阵"找出来，看它在 \(M^{\top}M\) 上动了什么手脚</b>。</p>
+
+  <p class="warn-inline cjk">⚠ 本页所有 3D（设计行列式曲面、岭回归的损失碗、贝叶斯后验钟形…）一律用 <b>2D 画布手绘透视投影</b>，<b>不调用 WebGL、不用 Plotly 3D</b>，任何浏览器都该能拖动旋转。若某张图空白，几乎一定是 KaTeX / Plotly 的 CDN 没加载到（换网络或刷新即可），而非 WebGL 问题。</p>
+
+  <!-- reading guide -->
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>一句话说清"它到底在改 MᵀM 的什么"。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>KaTeX 排版，关键步骤不跳步。</p></div>
+    <div class="gchip case"><div class="ic">▣</div><h5>案例</h5><p>课件原题 + 可算的真实数字。</p></div>
+    <div class="gchip d2"><div class="ic">▤</div><h5>2D 图</h5><p>Plotly 曲线，随滑块实时变。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>Canvas 手绘，可拖动旋转。</p></div>
+    <div class="gchip live"><div class="ic">⊕</div><h5>交互</h5><p>自己拨参数 / 让模拟跑起来。</p></div>
+    <div class="gchip flow"><div class="ic">→</div><h5>推导</h5><p>分步骤，看公式怎么"长出来"。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>容易错、纪要也错了的地方。</p></div>
+  </div>
+
+  <!-- ============================================================ CONCEPT MAP -->
+  <section id="map" class="topic-block">
+    <h3 class="topic cjk">知识全景地图</h3>
+    <p class="topic-en">How this lecture's ideas inherit, generalize, supply conditions, support, and trap each other</p>
+    <p class="cjk muted">点任意节点可跳到对应小节。<b>这张图只有一句脊柱</b>：正中是 OLS 的核心齿轮 \((M^{\top}M)^{-1}M^{\top}Y\)；向四周伸出的<b>五条枝</b>都是对 \(M^{\top}M\) 的不同改写——左边两条是"<b>怎么选 \(M\)</b>"（设计、设定误差），右边三条是"<b>怎么改 \(M^{\top}M\) 本身</b>"（岭、GLS、贝叶斯）。最底下那个 <b>③=⑤</b> 是全节高潮：岭回归与正态先验贝叶斯<b>是同一条公式</b>。</p>
+    <div class="mapwrap"><svg id="conceptmap" viewBox="0 0 980 800" role="img" aria-label="第十三节知识全景地图">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.2" orient="auto">
+          <path d="M0,0 L8,4.2 L0,8.4 Z" fill="#9A8E76"></path>
+        </marker>
+      </defs>
+      <g id="edges" fill="none" stroke-width="1.7"></g><g id="nodes"></g>
+    </svg></div>
+    <div class="legend cjk">
+      <span><i style="border-color:#3E7C4E"></i>推导 / 直接得出</span>
+      <span><i style="border-color:#2E3C72"></i>推广 / 同一套配方改 MᵀM</span>
+      <span><i style="border-color:#574AA6"></i>关键等式 / 被它支撑</span>
+      <span><i style="border-color:#B7892A"></i>前提条件（正交性）</span>
+      <span><i style="border-color:#B0442B"></i>盲点 / 张力</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ SPINE -->
+  <section id="spine" class="topic-block">
+    <h3 class="topic cjk">本节主线：一切都在改写同一个矩阵 MᵀM</h3>
+    <p class="topic-en">Every method in p23–39 is one edit to the precision matrix MᵀM that OLS already gave us</p>
+    <p class="cjk">第十二节最后，我们手里有一句话：\(\hat\beta\sim N_p\big(\beta,(M^{\top}M)^{-1}\sigma^2\big)\)。请把目光<b>钉在那个 \(M^{\top}M\) 上</b>。它是<b>设计携带了多少信息</b>的度量——也叫<b class="kw">精度矩阵</b>（它越大，\((M^{\top}M)^{-1}\) 越小，\(\hat\beta\) 越准）。本节五个听起来毫不相干的话题，<b>全都只是在这一个矩阵上动手脚</b>：</p>
+
+    <div class="scrollx"><table class="tab cjk">
+      <thead><tr><th style="text-align:left">方法</th><th>在 MᵀM 上做了什么</th><th>要求逆的"核心矩阵"</th><th>估计量 / 后验均值</th><th>小节</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">OLS（第十一/十二节）</td><td>基准，原样不动</td><td>\(M^{\top}M\)</td><td>\((M^{\top}M)^{-1}M^{\top}Y\)</td><td><a class="inlink" href="#t-fisher">§1.1</a></td></tr>
+        <tr><td class="lbl">① 最优设计</td><td>收数据<b>前</b>挑 \(M\)，把 \(\det\) 顶大 / 把 \(\operatorname{tr}\) 压小</td><td>\(M^{\top}M\)（可挑选）</td><td>同上，但<b>方差最小</b></td><td><a class="inlink" href="#t-design">§1.2</a></td></tr>
+        <tr><td class="lbl">② 设定误差</td><td>改 \(M\) 的<b>列</b>：漏列 / 多列</td><td>\(M_1^{\top}M_1\)</td><td>\((M_1^{\top}M_1)^{-1}M_1^{\top}Y\)（漏列⇒<b>偏</b>）</td><td><a class="inlink" href="#t-omit">§2.1</a></td></tr>
+        <tr style="background:#EAECF6"><td class="lbl">③ 岭回归</td><td>把 \(M^{\top}M\) <b>垫高</b> \(+\lambda I\)</td><td>\(M^{\top}M+\lambda I\)</td><td>\((M^{\top}M+\lambda I)^{-1}M^{\top}Y\)</td><td><a class="inlink" href="#t-ridge">§3.1</a></td></tr>
+        <tr><td class="lbl">④ 广义最小二乘</td><td>把<b>度量</b>从 \(I\) 换成 \(W^{-1}\)</td><td>\(M^{\top}W^{-1}M\)</td><td>\((M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y\)</td><td><a class="inlink" href="#t-gls">§4.1</a></td></tr>
+        <tr style="background:#EAECF6"><td class="lbl">⑤ 贝叶斯后验</td><td>加<b>先验精度</b> \(+V^{-1}\)</td><td>\(M^{\top}M+V^{-1}\)</td><td>\((M^{\top}M+V^{-1})^{-1}M^{\top}Y\)</td><td><a class="inlink" href="#t-bayes">§5.1</a></td></tr>
+      </tbody>
+    </table></div>
+
+    <p class="cjk muted">两行被高亮（③ 和 ⑤）。把它们的"核心矩阵"摆在一起：\(M^{\top}M+\lambda I\) 与 \(M^{\top}M+V^{-1}\)。<b>令 \(V^{-1}=\lambda I\)，它们一模一样。</b>这不是巧合——这是本节的<b>高潮</b>：<a class="inlink" href="#t-equiv">岭回归 = 给 \(\beta\) 一个以 0 为中心、精度 \(\lambda\) 的正态先验下的贝叶斯</a>。</p>
+
+    <div class="archwrap"><svg viewBox="0 0 980 330" role="img" aria-label="MᵀM 核心齿轮与五处改写示意">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.2" orient="auto">
+          <path d="M0,0 L8,4.2 L0,8.4 Z" fill="#9A8E76"></path>
+        </marker>
+      </defs>
+      <!-- center gear -->
+      <g font-family="Fraunces, Georgia, serif">
+        <circle cx="490" cy="165" r="74" fill="#DFE1F0" stroke="#2E3C72" stroke-width="2.2"></circle>
+        <text x="490" y="150" text-anchor="middle" font-size="22" fill="#23285C" font-weight="700">MᵀM</text>
+        <text x="490" y="174" text-anchor="middle" font-size="11.5" fill="#4C4A55">精度矩阵</text>
+        <text x="490" y="191" text-anchor="middle" font-size="11.5" fill="#4C4A55">(信息的度量)</text>
+      </g>
+      <!-- 5 edit boxes -->
+      <g font-family="Fraunces, Georgia, serif">
+        <rect x="40" y="24" width="210" height="52" rx="10" fill="#FFFDF8" stroke="#2E3C72"></rect>
+        <text x="145" y="45" text-anchor="middle" font-size="13" fill="#23285C" font-weight="600">① 最优设计</text>
+        <text x="145" y="63" text-anchor="middle" font-size="11" fill="#4C4A55">挑 M ⇒ det(MᵀM) 最大</text>
+
+        <rect x="40" y="139" width="210" height="52" rx="10" fill="#FFFDF8" stroke="#B0442B"></rect>
+        <text x="145" y="160" text-anchor="middle" font-size="13" fill="#8a2f1e" font-weight="600">② 设定误差</text>
+        <text x="145" y="178" text-anchor="middle" font-size="11" fill="#4C4A55">改 M 的列：漏 / 多</text>
+
+        <rect x="40" y="254" width="210" height="52" rx="10" fill="#EAECF6" stroke="#2E3C72" stroke-width="1.8"></rect>
+        <text x="145" y="275" text-anchor="middle" font-size="13" fill="#23285C" font-weight="600">③ 岭回归</text>
+        <text x="145" y="293" text-anchor="middle" font-size="11" fill="#4C4A55">MᵀM + λI</text>
+
+        <rect x="730" y="82" width="210" height="52" rx="10" fill="#FFFDF8" stroke="#2E3C72"></rect>
+        <text x="835" y="103" text-anchor="middle" font-size="13" fill="#23285C" font-weight="600">④ 广义最小二乘</text>
+        <text x="835" y="121" text-anchor="middle" font-size="11" fill="#4C4A55">MᵀW⁻¹M（换度量）</text>
+
+        <rect x="730" y="197" width="210" height="52" rx="10" fill="#EAECF6" stroke="#2E3C72" stroke-width="1.8"></rect>
+        <text x="835" y="218" text-anchor="middle" font-size="13" fill="#23285C" font-weight="600">⑤ 贝叶斯后验</text>
+        <text x="835" y="236" text-anchor="middle" font-size="11" fill="#4C4A55">MᵀM + V⁻¹</text>
+      </g>
+      <!-- arrows from gear to each box -->
+      <path d="M420,140 C340,90 300,60 252,52" fill="none" stroke="#9A8E76" stroke-width="1.5" marker-end="url(#ah)"></path>
+      <path d="M416,165 L254,165" fill="none" stroke="#9A8E76" stroke-width="1.5" marker-end="url(#ah)"></path>
+      <path d="M420,190 C340,240 300,270 254,280" fill="none" stroke="#9A8E76" stroke-width="1.5" marker-end="url(#ah)"></path>
+      <path d="M560,150 C640,120 690,110 728,108" fill="none" stroke="#9A8E76" stroke-width="1.5" marker-end="url(#ah)"></path>
+      <path d="M560,185 C640,215 690,222 728,223" fill="none" stroke="#9A8E76" stroke-width="1.5" marker-end="url(#ah)"></path>
+      <!-- equality bridge ③=⑤ -->
+      <path d="M250,280 C470,330 620,300 730,236" fill="none" stroke="#574AA6" stroke-width="2" stroke-dasharray="6 4"></path>
+      <g font-family="Fraunces, serif"><rect x="430" y="296" width="120" height="26" rx="8" fill="#E5E1F2" stroke="#574AA6"></rect>
+        <text x="490" y="313" text-anchor="middle" font-size="12.5" fill="#574AA6" font-weight="700">③ = ⑤（V⁻¹=λI）</text></g>
+    </svg></div>
+
+    <div class="xander cjk"><p class="who">▶ 给 Xander 的直话</p><p>你说"统计底子不好、最怕一堆看不出关联的名词"——这一节正是重灾区：课件把<b>最优设计、岭回归、GLS、贝叶斯</b>排成四个互不相干的板块，AI 纪要更是把它们拆成四张孤立的卡片。但它们<b>不是四个东西</b>，是<b>同一个 \(M^{\top}M\) 的四种改装</b>。我把这条主线提到最前面，不是为了"显得有条理"，而是因为<b>这是它真正的结构</b>：抓住它，你看任何一个新方法都只需问一句"<b>它在 \(M^{\top}M\) 上动了什么</b>"；抓不住，你就得把四套公式分别背一遍，期末遇到"岭回归和贝叶斯有什么关系"这种题就会卡死。下面每一节我都会在开头的关系徽章里，明确标它<b>改的是 \(M^{\top}M\) 的哪一处</b>。</p></div>
+  </section>
+
+  <!-- ============================================================ AUDIT -->
+  <section id="audit" class="topic-block">
+    <h3 class="topic cjk">§0 审计：AI 纪要漏掉 / 讲错的 5 个地方</h3>
+    <p class="topic-en">Five places where the auto-generated mind-map and summary are wrong, overstated, or miss the load-bearing link</p>
+    <p class="cjk">这一节的录音纪要、思维导图、图文纪要全是 AI 自动生成的。它们<b>结构看着齐整</b>，但对底子不牢的人最危险——因为它把<b>本来是一条线的东西，剪成了互不相干的卡片</b>，还顺手讲错了几处。下面五张卡，按"<b>错得越关键越靠前</b>"排；后面每一节我都会回扣对应卡号。</p>
+
+    <div class="crit cjk">
+      <p class="who">⚠ 陷阱卡 ①　最致命：把岭回归和贝叶斯当成两件事</p>
+      <p>思维导图把<b>「岭回归」</b>和<b>「贝叶斯线性回归」</b>画成左右两条毫不相干的大枝，图文纪要也是两张并列的卡片，AI 纪要分在 2.3 和 2.5。<b>这是这一节最大的信息损失。</b>课件 p36–37 白纸黑字推出：正态先验 \(\beta\sim N_p(0,V\sigma^2)\) 下，后验均值是 \((M^{\top}M+V^{-1})^{-1}M^{\top}y\)。把 \(V^{-1}\) 取成 \(\lambda I\)，它<b>逐字</b>就是岭估计 \((M^{\top}M+\lambda I)^{-1}M^{\top}y\)。也就是说：<b>岭回归不是一个工程补丁，它就是「给 \(\beta\) 一个以 0 为中心、精度 \(\lambda\) 的正态先验」下的贝叶斯后验均值（同时也是 MAP）</b>。拆开记，你不仅多背一套公式，还会在"岭回归的 \(\lambda\) 到底代表什么"上永远说不清——答案是：\(\lambda\) 就是你对"系数应该接近 0"这件事<b>有多确信</b>。详见 <a class="inlink" href="#t-equiv">§5.2</a>，全节高潮。</p>
+    </div>
+
+    <div class="crit cjk">
+      <p class="who">⚠ 陷阱卡 ②　第二处漏链：「正交⇒独立」和「遗漏变量偏差」是同一枚硬币</p>
+      <p>纪要把 p23 的<b>「正交 ⇒ 估计独立」</b>当成第十二节的尾巴，把 p28 的<b>「遗漏变量产生偏差」</b>放进"模型设定错误"，两者完全没连。但它们是<b>同一个量在说话</b>：漏掉 \(M_2\) 这组列时，保留系数的偏差是 \(\mathbb{E}[\hat\beta_1]-\beta_1=(M_1^{\top}M_1)^{-1}M_1^{\top}M_2\,\beta_2\)。这个偏差<b>恰好为 0，当且仅当 \(M_1^{\top}M_2=0\)</b>——也就是被漏的列与保留的列<b>正交</b>。所以"正交⇒独立"不是一句孤立趣闻：它正是"<b>什么时候漏变量也不带来偏差</b>"的答案。一个原理，两处用途。详见 <a class="inlink" href="#t-orth">§1.3</a> 与 <a class="inlink" href="#t-omit">§2.1</a>。</p>
+    </div>
+
+    <div class="crit cjk">
+      <p class="who">⚠ 陷阱卡 ③　讲错：GLS「必须用 Cholesky / LLᵀ 分解」</p>
+      <p>思维导图在 GLS 下明确写"<b>Cholesky 分解（LL′ 分解）</b>"。两层问题。<b>其一</b>，课件（p25 / p33 / p35）用的是<b>对称正定平方根</b> \(W^{-1/2}\)（满足 \(W^{-1/2}W^{-1/2}=W^{-1}\) 且自身对称），不是下三角的 Cholesky 因子——两者都能"漂白"误差，但课件选对称根，是为了让证明里的几何对称、特征分解直接可用。<b>其二，也更要紧</b>：不管用 Cholesky 还是对称根，<b>分解只是证明里的脚手架</b>。最终的 GLS 估计量 \((M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y\) <b>只依赖 \(W^{-1}\) 本身，与你怎么分解它毫无关系</b>。把"某种分解"写成 GLS 的<b>定义</b>，是把一个可有可无的计算手段误当成了本质。详见 <a class="inlink" href="#t-whiten">§4.2</a>。</p>
+    </div>
+
+    <div class="crit cjk">
+      <p class="who">⚠ 陷阱卡 ④　被说死的口号：「宁可多选，不可少选」</p>
+      <p>纪要和图文都把"<b>宁可多选不可少选</b>"当成一条干净铁律。<b>这话被讲过头了。</b>课件 p28 真正证明的只有两件<b>不对称</b>的事：(a) 漏掉一个<b>与保留变量相关的</b>真实变量 ⇒ <b>系统性偏差</b>，且这个偏差<b>不随样本量消失</b>；(b) 多放一个无关变量 ⇒ 估计<b>仍无偏，但方差变大</b>，若与已有列共线还会让 \(M^{\top}M\) 接近奇异。所以它<b>不是</b>"多选永远更安全"，而是<b>偏差↔方差的权衡</b>。更讽刺的是：<b>紧接着的下一个话题（岭回归）存在的全部理由，正是来惩罚"多选"造成的方差膨胀</b>。一边喊"宁可多选"，一边马上用岭回归收拾多选的烂摊子——纪要完全没点出这个张力。详见 <a class="inlink" href="#t-tradeoff">§2.2</a>。</p>
+    </div>
+
+    <div class="crit cjk">
+      <p class="who">⚠ 陷阱卡 ⑤　讲错的分布：预测"服从 t 分布或正态"</p>
+      <p>思维导图在"预测分布"下写"<b>服从 t 分布或正态分布</b>"。在这一节的设定里，<b>"t 分布"是错的</b>。课件 p36–39 反复强调一个前提：<b>误差方差 \(\sigma^2\) 已知</b>。\(\sigma^2\) 已知时，后验与后验预测<b>都是正态</b>，预测区间用的是<b>正态分位数 \(z_{1-\alpha/2}\)，不是 \(t\)</b>。\(t\) 只在<b>需要用数据估计 \(\sigma^2\)</b> 时才登场（那是前面频率派的章节，或把 \(\sigma^2\) 也设先验的另一套贝叶斯）。把两种情形混成"t 或正态"，正是没抓住"\(\sigma^2\) 已知"这个关键假设。<b>附带范围警告</b>：纪要在"非恒定方差/相关误差"下塞进 <b>ARCH/GARCH、PCA、协整、因子分析、ANOVA</b> 一大串——这些是课堂<b>发散闲聊，不在 p23–39 里</b>。本节真实工具只有五个：最优设计、遗漏偏差公式、岭回归、GLS、贝叶斯。详见 <a class="inlink" href="#t-bpred">§5.4</a>。</p>
+    </div>
+
+    <p class="note cjk"><b>另：ASR 噪声小词典（看纪要时自行回译）。</b>纪要里这些怪词是语音转文字听岔的：<b>"C 方 / G 方" = \(\sigma^2\)</b>；<b>"缪" = \(\mu\)</b>；<b>"卡法" = \(\chi^2\)</b>；<b>"栏目 / 拉姆达" = \(\lambda\)</b>；<b>"CVSS" = CVSSE（交叉验证残差平方和）</b>；<b>"矩阵的 G" = 行列式 \(\det\)</b>；<b>"姿态分布" = 正态分布</b>；<b>"自然函数" = 似然函数</b>。看见别慌，都是同一个东西。</p>
+  </section>
+
+  <!-- ============================================================ PART I -->
+  <div class="part-head cjk" id="part1">
+    <div class="pk">Ⅰ</div>
+    <h2>收数据前：把 M 设计好</h2>
+    <p>第十二节我们接受了 \(\hat\beta\) 的协方差是 \((M^{\top}M)^{-1}\sigma^2\)——但只是被动接受。这一部分问一个主动的问题：<b>如果"在哪里测量"由我决定（即 \(M\) 的行可以挑）</b>，我该怎么挑，才能让估计最准？答案全藏在 \(M^{\top}M\) 的"胖瘦"里。脊柱第 ① 处改写：<b>不改公式，只挑 \(M\)</b>。</p>
+  </div>
+
+  <section id="t-fisher" class="topic-block">
+    <h3 class="topic cjk">1.1　(MᵀM)⁻¹ 是"不确定性的形状"</h3>
+    <p class="topic-en">The inverse design matrix is literally the shape and size of the uncertainty cloud around your estimate</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 · 第十二节 \(\operatorname{Cov}(\hat\beta)=(M^{\top}M)^{-1}\sigma^2\)</span>
+      <span class="rel general"><span class="dot"></span>是后面五处改写的<b>共同地基</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">别把 \((M^{\top}M)^{-1}\) 当成一坨抽象矩阵。它就是 \(\hat\beta\) 这朵<b>正态云的形状与大小</b>：协方差矩阵 \(=(M^{\top}M)^{-1}\sigma^2\)。\(M^{\top}M\) 越"胖"（行列式越大），它的逆越"瘦"，云越小，估计越准。<b>整节课的所有花样，本质都是在调这朵云的胖瘦。</b></p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p class="cjk">置信区域是一个<b>椭球</b>（\(\sigma^2\) 已知时）：</p>
+      \[\Big\{\beta:\ (\beta-\hat\beta)^{\top}(M^{\top}M)(\beta-\hat\beta)\le \sigma^2\,\chi^2_{p,1-\alpha}\Big\}.\]
+      <p class="cjk">椭球的<b>主轴方向</b>是 \(M^{\top}M\) 的特征向量，轴<b>长</b> \(\propto 1/\sqrt{\text{特征值}}\)。整个椭球的<b>体积</b> \(\propto \det(M^{\top}M)^{-1/2}\)。所以"估计准" = "椭球小" = "\(\det(M^{\top}M)\) 大"。把这三件事画上等号，下一节的"最优设计"就只剩一句话了。</p>
+    </div>
+
+    <div class="mod d2"><div class="mod-label"><span class="ic">▤</span>2D · 拖动看云的形状</div>
+      <p class="cjk">下面是简单线性回归 \(Y=\beta_1+x\,\beta_2+E\)（\(n=16\)）的置信椭圆。拨动"<b>预测点分散度</b>"：当 \(x\) 挤在一起时 \(\det\) 很小、椭圆又大又斜（\(\hat\beta_1,\hat\beta_2\) 强相关、都不准）；把 \(x\) 拉开，\(\det\) 飙升、椭圆缩成小圆点。<b>同样的 16 个点、同样的 \(\sigma^2\)，仅仅换了测量位置，精度天差地别</b>——这正是"设计"的全部意义。</p>
+      <div class="controls">
+        <div class="ctrl"><label>预测点分散度 spread <span class="val" id="fSpreadV">1.00</span></label><input type="range" id="fSpread" min="0.12" max="1" step="0.02" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>\(\det(M^{\top}M)\) = <b id="fDet">—</b></span>
+        <span>椭圆面积 ∝ <b id="fArea">—</b> <span class="rd-note">越小越准</span></span>
+        <span>\(\hat\beta_1,\hat\beta_2\) 相关系数 ≈ <b id="fCorr">—</b></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pFisher"><div class="loading">加载椭圆…</div></div></div>
+    </div>
+  </section>
+
+  <section id="t-design" class="topic-block">
+    <h3 class="topic cjk">1.2　最优设计：把点推到 ±1，且要"摆平"</h3>
+    <p class="topic-en">Optimal design — pick measurement locations to fatten det(MᵀM); the answer is the extremes, kept balanced</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>推广 · 第 ① 处改写：挑 \(M\) 使 \(M^{\top}M\) 最胖</span>
+      <span class="rel inherit"><span class="dot"></span>继承 · 椭球体积 ∝ \(\det^{-1/2}\)（<a class="inlink" href="#t-fisher">§1.1</a>）</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">既然椭球体积 \(\propto\det(M^{\top}M)^{-1/2}\)，"最准的设计"就是<b>把 \(\det(M^{\top}M)\) 顶到最大</b>（叫 <b class="kw">D-最优</b>），或者<b>把 \(\operatorname{tr}\big((M^{\top}M)^{-1}\big)\) 压到最小</b>（叫 <b class="kw">A-最优</b>，关心各系数方差之和）。在区间 \([-1,1]\) 上做实验，结论极其朴素：<b>把测量点尽量推到两个端点 \(\pm1\)（拉开杠杆臂），同时让它们左右"摆平"（\(\sum x\approx0\)）</b>。直觉：要量一条直线的斜率，当然把两只脚踩得越开越稳——但别全踩一边，否则截距没人管。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 为什么是端点</div>
+      <p class="cjk">简单线性回归里 \(M^{\top}M=\left(\begin{smallmatrix}n & \sum x_i\\ \sum x_i & \sum x_i^2\end{smallmatrix}\right)\)，于是</p>
+      \[\det(M^{\top}M)=n\textstyle\sum x_i^2-\big(\sum x_i\big)^2.\]
+      <p class="cjk">固定前 \(n-1\) 个点，只动最后一点 \(x_n\)，把行列式看成 \(x_n\) 的函数 \(\rho(x_n)\)：</p>
+      \[\rho'(x_n)=2(n-1)x_n-2\!\!\sum_{i&lt;n}\!x_i,\qquad \rho''(x_n)=2(n-1)&gt;0.\]
+      <p class="cjk">二阶导恒正 ⇒ \(\rho\) 是<b>开口向上的抛物线（凸函数）</b>。凸函数在闭区间上的<b>最大值必在端点</b>，绝不在内部！所以 \(x_n^\star=\pm1\)：若已有点之和 \(\sum_{i&lt;n}x_i&lt;0\) 就取 \(+1\)，反之取 \(-1\)——这恰好是把总和往 0 拉。<b>纪要把这写成"求导等于零找驻点"是反的</b>：求导等于零给的是抛物线<b>底部（最小值）</b>，我们要的是端点最大值。</p>
+    </div>
+
+    <div class="mod case"><div class="mod-label"><span class="ic">▣</span>案例 · 课件 p27 原题</div>
+      <p class="cjk">课件让你在 \(x_1,\dots,x_{n-1}\in[-1,1]\) 已定的前提下，给最后一点找最优位置。代入上面：答案就是端点，符号由其余点的和决定。推到极致，<b>两点设计</b> \(\{x_1,x_2\}\) 的 \(\det=(x_1-x_2)^2\)，在 \((1,-1)\) 或 \((-1,1)\) 取最大值 \(4\)。这就是"D-最优两点设计 = 两个端点各放一半样本"的来历。</p>
+    </div>
+
+    <div class="mod d3"><div class="mod-label"><span class="ic">◈</span>3D · det = (x₁−x₂)² 曲面（可拖动旋转）</div>
+      <p class="cjk">两点设计的 \(\det(M^{\top}M)=(x_1-x_2)^2\) 是定义在 \([-1,1]^2\) 上的曲面。拖动旋转：它是个"<b>马鞍朝下的山谷</b>"，沿对角线 \(x_1=x_2\)（两点重合）是<b>谷底 0</b>（设计退化、斜率完全不可辨），四个角里 \((1,-1)\) 与 \((-1,1)\) 是<b>两座最高峰</b>。最优设计 = 站上山峰 = 站在两个对角端点。这是<b>真正需要三维</b>的地方：你要同时看两个设计点怎么联合决定信息量。</p>
+      <div class="plotwrap"><div class="plot d3" id="dDet3d"><div class="loading">构建曲面…</div></div></div>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 自己摆两个点</div>
+      <p class="cjk">拨动两个设计点 \(x_1,x_2\)，左边实时显示 \(\det\) 与对应的置信椭圆。试试：两点都放 0.2（挤一起）→ \(\det\) 几乎为 0、椭圆爆炸；拉到 \(\pm1\) → \(\det=4\)、椭圆最小。你会亲手验证"凸函数最大值在端点"。</p>
+      <div class="controls">
+        <div class="ctrl"><label>设计点 \(x_1\) <span class="val" id="dxaV">-1.00</span></label><input type="range" id="dxa" min="-1" max="1" step="0.02" value="-1"></div>
+        <div class="ctrl"><label>设计点 \(x_2\) <span class="val" id="dxbV">1.00</span></label><input type="range" id="dxb" min="-1" max="1" step="0.02" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>\(\det(M^{\top}M)\) = <b id="dDetL">—</b> <span class="rd-note">最大 = 4</span></span>
+        <span>椭圆面积 ∝ <b id="dVolL">—</b></span>
+        <span id="dWarn"></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pDesignEll"><div class="loading">加载…</div></div></div>
+    </div>
+
+    <p class="note cjk"><b>D-最优 vs A-最优的细微差别（纪要含糊带过）。</b>D-最优最大化 \(\det\)，几何上是<b>最小化椭球总体积</b>；A-最优最小化 \(\operatorname{tr}\!\big((M^{\top}M)^{-1}\big)\)，即<b>最小化各系数方差之和</b>（不管它们的相关结构）。两者常常给出相近的设计，但<b>不等价</b>：体积小不代表每根轴都短（可能一根极长一根极短）。课件以 D-最优为主线，知道有 A-最优这个"重视边际方差"的孪生准则即可。</p>
+  </section>
+
+  <section id="t-orth" class="topic-block">
+    <h3 class="topic cjk">1.3　正交 ⇒ 独立（承接 p23，也是 §2.1 的"免罪条件"）</h3>
+    <p class="topic-en">Orthogonal columns make the estimates block-diagonal and independent — the same condition that will save you from omitted-variable bias</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 · 第十二节 p23 正交性</span>
+      <span class="rel tool"><span class="dot"></span>工具 · 为 <a class="inlink" href="#t-omit">§2.1</a> 提供"漏列也不偏"的条件</span>
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ②</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">把真实模型拆成两组列 \(Y=M^{1}\beta^{1}+M^{2}\beta^{2}+E\)。若这两组列<b>互相正交</b>（\((M^{1})^{\top}M^{2}=0\)），那么估计 \(\beta^{1}\) 和估计 \(\beta^{2}\) <b>互不干扰</b>：它们的估计相互独立，<b>加进或去掉其中一组，另一组的估计纹丝不动</b>。几何上——两组列张成的子空间互相垂直，把 \(Y\) 往两个垂直方向投影，自然不会"抢信息"。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p class="cjk">当 \((M^{1})^{\top}M^{2}=0\) 时，整块 \(M^{\top}M\) 是<b>分块对角</b>的，求逆也分块对角：</p>
+      \[\operatorname{Cov}\!\begin{pmatrix}\hat\beta^{1}\\[2pt]\hat\beta^{2}\end{pmatrix}=\sigma^2\begin{pmatrix}\big((M^{1})^{\top}M^{1}\big)^{-1} & 0\\[3pt] 0 & \big((M^{2})^{\top}M^{2}\big)^{-1}\end{pmatrix}.\]
+      <p class="cjk">对角块外全是 0 ⇒ \(\operatorname{Cov}(\hat\beta^{1},\hat\beta^{2})=0\)；在正态假设下，<b>零协方差就是独立</b>。这就是"正交 ⇒ 独立"。记住它的形状：<b>一块管一块，互不串门</b>。</p>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 列的夹角 → 估计的相关</div>
+      <p class="cjk">设两根（单位长）预测列的夹角为 \(\theta\)。可以算出两个系数估计的相关系数 <b>恰好是 \(-\cos\theta\)</b>。拨动 \(\theta\)：在 \(90^\circ\)（正交）时 \(\cos\theta=0\)，椭圆<b>正对坐标轴</b>、两估计独立；把 \(\theta\) 拨小，列越来越平行（趋近共线），椭圆被拉成<b>又长又斜</b>的雪茄，两估计强烈纠缠——这正是<b>多重共线性</b>的几何长相，也是 §3 岭回归要救的病。</p>
+      <div class="controls">
+        <div class="ctrl"><label>两列夹角 \(\theta\)（度） <span class="val" id="oAngleV">90°</span></label><input type="range" id="oAngle" min="8" max="90" step="1" value="90"></div>
+      </div>
+      <div class="readout">
+        <span>\(\cos\theta\) = <b id="oCos">0.00</b></span>
+        <span>\(\operatorname{corr}(\hat\beta_1,\hat\beta_2)=-\cos\theta\) = <b id="oCorr">0.00</b></span>
+        <span id="oState"></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pOrth"><div class="loading">加载椭圆…</div></div></div>
+    </div>
+
+    <p class="note cjk"><b>为什么这节要紧紧贴着 §2.1。</b>下一节会推出"漏掉 \(M_2\) 列时保留系数的偏差 \(=(M_1^{\top}M_1)^{-1}M_1^{\top}M_2\,\beta_2\)"。这个偏差<b>等于 0 当且仅当 \(M_1^{\top}M_2=0\)</b>，也就是<b>此处的正交条件</b>。所以"正交⇒独立"不是闲笔：它直接回答了"什么时候我可以放心漏掉一个变量"。这正是陷阱卡 ② 要你看见的那条被纪要剪断的线。</p>
+  </section>
+
+  <!-- ============================================================ PART II -->
+  <div class="part-head cjk" id="part2">
+    <div class="pk">Ⅱ</div>
+    <h2>M 的列选错：模型设定误差</h2>
+    <p>上一部分挑的是 \(M\) 的<b>行</b>（在哪测量）。这一部分管 \(M\) 的<b>列</b>（放哪些变量）。选错列有三种：模型类型错（把非线性硬掰成线性）、漏列、多列。其中<b>漏列</b>最阴险——它带来的偏差<b>不随样本量消失</b>。脊柱第 ② 处改写：<b>错的不是公式，是 \(M\) 的列。</b></p>
+  </div>
+
+  <section id="t-omit" class="topic-block">
+    <h3 class="topic cjk">2.1　遗漏变量偏差，与正交如何救你</h3>
+    <p class="topic-en">Omitted-variable bias — and how orthogonality (from §1.3) makes it vanish</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>第 ② 处改写：\(M\) 漏列</span>
+      <span class="rel tool"><span class="dot"></span>用到 <a class="inlink" href="#t-orth">§1.3</a> 的正交条件</span>
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ②</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">真相是 \(Y=M_1\beta_1+M_2\beta_2+E\)，但你只拿 \(M_1\) 去拟合（漏了 \(M_2\)）。结果：\(M_2\) 的影响会<b>顺着 \(M_1\) 与 \(M_2\) 的相关性"漏"进 \(\hat\beta_1\)</b>，把它系统性地推偏。关键区别于随机误差：这种偏差是<b>系统性的</b>，<b>样本量再大也不会消失</b>（既有偏、又不一致）。这就是计量经济学最常被引用的"内生性 / 遗漏变量"问题的源头。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 偏差长什么样</div>
+      <p class="cjk">只用 \(M_1\) 的估计 \(\hat\beta_1=(M_1^{\top}M_1)^{-1}M_1^{\top}Y\)，代入真实 \(Y\) 取期望：</p>
+      \[\mathbb{E}[\hat\beta_1]=\beta_1+\underbrace{(M_1^{\top}M_1)^{-1}M_1^{\top}M_2\,\beta_2}_{\text{遗漏偏差}}.\]
+      <p class="cjk">读这条公式：偏差由两件事相乘——<b>遗漏变量自己的效应 \(\beta_2\)</b>，以及<b>遗漏变量与保留变量的关联 \(M_1^{\top}M_2\)</b>。<b>任何一个为 0，偏差就为 0。</b>特别地，当 \(M_1^{\top}M_2=0\)（正交，见 <a class="inlink" href="#t-orth">§1.3</a>）时，<b>哪怕你漏掉一个真实变量，\(\hat\beta_1\) 也完全无偏</b>。这就是陷阱卡 ② 说的"同一枚硬币"：§1.3 的正交，正是这里的免罪条件。</p>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 亲手把回归线推偏</div>
+      <p class="cjk">下图：真实模型 \(Y=x_1+\beta_2 x_2+\varepsilon\)（真实 \(\beta_1=1\)），但我们只把 \(Y\) 对 \(x_1\) 回归。拨动 \(x_1,x_2\) 的<b>相关性 \(\rho\)</b> 和遗漏效应 \(\beta_2\)：<b style="color:var(--rust)">实线</b>是漏掉 \(x_2\) 后的拟合线（被推偏的 \(\hat\beta_1\)），<b>虚线</b>是真实的偏效应 \(\beta_1=1\)。把 \(\rho\) 拨到 0 ——两条线<b>立刻重合</b>，偏差消失，无论 \(\beta_2\) 多大。这就是"正交免罪"的现场演示。</p>
+      <div class="controls">
+        <div class="ctrl"><label>\(x_1,x_2\) 相关性 \(\rho\) <span class="val" id="omRV">0.70</span></label><input type="range" id="omR" min="-0.95" max="0.95" step="0.05" value="0.7"></div>
+        <div class="ctrl"><label>遗漏效应 \(\beta_2\) <span class="val" id="omB2V">1.5</span></label><input type="range" id="omB2" min="-2" max="2" step="0.1" value="1.5"></div>
+      </div>
+      <div class="readout">
+        <span>真实 \(\beta_1\) = <b>1.00</b></span>
+        <span>有偏估计 \(\hat\beta_1\) ≈ <b id="omEst">—</b></span>
+        <span>偏差 ≈ <b id="omBias" class="warnval">—</b> <span class="rd-note">≈ ρ·β₂</span></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pOmit"><div class="loading">模拟数据…</div></div></div>
+    </div>
+  </section>
+
+  <section id="t-tradeoff" class="topic-block">
+    <h3 class="topic cjk">2.2　多选 vs 少选：拿偏差换方差（陷阱卡 ④ 现场）</h3>
+    <p class="topic-en">Over- vs under-inclusion is a bias–variance trade-off, not a one-way rule — and ridge exists precisely to punish over-inclusion</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ④</b>：拆穿"宁可多选"</span>
+      <span class="rel tool"><span class="dot"></span>为 <a class="inlink" href="#t-ridge">§3.1 岭回归</a> 埋动机</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · 两个方向不对称</div>
+      <p class="cjk">纪要把"<b>宁可多选不可少选</b>"当铁律。但课件证明的是<b>两件不对称的事</b>，不是一条单行道：</p>
+    </div>
+
+    <div class="scrollx"><table class="tab cjk">
+      <thead><tr><th style="text-align:left">你做了什么</th><th>无偏？</th><th>方差</th><th>随样本量 \(n\to\infty\) 会怎样</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">少选：漏掉一个<b>相关的</b>真变量</td><td><b class="bad">否（系统偏差）</b></td><td>较小</td><td><b class="bad">偏差不消失</b>（不一致）</td></tr>
+        <tr><td class="lbl">多选：放进一个<b>无关</b>变量</td><td><b class="ok">是</b>（系数趋于 0）</td><td><b>变大</b></td><td>偏差为 0，方差随 \(n\) 缩小</td></tr>
+        <tr><td class="lbl">多选：放进一个<b>共线</b>变量</td><td><b class="ok">是</b></td><td><b class="bad">爆炸</b>（\(M^{\top}M\) 近奇异）</td><td>无偏但极不稳定</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>为什么多选会让方差爆炸</div>
+      <p class="cjk">放进一个与已有列相关性为 \(\rho\) 的变量，被估系数的方差会乘上一个<b>方差膨胀因子</b> \(\mathrm{VIF}=\dfrac{1}{1-\rho^2}\)。\(\rho\to1\) 时 VIF \(\to\infty\)——这就是 §1.3 那根"又长又斜的雪茄"在代数上的样子。所以"多选"不是免费的：你用<b>无偏</b>换来了<b>方差</b>。下图拨 \(\rho\) 看 VIF 怎么起飞。</p>
+      <div class="controls">
+        <div class="ctrl"><label>新增列与已有列相关性 \(\rho\) <span class="val" id="trRV">0.50</span></label><input type="range" id="trR" min="0" max="0.97" step="0.01" value="0.5"></div>
+      </div>
+      <div class="readout">
+        <span>方差膨胀因子 VIF = <b id="trVIF">1.33</b></span>
+        <span id="trState"></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pTrade"><div class="loading">加载…</div></div></div>
+    </div>
+
+    <div class="mod trap"><div class="mod-label"><span class="ic">⚠</span>盲点 · 纪要没点破的张力</div>
+      <p class="cjk">最该警觉的一点：纪要一边喊"<b>宁可多选</b>"，一边<b>紧接着就讲岭回归</b>——而岭回归<b>存在的全部理由，就是来惩罚"多选 / 共线"带来的方差膨胀</b>。这等于"先鼓励你乱塞变量，再请一个保安来收拾"。正确的理解是：变量取舍是<b>偏差↔方差权衡</b>，没有"永远更安全"的方向；当你不得不多放变量时，<b>岭回归（=给系数加正态先验）是控制由此产生的方差的工具</b>。这条因果链——多选→方差→岭回归——才是这两节真正的剧情，纪要把它剪成了不相干的三段。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART III -->
+  <div class="part-head cjk" id="part3">
+    <div class="pk">Ⅲ</div>
+    <h2>MᵀM 病态：岭回归</h2>
+    <p>多重共线性（§1.3 的"雪茄"、§2.2 的 VIF 爆炸）让 \(M^{\top}M\) 接近奇异，\((M^{\top}M)^{-1}\) 随之爆炸，OLS 变得极不稳定。岭回归的修法朴素到可爱：<b>给 \(M^{\top}M\) 垫一块 \(\lambda I\)，把它从奇异的悬崖边推回来</b>。脊柱第 ③ 处改写：\(M^{\top}M\to M^{\top}M+\lambda I\)。记住这个形状——§5.2 会发现它<b>就是</b>贝叶斯。</p>
+  </div>
+
+  <section id="t-ridge" class="topic-block">
+    <h3 class="topic cjk">3.1　岭回归：把 MᵀM 垫高 +λI</h3>
+    <p class="topic-en">Ridge — lift the precision matrix by λI; trade a little bias for a large drop in variance</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>第 ③ 处改写：\(M^{\top}M+\lambda I\)</span>
+      <span class="rel tool"><span class="dot"></span>治 <a class="inlink" href="#t-tradeoff">§2.2</a> 的方差爆炸</span>
+      <span class="rel dual"><span class="dot"></span>对偶 · 与 <a class="inlink" href="#t-bayes">§5.1 贝叶斯</a><b>同一公式</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">\(M^{\top}M\) 近奇异时，它有一个几乎为 0 的特征值——沿那个方向"地面几乎是平的"，OLS 在那个方向上左右乱晃（方差巨大）。加 \(\lambda I\) 等于把<b>每个特征值都抬高 \(\lambda\)</b>，再小的特征值也变成 \(\ge\lambda\)，"地面"重新有了坡度，估计被钉稳。代价：所有系数都被<b>朝 0 收缩</b>一点（引入偏差）。\(\lambda\) 就是这个权衡的旋钮：\(\lambda=0\) 回到 OLS，\(\lambda\to\infty\) 把所有系数压成 0。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 存在更优的 λ</div>
+      \[\tilde\beta(\lambda)=(M^{\top}M+\lambda I_p)^{-1}M^{\top}Y.\]
+      <p class="cjk">用一个干净的玩具看清权衡：设计正交时 \(M^{\top}M=I_p\)，每个 \(\hat\beta_j\sim N(\beta_j,\sigma^2)\) 独立，岭把它缩成 \(\tilde\beta_j=\hat\beta_j/(1+\lambda)\)。于是</p>
+      \[\text{MSE}(\lambda)=\underbrace{\frac{\lambda^2\,\|\beta\|^2}{(1+\lambda)^2}}_{\text{偏差}^2\,\uparrow}+\underbrace{\frac{p\,\sigma^2}{(1+\lambda)^2}}_{\text{方差}\,\downarrow},\qquad \lambda^\star=\frac{p\,\sigma^2}{\|\beta\|^2}.\]
+      <p class="cjk">令导数为 0 得 \(\lambda^\star=p\sigma^2/\|\beta\|^2&gt;0\)。<b>关键结论：总存在一个正的 \(\lambda\)，让岭的 MSE 严格小于 OLS（\(\lambda=0\)）。</b>这不是工程经验，是可证的定理——也是课件 p29 那道习题的内核。下面拨 \(\lambda\) 亲眼看 U 形。</p>
+    </div>
+
+    <div class="mod d3"><div class="mod-label"><span class="ic">◈</span>3D · 惩罚如何把"碗底"挪向原点（可拖动）</div>
+      <p class="cjk">把目标函数画成 \((\beta_1,\beta_2)\) 上的曲面。OLS 的残差平方和 RSS 是一个<b>碗</b>，碗底就是 OLS 解。岭回归在碗上<b>加一项 \(\lambda(\beta_1^2+\beta_2^2)\)</b>（一个以原点为心的二次锥），合成后的新碗，碗底被<b>朝原点拽过去</b>。下图画的就是这个<b>合成后的碗</b>，红点是被拽过去的岭解；旋转它，你能看出碗底确实不在 OLS 原位，而是滑向了 0。当 \(M^{\top}M\) 病态（碗在某方向极扁）时，这一拽能极大地稳住解。</p>
+      <div class="plotwrap"><div class="plot d3" id="dRidge3d"><div class="loading">构建损失碗…</div></div></div>
+    </div>
+
+    <div class="mod d2"><div class="mod-label"><span class="ic">▤</span>2D · 约束球视角 + MSE 的 U 形（拨 λ）</div>
+      <p class="cjk"><b>左图（约束球）</b>：岭等价于"在 \(\|\beta\|\le t\) 的圆盘内最小化 RSS"。椭圆等高线的圆心是 OLS 解，圆盘随 \(\lambda\) 变小（\(t\downarrow\)）；解就是<b>等高线与圆盘相切的点</b>，随 \(\lambda\) 增大一路滑向原点。<b>右图（MSE）</b>：偏差²（升）、方差（降）、二者之和 MSE（先降后升的 <b>U 形</b>）。竖线是你当前的 \(\lambda\)，星号是理论最优 \(\lambda^\star\)。把竖线拨到星号，MSE 触底——并且<b>低于左端 OLS 的水平线</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label>正则强度 \(\lambda\) <span class="val" id="rLamV">0.40</span></label><input type="range" id="rLam" min="0" max="6" step="0.05" value="0.4"></div>
+      </div>
+      <div class="readout">
+        <span>收缩因子 \(1/(1+\lambda)\) = <b id="rShrink">0.71</b></span>
+        <span>MSE(λ) = <b id="rMSE">—</b></span>
+        <span>OLS 的 MSE = <b id="rOLS">—</b></span>
+        <span id="rState"></span>
+      </div>
+      <div class="two-col">
+        <div class="plotwrap"><div class="plot" id="pRidgeBall"><div class="loading">加载…</div></div></div>
+        <div class="plotwrap"><div class="plot" id="pRidgeMSE"><div class="loading">加载…</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="t-loocv" class="topic-block">
+    <h3 class="topic cjk">3.2　选 λ：交叉验证与定理 7.8 的捷径</h3>
+    <p class="topic-en">Choosing λ by leave-one-out CV — and the Theorem 7.8 shortcut that avoids refitting n times</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>给 <a class="inlink" href="#t-ridge">§3.1</a> 的 \(\lambda\) 定一个数据驱动的值</span>
+      <span class="rel inherit"><span class="dot"></span>继承 · 第十二节的帽子矩阵 / 残差投影</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">\(\lambda\) 不能靠拍脑袋。<b>留一交叉验证（LOOCV）</b>：每次扣掉一个数据点，用其余点拟合，再预测被扣的那个，累加预测误差平方得 \(\mathrm{CVSSE}(\lambda)\)；让它最小的 \(\lambda\) 就是好 \(\lambda\)。朴素做法要重拟合 \(n\) 次——<b>定理 7.8 给了一条捷径：一次拟合就能算出全部留一误差</b>，靠的是"留一残差 = 普通残差 ÷ \((1-\)杠杆值\()\)"。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · Woodbury 捷径</div>
+      <p class="cjk">记残差投影 \(Q=I_n-M(M^{\top}M+\lambda I)^{-1}M^{\top}\)。定理 7.8（用 Woodbury 恒等式证）给出全部留一预测残差向量</p>
+      \[\Lambda=\operatorname{diag}\!\big(Q_{11}^{-1},\dots,Q_{nn}^{-1}\big)\,QY,\qquad \mathrm{CVSSE}(\lambda)=\sum_{i=1}^n \Lambda_i^2.\]
+      <p class="cjk">读法：\(QY\) 是一次拟合就有的普通残差；\(Q_{ii}\) 是第 \(i\) 个点的"自我影响"（杠杆）。把普通残差除以 \(Q_{ii}\) 就还原成"假装没用过这个点"的残差。<b>于是 \(n\) 次重拟合塌缩成一次矩阵运算</b>——这是把"昂贵的验证"变"廉价"的经典技巧，机器学习里反复出现。</p>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 扫 λ 找 CVSSE 谷底</div>
+      <p class="cjk">下图是某数据上的 \(\mathrm{CVSSE}(\lambda)\) 曲线（用捷径算的）。拨动 \(\lambda\)，竖线移动，读出当前 CVSSE；星号标出谷底 \(\lambda_{\mathrm{CV}}\)。注意它<b>未必</b>等于 §3.1 那个理论 \(\lambda^\star\)——理论 \(\lambda^\star\) 要知道真实 \(\|\beta\|^2\) 和 \(\sigma^2\)（现实中不知道），CVSSE 则<b>纯靠数据</b>替你估出这个最优点。这就是"可操作"与"理论最优"的分工。</p>
+      <div class="controls">
+        <div class="ctrl"><label>正则强度 \(\lambda\) <span class="val" id="cvLamV">1.00</span></label><input type="range" id="cvLam" min="0.02" max="8" step="0.02" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>当前 CVSSE(λ) = <b id="cvSSE">—</b></span>
+        <span>谷底 \(\lambda_{\mathrm{CV}}\) ≈ <b id="cvBest" class="okval">—</b></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pLOOCV"><div class="loading">加载…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART IV -->
+  <div class="part-head cjk" id="part4">
+    <div class="pk">Ⅳ</div>
+    <h2>误差的尺子不是 I：广义最小二乘</h2>
+    <p>OLS 偷偷假设了误差<b>独立同方差</b>（\(\operatorname{Cov}(E)=\sigma^2 I\)，量距离用的是普通直尺 \(I\)）。可现实里误差常常<b>相关</b>（时间序列）或<b>异方差</b>（有的点噪声大）。这时直尺 \(I\) 用错了。GLS 的办法：<b>换一把尺子 \(W^{-1}\)</b>，于是 \(M^{\top}M\) 变成 \(M^{\top}W^{-1}M\)。脊柱第 ④ 处改写：<b>不改列、不垫高，改度量。</b></p>
+  </div>
+
+  <section id="t-gls" class="topic-block">
+    <h3 class="topic cjk">4.1　GLS：把度量从 I 换成 W⁻¹</h3>
+    <p class="topic-en">Generalized least squares — replace the identity metric with W⁻¹ so noisier observations count less</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>第 ④ 处改写：\(M^{\top}W^{-1}M\)</span>
+      <span class="rel inherit"><span class="dot"></span>继承 · OLS 是 \(W=I\) 的特例</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p class="cjk">假设误差 \(\operatorname{Cov}(E)=\sigma^2 W\)，\(W\) 已知正定、\(\sigma^2\) 未知。直觉一句话：<b>噪声大的观测，话语权就该小</b>。OLS 一视同仁，会被高噪点拽偏；GLS 给每个观测按其噪声<b>反比加权</b>（用 \(W^{-1}\) 当尺子），让可靠的点说话更响。异方差是 \(W\) 为对角阵的特例（加权最小二乘 WLS），相关误差则是 \(W\) 有非对角元的情形。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 换度量后的正规方程</div>
+      <p class="cjk">把目标从 \(\|Y-M\beta\|^2\) 换成<b>加权</b>平方和：</p>
+      \[\mathcal{E}(\beta)=(Y-M\beta)^{\top}W^{-1}(Y-M\beta).\]
+      <p class="cjk">求梯度 \(\nabla\mathcal{E}=-2M^{\top}W^{-1}(Y-M\beta)\)，令其为 0；Hessian \(=2M^{\top}W^{-1}M\) 正定 ⇒ 凸函数、唯一全局最小：</p>
+      \[\boxed{\ \hat\beta_{\mathrm{GLS}}=(M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y.\ }\]
+      <p class="cjk">和 OLS 长得一模一样，只是每个 \(M^{\top}M\) 中间都塞了个 \(W^{-1}\)。<b>这就是脊柱第 ④ 笔的全部</b>。</p>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 异方差下 OLS 被拽偏，GLS 稳住</div>
+      <p class="cjk">下图：右侧的点噪声越来越大（漏斗形异方差）。拨动"异方差强度"：<b style="color:var(--ink-faint)">灰线</b>是 OLS（一视同仁，被右侧高噪点拽得乱晃），<b style="color:var(--accent)">蓝线</b>是 GLS（按 \(1/\sigma_i^2\) 加权，紧贴真实直线）。强度越大，两条线分得越开，OLS 的方差越糟。这就是"换尺子"换来的<b>效率</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label>异方差强度 <span class="val" id="gHetV">1.20</span></label><input type="range" id="gHet" min="0" max="2.4" step="0.05" value="1.2"></div>
+        <div class="ctrl"><label>重新抽一组噪声 <span class="val" id="gSeedV">#1</span></label><input type="range" id="gSeed" min="1" max="40" step="1" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>真实斜率 = <b>2.00</b></span>
+        <span>OLS 斜率 = <b id="gOLS">—</b></span>
+        <span>GLS 斜率 = <b id="gGLS" class="okval">—</b></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pGLS"><div class="loading">模拟数据…</div></div></div>
+    </div>
+  </section>
+
+  <section id="t-whiten" class="topic-block">
+    <h3 class="topic cjk">4.2　白化 + Gauss–Markov 7.9（GLS 是 BLUE）</h3>
+    <p class="topic-en">Whitening turns GLS back into OLS, so Gauss–Markov gives BLUE — and the factorization is only a proof scaffold (trap card ③)</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>证明工具 · 把 GLS 化归成 OLS</span>
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ③</b>：分解只是脚手架</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · "漂白"误差</div>
+      <p class="cjk">怎么证明 GLS 最优？一个漂亮的换元：用<b>对称正定平方根</b> \(W^{-1/2}\)（满足 \(W^{-1/2}W^{-1/2}=W^{-1}\)）把整个模型左乘一遍。令 \(Y'=W^{-1/2}Y,\ M'=W^{-1/2}M,\ E'=W^{-1/2}E\)。神奇之处：新误差 \(E'\) 的协方差变回 \(\sigma^2 I\)——<b>相关 / 异方差被"漂白"成了独立同方差</b>。于是对 \((Y',M')\) 做<b>普通 OLS</b>，就等价于对原数据做 GLS。</p>
+    </div>
+
+    <div class="mod flow"><div class="mod-label"><span class="ic">→</span>推导 · 三步得 BLUE（定理 7.9）</div>
+      <ol class="steps cjk">
+        <li>白化：\(Y'=W^{-1/2}Y=W^{-1/2}M\beta+E'\)，其中 \(\operatorname{Cov}(E')=W^{-1/2}(\sigma^2 W)W^{-1/2}=\sigma^2 I\)。</li>
+        <li>新模型满足经典假设，对它套<b>普通 Gauss–Markov（定理 7.2）</b>：OLS \(\hat\beta'=(M'^{\top}M')^{-1}M'^{\top}Y'\) 是 BLUE。</li>
+        <li>代回 \(M'=W^{-1/2}M\)：\(M'^{\top}M'=M^{\top}W^{-1}M\)、\(M'^{\top}Y'=M^{\top}W^{-1}Y\)，于是 \(\hat\beta'=\hat\beta_{\mathrm{GLS}}\)。<b>结论：GLS 是所有线性无偏估计里方差最小的（BLUE）。</b></li>
+      </ol>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 看"漂白"把斜椭圆掰成正圆</div>
+      <p class="cjk">误差协方差 \(W=\left(\begin{smallmatrix}1&\rho\\ \rho&1\end{smallmatrix}\right)\) 的"等概率云"是一个<b>斜椭圆</b>（\(\rho\) 越大越斜越扁）。左乘 \(W^{-1/2}\) 后，它被掰成<b>正圆</b>（独立同方差）。拨动 \(\rho\) 看左边的相关云怎样被右边的白化坐标系拉正——GLS 就是先换到这套"误差看起来各向同性"的坐标里，再做最朴素的最小二乘。</p>
+      <div class="controls">
+        <div class="ctrl"><label>误差相关 \(\rho\) <span class="val" id="wRhoV">0.60</span></label><input type="range" id="wRho" min="-0.9" max="0.9" step="0.02" value="0.6"></div>
+      </div>
+      <div class="readout">
+        <span>白化前：相关 \(\rho\) = <b id="wShow">0.60</b>（斜椭圆）</span>
+        <span>白化后：相关 = <b class="okval">0.00</b>（正圆）</span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pWhiten"><div class="loading">加载…</div></div></div>
+    </div>
+
+    <div class="mod trap"><div class="mod-label"><span class="ic">⚠</span>盲点 · 陷阱卡 ③ 的两记重点</div>
+      <p class="cjk"><b>① 课件用对称根 \(W^{-1/2}\)，不是 Cholesky 的下三角因子。</b>两者都能漂白误差，但对称根让上面第 2 步的特征分解 / 几何对称直接可用，证明更干净。<b>② 更要紧：分解只是"脚手架"。</b>看最终公式 \((M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y\)——里面<b>只有 \(W^{-1}\)</b>，<b>没有 \(W^{-1/2}\)、更没有 Cholesky 因子的影子</b>。换句话说，你用对称根还是 Cholesky 去推导，<b>得到的估计量一字不差</b>。思维导图把"Cholesky 分解"写进 GLS 的定义层，是把一个临时计算工具误当成了本质。<b>顺带：MLE 视角。</b>若再假设 \(E\sim N_n(0,\sigma^2 W)\)，在 \(n&gt;p\) 时 GLS 恰是 \(\beta\) 的 MLE，\(\hat\sigma^2=\tfrac1n(Y-M\hat\beta)^{\top}W^{-1}(Y-M\hat\beta)\)；\(n=p\) 时 MLE 不存在（自由度耗尽）。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART V -->
+  <div class="part-head cjk" id="part5">
+    <div class="pk">Ⅴ</div>
+    <h2>带着先验：贝叶斯回归</h2>
+    <p>前面都把 \(\beta\) 当成一个<b>待估的死数</b>。贝叶斯换个世界观：\(\beta\) 也是<b>随机的</b>，你对它先有个<b>信念（先验）</b>，数据来了再更新成<b>后验</b>。本节会推出后验精度 \(=M^{\top}M+V^{-1}\)，脊柱第 ⑤ 处改写。然后是全节最漂亮的一拳：<b>§5.2 会发现 ⑤ 和 ③ 是同一个东西</b>——岭回归不过是"正态先验贝叶斯"的另一个名字。</p>
+  </div>
+
+  <section id="t-bayes" class="topic-block">
+    <h3 class="topic cjk">5.1　后验 = 先验 × 似然：精度相加 MᵀM+V⁻¹</h3>
+    <p class="topic-en">Posterior = prior × likelihood; with a normal prior the posterior is normal and its precision is data precision plus prior precision</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>第 ⑤ 处改写：\(M^{\top}M+V^{-1}\)</span>
+      <span class="rel dual"><span class="dot"></span>对偶 · 与 <a class="inlink" href="#t-ridge">§3.1 岭回归</a><b>同一公式</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · 两份信息按精度相加</div>
+      <p class="cjk">给 \(\beta\) 一个先验 \(\beta\sim N_p(0,V\sigma^2)\)：均值 0 表示"<b>开局我赌每个效应都偏小</b>"（效应稀疏原则），\(V^{-1}\) 是这份信念的<b>精度</b>（越大越笃定 \(\beta\) 接近 0）。数据则通过似然提供另一份信息，精度是 \(M^{\top}M\)。贝叶斯把两份信息<b>按精度相加</b>：后验精度 \(=M^{\top}M+V^{-1}\)，后验均值是两边的<b>精度加权平均</b>。数据多 → \(M^{\top}M\) 压过先验，后验贴近 OLS；数据少 / 先验强 → 后验被拉向先验均值 0。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 后验仍是正态</div>
+      <p class="cjk">\(\sigma^2\) 已知。先验密度 \(f(\beta)\propto\exp\!\big(-\tfrac{1}{2\sigma^2}\beta^{\top}V^{-1}\beta\big)\)，似然 \(\propto\exp\!\big(-\tfrac{1}{2\sigma^2}(y-M\beta)^{\top}(y-M\beta)\big)\)。两者相乘、对 \(\beta\) 配方，指数里凑出一个完全平方，<b>后验依旧是正态</b>：</p>
+      \[\beta\mid y\ \sim\ N_p\!\Big(\ \tilde\beta=(M^{\top}M+V^{-1})^{-1}M^{\top}y,\ \ (M^{\top}M+V^{-1})^{-1}\sigma^2\ \Big).\]
+      <p class="cjk">把这条和 OLS 的 \((M^{\top}M)^{-1}M^{\top}y\) 并排：<b>分母从 \(M^{\top}M\) 变成 \(M^{\top}M+V^{-1}\)</b>，仅此而已。请<b>记死这个 \(+V^{-1}\) 的形状</b>，下一节就靠它收网。</p>
+    </div>
+
+    <div class="mod d3"><div class="mod-label"><span class="ic">◈</span>3D · 后验钟形 = 先验钟 × 似然钟（可拖动）</div>
+      <p class="cjk">在 \((\beta_1,\beta_2)\) 平面上，先验是<b>以原点为心的宽钟</b>，似然是<b>以 OLS 解为心的钟</b>，二者相乘得到的<b>后验钟</b>——钟峰落在两者之间，且比任何一个都<b>更尖</b>（精度相加 ⇒ 更确定）。下图画的是这口后验钟，可旋转观察它的峰相对原点和 OLS 解的位置。这是少有的"<b>三维真的帮上忙</b>"之处：你要同时看两个系数的联合不确定性如何被先验收紧。</p>
+      <div class="plotwrap"><div class="plot d3" id="dBayes3d"><div class="loading">构建后验钟…</div></div></div>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 调先验精度，看后验被拉向 0</div>
+      <p class="cjk">一维版（单个系数）：<b style="color:var(--ink-faint)">灰</b>=先验（心在 0）、<b style="color:var(--gold)">金</b>=似然（心在 OLS 估计 \(\hat\beta=2\)）、<b style="color:var(--accent)">蓝</b>=后验。拨"先验精度 \(V^{-1}\)"：精度→0（先验极宽、几乎无信息）时后验≈似然、贴近 2；精度变大时后验被<b>一路拽向 0</b> 并变尖。<b>这个"拽向 0"的动作，下一节你会看到它有个你早就认识的名字。</b></p>
+      <div class="controls">
+        <div class="ctrl"><label>先验精度 \(V^{-1}\) <span class="val" id="bPrecV">1.00</span></label><input type="range" id="bPrec" min="0" max="16" step="0.1" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>似然中心（OLS）= <b>2.00</b></span>
+        <span>后验均值 = <b id="bMean">—</b></span>
+        <span>后验标准差 = <b id="bSD">—</b></span>
+        <span id="bPull"></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pBayesPLP"><div class="loading">加载…</div></div></div>
+    </div>
+  </section>
+
+  <section id="t-equiv" class="topic-block">
+    <h3 class="topic cjk">5.2　★ 揭晓：岭回归 = 正态先验下的贝叶斯</h3>
+    <p class="topic-en">The punchline — ridge with penalty λ is exactly the posterior mean under a N(0, σ²/λ) prior</p>
+    <div class="rels cjk">
+      <span class="rel dual"><span class="dot"></span>对偶 · 把 ③ 与 ⑤ 焊死</span>
+      <span class="rel warn"><span class="dot"></span>正面回应 <b>陷阱卡 ①</b></span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · 同一个矩阵的两种说法</div>
+      <p class="cjk">把这一节两次出现的"核心矩阵"摆上台面：</p>
+    </div>
+
+    <div class="scrollx"><table class="tab cjk">
+      <thead><tr><th>视角</th><th>核心矩阵（要求逆的那个）</th><th>估计量 / 后验均值</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">③ 岭回归（§3.1）</td><td>\(M^{\top}M+\lambda I\)</td><td>\((M^{\top}M+\lambda I)^{-1}M^{\top}y\)</td></tr>
+        <tr><td class="lbl">⑤ 贝叶斯后验（§5.1）</td><td>\(M^{\top}M+V^{-1}\)</td><td>\((M^{\top}M+V^{-1})^{-1}M^{\top}y\)</td></tr>
+        <tr style="background:#E5E1F2"><td class="lbl"><b>令 \(V^{-1}=\lambda I\)</b></td><td><b>完全相同</b></td><td><b>逐字相同</b></td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 一行等式</div>
+      \[\underbrace{(M^{\top}M+\lambda I)^{-1}M^{\top}y}_{\text{岭估计 }\tilde\beta(\lambda)}\ \equiv\ \underbrace{(M^{\top}M+V^{-1})^{-1}M^{\top}y}_{\text{贝叶斯后验均值，}V^{-1}=\lambda I}.\]
+      <p class="cjk">所以——<b>岭回归不是一个为了"治病"临时发明的补丁</b>。它精确地等于：<b>给 \(\beta\) 一个以 0 为中心、各向同性、精度为 \(\lambda\) 的正态先验</b> \(\beta\sim N\!\big(0,\tfrac{\sigma^2}{\lambda}I\big)\)，然后取后验均值（在正态下它也是后验众数 MAP）。这把 §3 和 §5 焊成了一块：</p>
+      <ul class="ul cjk">
+        <li><b>\(\lambda\) 的含义被点亮了</b>：它就是你对"系数应该接近 0"的<b>先验笃定程度</b>。\(\lambda\) 大 = 强先验 = 使劲收缩；\(\lambda=0\) = 无先验 = 退回 OLS。</li>
+        <li><b>"该选多大 \(\lambda\)"有了两种语言</b>：频率派说"用 CVSSE 调"（§3.2），贝叶斯说"它编码了我的先验信念"——<b>同一个旋钮，两种世界观</b>。</li>
+        <li><b>L1 / Lasso 的类比也顺出来了</b>：把正态先验换成拉普拉斯先验，MAP 就变成 Lasso。正则化 ⇔ 先验，是一座通用的桥。</li>
+      </ul>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 两条路径完全重合</div>
+      <p class="cjk">三个系数的真·演示（正交设计，OLS 估计 \(\hat\beta=[3,-2,1]\)）。<b>实线</b>是岭回归随 \(\lambda\) 的收缩路径，<b>圆点</b>是把先验精度设成 \(V^{-1}=\lambda I\) 的贝叶斯后验均值。拨动 \(\lambda\)：无论怎么拨，圆点<b>永远精确落在实线上</b>，差值恒为 0。这不是近似、不是巧合——是同一条公式。<b>这就是陷阱卡 ① 被纪要剪断的那根主线。</b></p>
+      <div class="controls">
+        <div class="ctrl"><label>\(\lambda\)（= 先验精度 \(V^{-1}\)） <span class="val" id="eqLamV">1.00</span></label><input type="range" id="eqLam" min="0" max="8" step="0.05" value="1"></div>
+      </div>
+      <div class="readout">
+        <span>岭 \(\tilde\beta_1\) = <b id="eqRidge">—</b></span>
+        <span>贝叶斯后验均值 = <b id="eqBayes">—</b></span>
+        <span>差值 = <b id="eqDiff" class="okval">0.00e+0</b> <span class="rd-note">恒等于 0</span></span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pEquiv"><div class="loading">加载路径…</div></div></div>
+    </div>
+  </section>
+
+  <section id="t-bstd" class="topic-block">
+    <h3 class="topic cjk">5.3　截距不缩 + 把预测变量标准化到 [−1,1]</h3>
+    <p class="topic-en">Give the intercept a flat prior, and standardize predictors to [−1,1] so every slope shares one prior — then a coefficient is half the min→max swing</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>让 §5.2 的"统一 \(\lambda\)"在实践中说得通</span>
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ⑤</b>（措辞 / 缺"为什么"）</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · 两个实操决定</div>
+      <p class="cjk"><b>(1) 截距别收缩。</b>截距 \(\beta_1\)（对应 \(m_1(x)\equiv1\) 那一列）是"所有预测变量取基准时的响应水平"，它<b>本就该是个非零的数</b>，没理由把它往 0 拽。做法：让先验精度矩阵<b>分块对角</b>，截距对应的对角元设为 \(0\)（=方差无穷大=对截距<b>无信息 / 平坦先验</b>）。<br><b>(2) 把每个预测变量标准化到 \([-1,1]\)。</b>因为我们想给所有斜率<b>同一个</b>先验 \(\beta_j\sim N(0,\lambda^{-1}\sigma^2)\)、用<b>同一个 \(\lambda\)</b> 收缩；可"收入"和"年龄"量纲天差地别，同一个 \(\lambda\) 对它们意义不同。<b>先把它们放到同一把尺子上</b>，\(\lambda\) 才是公平的。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 标准化与"半摆幅"含义</div>
+      <p class="cjk">先验精度分块：\(V^{-1}=\left(\begin{smallmatrix}0 & 0\\ 0 & V_*^{-1}\end{smallmatrix}\right)\)（第一块 0 = 截距平坦先验）。标准化映射（\(\omega\) 为原始值）：</p>
+      \[m_j(x_i)=\frac{\omega_{ij}-\omega_{\mathrm{mid}}}{\omega_{\mathrm{range}}/2},\quad \omega_{\mathrm{mid}}=\tfrac{\min+\max}{2},\ \ \omega_{\mathrm{range}}=\max-\min.\]
+      <p class="cjk">这样每个预测变量都落在 \([-1,1]\)。<b>一个常被纪要漏掉的妙处</b>：标准化后，斜率 \(\beta_j\) 的含义变成——<b>当该预测变量从最小值走到最大值（其余不变）时，期望响应变化量的"一半"</b>。因为标准化变量从 \(-1\) 到 \(+1\) 摆幅是 \(2\)，响应变 \(2\beta_j\)，故 \(\beta_j\) 是<b>半摆幅</b>。系数因此<b>可比、可读</b>，不再被单位绑架。</p>
+      <div class="plotwrap"><div class="plot" id="pStd"><div class="loading">加载…</div></div></div>
+    </div>
+
+    <div class="mod trap"><div class="mod-label"><span class="ic">⚠</span>盲点 · 给纪要的两处修正</div>
+      <p class="cjk"><b>① "无信息先验 = 均匀分布"是松散说法。</b>正确说法是<b>方差趋于无穷的极限（平坦 / 非正常先验）</b>。真正的"在 \(\mathbb{R}\) 上均匀分布"根本不是一个合法概率分布（积分发散）；我们说的是"精度 → 0"这个极限，在精度矩阵里就体现为<b>对角元为 0</b>。这一点纪要写对了形式（对角 0），但用"均匀分布"概括会误导。<br><b>② 这次区间纪要写对了</b>：标准化到 <b>\([-1,1]\)</b>（不是 \([0,1]\)）——别被某些资料的 \([0,1]\) 带偏。\([-1,1]\) 的好处正是上面的"半摆幅"对称解读，且让截距落在<b>预测变量的中点</b>处、含义最干净。纪要漏掉的不是区间本身，而是<b>"为什么偏偏是 \([-1,1]\)"以及"系数 = 半摆幅"这层意义</b>。</p>
+    </div>
+  </section>
+
+  <section id="t-bpred" class="topic-block">
+    <h3 class="topic cjk">5.4　后验预测：那个 "+1"，以及为什么用 z 不用 t</h3>
+    <p class="topic-en">Posterior predictive distribution — the "+1" is the new point's own noise, and we use z because σ² is known (trap card ⑤)</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 · 第十二节 §3.2 预测区间的"+1"</span>
+      <span class="rel warn"><span class="dot"></span>对应 <b>陷阱卡 ⑤</b>：是正态/z，不是 t</span>
+    </div>
+
+    <div class="mod idea"><div class="mod-label"><span class="ic">◆</span>直觉 · 两份不确定性</div>
+      <p class="cjk">要预测一个<b>新</b>观测 \(Y(x_0)=m(x_0)\beta+E(x_0)\)，不确定性来自两处：<b>(1)</b> 我们不知道 \(\beta\) 的确切值（后验有展宽）；<b>(2)</b> 新点自带一份噪声 \(E(x_0)\sim N(0,\sigma^2)\)。把两者一加，就得到后验预测方差里那个 <b>\([\,m(x_0)(M^{\top}M+V^{-1})^{-1}m(x_0)^{\top}+1\,]\sigma^2\)</b>——括号里的第一项是"参数没估准"，<b>那个 "+1" 就是新点自己的噪声</b>。第十二节频率派预测区间里你已经见过同一个"+1"，这里只是换了贝叶斯外衣。</p>
+    </div>
+
+    <div class="mod form"><div class="mod-label"><span class="ic">∑</span>公式 · 后验预测与区间</div>
+      <p class="cjk">用一条通用结论（\(W\mid\alpha\sim N(r\alpha,\tau^2),\ \alpha\sim N_q(a,A)\Rightarrow W\sim N(ra,\,rAr^{\top}+\tau^2)\)）一步得到：</p>
+      \[Y(x_0)\mid y\ \sim\ N\!\Big(m(x_0)\tilde\beta,\ \big[\,m(x_0)(M^{\top}M+V^{-1})^{-1}m(x_0)^{\top}+1\,\big]\sigma^2\Big),\]
+      \[\text{预测区间：}\quad m(x_0)\tilde\beta\ \pm\ z_{1-\alpha/2}\sqrt{\big[\,m(x_0)(M^{\top}M+V^{-1})^{-1}m(x_0)^{\top}+1\,\big]\sigma^2}.\]
+      <p class="cjk"><b>注意是 \(z_{1-\alpha/2}\)（正态分位数），不是 \(t\)。</b>因为本节自始至终假设 \(\sigma^2\) <b>已知</b>——不需要用数据去估 \(\sigma^2\)，自然没有 \(t\) 分布登场的理由。术语上，贝叶斯把 \(m(x_0)\tilde\beta\) 叫"<b>点预测（point prediction）</b>"，频率派叫"点预测量（point predictor）"，一词之差，但分布的来历不同。</p>
+    </div>
+
+    <div class="mod live"><div class="mod-label"><span class="ic">⊕</span>交互 · 两条预测带，先验越强越窄越平</div>
+      <p class="cjk">下图：拟合直线 + 两条带。<b style="color:var(--accent)">内带（窄）</b>是均值的可信带（只含参数不确定性，<b>在数据中心处收紧</b>）；<b>外带（宽）</b>是新观测的预测带（加了 "+1"，整体更宽、近似平行）。拨"先验精度"：先验越强，直线越被<b>压平（斜率向 0 收缩）</b>、带子越窄——这正是 §5.2 那个 \(\lambda\) 在预测层面的后果。</p>
+      <div class="controls">
+        <div class="ctrl"><label>先验精度（斜率上的 \(\lambda\)） <span class="val" id="bpPrecV">0.50</span></label><input type="range" id="bpPrec" min="0" max="20" step="0.1" value="0.5"></div>
+      </div>
+      <div class="readout">
+        <span>边缘 x₀=4 处均值带半宽 ≈ <b id="bpMean">—</b></span>
+        <span>边缘 x₀=4 处预测带半宽 ≈ <b id="bpPred">—</b> <span class="rd-note">含 +1</span></span>
+        <span>用 <b class="okval">z = 1.96</b>（σ² 已知）</span>
+      </div>
+      <div class="plotwrap"><div class="plot" id="pBPred"><div class="loading">加载…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ============================= 收尾 ============================= -->
+  <section id="closing" class="closing-block">
+    <div class="part-head"><span class="pnum">∎</span><h2>收尾 · 一个矩阵，五处改写</h2></div>
+    <p class="cjk lead">把整节折叠成一句话：<b>普通最小二乘 \(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\) 没变，变的只是中间那块 \(M^{\top}M\)。</b>本节的五个主题，全是对同一块矩阵动了一次手术——要么换它的<b>内容</b>（列），要么换它的<b>度量</b>（\(W^{-1}\)），要么给它<b>加料</b>（\(+\lambda I\) 或 \(+V^{-1}\)）。把这张表钉在脑子里，比记五个孤立公式划算得多。</p>
+
+    <div class="scrollx">
+    <table class="tab">
+      <thead><tr><th>触发的"病"</th><th>对 \(M^{\top}M\) 做了什么</th><th>得到的估计</th><th>代价 / 盲点</th></tr></thead>
+      <tbody>
+        <tr><td class="lbl">① 还没收数据，想让 \(\hat\beta\) 尽量准（<b>最优设计</b>）</td>
+          <td>挑 \(M\) 的<b>行</b>（即 \(x\) 取值），把 \(M^{\top}M\) 撑"胖"：D-最优 \(\max\det\)，A-最优 \(\min\operatorname{tr}(\cdot)^{-1}\)</td>
+          <td>\(\hat\beta=(M^{\top}M)^{-1}M^{\top}Y\)（公式没变，方差更小）</td>
+          <td>把点全推到边界 \(\pm1\) 只对<b>当前设定的模型</b>最优；模型一错（比如真关系是曲的），边界设计反而最看不出弯。</td></tr>
+        <tr><td class="lbl">② \(M\) 的<b>列</b>选错了（<b>设定误差</b>）</td>
+          <td>漏列 ⇒ 用错的 \(M_1^{\top}M_1\)；多列 ⇒ 矩阵更大但含废列</td>
+          <td>漏列：\(E[\hat\beta_1]=\beta_1+(M_1^{\top}M_1)^{-1}M_1^{\top}M_2\beta_2\)（<b class="bad">有偏</b>，除非正交）；多列：<b class="ok">无偏</b>但方差涨（VIF）</td>
+          <td>"宁可多选"不是免费的——多选用方差买无偏，<b>正是岭回归要罚的东西</b>。</td></tr>
+        <tr style="background:#EAECF6"><td class="lbl">③ \(M^{\top}M\) 接近奇异 / 列高度共线（<b>岭回归</b>）</td>
+          <td>直接 <b>\(M^{\top}M\;\to\;M^{\top}M+\lambda I\)</b></td>
+          <td>\(\tilde\beta(\lambda)=(M^{\top}M+\lambda I)^{-1}M^{\top}Y\)</td>
+          <td>引入偏差换方差；\(\lambda\) 要靠 LOOCV（定理7.8 一次反演拿到全部留一残差）来挑，不是拍脑袋。</td></tr>
+        <tr><td class="lbl">④ 误差的"尺子"不是 \(I\)（异方差 / 相关，<b>GLS</b>）</td>
+          <td>度量从 \(I\) 换成 \(W^{-1}\)： <b>\(M^{\top}M\;\to\;M^{\top}W^{-1}M\)</b></td>
+          <td>\(\hat\beta_{\mathrm{GLS}}=(M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y\)（Gauss-Markov 7.9：BLUE）</td>
+          <td>白化只是<b>证明脚手架</b>，对称根 \(W^{-1/2}\) 或 Cholesky 都行；最终估计只认 \(W^{-1}\)。\(W\) 必须<b>已知</b>。</td></tr>
+        <tr style="background:#EAECF6"><td class="lbl">⑤ 带着先验信念 \(\beta\sim N(0,V\sigma^2)\)（<b>贝叶斯</b>）</td>
+          <td>后验精度 <b>\(M^{\top}M\;\to\;M^{\top}M+V^{-1}\)</b></td>
+          <td>后验均值 \(\tilde\beta=(M^{\top}M+V^{-1})^{-1}M^{\top}y\)</td>
+          <td>先验均值取 0 = "默认效应近 0"的稀疏信念；\(\sigma^2\) 这里假设<b>已知</b>，所以预测用 \(z\) 不用 \(t\)。</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="mod live" style="margin-top:14px">
+      <div class="mod-label"><span class="ic">★★</span>把③和⑤叠在一起看——这是本节最值钱的一行</div>
+      <p class="cjk">当先验取 <b>\(V^{-1}=\lambda I\)</b> 时，⑤的后验精度 \(M^{\top}M+V^{-1}\) <b>逐项等于</b>③的 \(M^{\top}M+\lambda I\)。于是：<b style="color:var(--accent)">岭回归的解 = 正态先验下贝叶斯后验的均值（也是 MAP）</b>。两条看起来八竿子打不着的路——一条是数值上给病态矩阵"加对角线稳一稳"，一条是认识论上"我事先就相信系数接近 0"——给出的是<b>同一个 \(\tilde\beta\)</b>。\(\lambda\) 就是先验精度：你越确信 \(\beta\approx0\)，\(\lambda\) 越大，收缩越狠。§5.2 的交互图里两条曲线严丝合缝地叠着，就是这件事的肉眼证据。</p>
+    </div>
+
+    <div class="xander">
+      <div class="xander-tag">给 Xander 的直话 · 别把这五件事记成五张卡</div>
+      <p class="cjk">你底子薄，最大的风险不是某条公式记错，而是<b>把它们存成五个互不相干的抽屉</b>——考试能背，遇到真问题时却不知道该开哪个。所以请用"\(M^{\top}M\) 这一根脊柱"来挂它们，而不是反过来。下面五条是我对本节 AI 纪要的审计结论，也是你最该警惕的盲点，按重要性排：</p>
+      <p class="cjk"><b>1（最致命）</b> · 纪要把岭回归和贝叶斯当成两章独立内容讲——这是<b>埋掉了本节的题眼</b>。它们是 \(V^{-1}=\lambda I\) 的同一件事。看不见这一点，你就只是会算，不是懂了。</p>
+      <p class="cjk"><b>2</b> · "正交 ⇒ 独立"（p23）和"遗漏变量偏差"（p28）是一枚硬币的两面：偏差 \((M_1^{\top}M_1)^{-1}M_1^{\top}M_2\beta_2\) 恰好在 \(M_1^{\top}M_2=0\)（正交）时为零。纪要把两处当成毫无关系的知识点，丢了它们之间最干净的逻辑桥。</p>
+      <p class="cjk"><b>3</b> · 思维导图写 GLS 用 "Cholesky (LL')"——这是把<b>证明手段当成了定义</b>。教材用的是对称根 \(W^{-1/2}\)，而且不管用哪种分解，最终估计 \((M^{\top}W^{-1}M)^{-1}M^{\top}W^{-1}Y\) 只依赖 \(W^{-1}\)，分解方式根本不进结果。</p>
+      <p class="cjk"><b>4</b> · "宁可多选不可少选"被讲成铁律——它其实是<b>偏差↔方差的权衡</b>，没有免费的一边。岭回归的存在本身就是在惩罚"多选"带来的方差，纪要里这层张力是缺的。</p>
+      <p class="cjk"><b>5</b> · 思维导图说后验预测"服从 t 分布或正态"——在本节 <b>t 是错的</b>。\(\sigma^2\) 全程假设已知，没有"拿数据估方差"这一步，自然轮不到 \(t\) 出场，只能是正态（用 \(z\)）。另外纪要里那串 ARCH/GARCH/PCA/协整/因子分析/ANOVA 都是课堂上的<b>题外延伸</b>，不在 p23–39 的正文里，别把它们误当本节考点。</p>
+      <p class="cjk" style="margin-top:8px">最后一句不留情面的话：这套讲义能帮你建立直觉，但<b>它替代不了你自己把 \((M^{\top}M+\lambda I)^{-1}\) 在纸上推一遍</b>。交互图让你"看见"收缩，纸笔才让你"拥有"它。两件事都做，缺一不可。</p>
+    </div>
+
+    <footer class="foot cjk">
+      <p>统计补课 · 第十三节 — 最优设计、设定误差、岭回归、GLS 与贝叶斯回归（Wasserman 风格 · 第7章 p23–39）</p>
+      <p class="foot-sub">本节脊柱：一个 \(M^{\top}M\)，五处改写 · 题眼：岭回归 = 正态先验贝叶斯（\(V^{-1}=\lambda I\)） · 全部 3D 用纯 Canvas-2D 引擎绘制（无 WebGL）</p>
+    </footer>
+  </section>
+</main>
+</div><!-- /layout -->
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1B1A1F',inkSoft:'#4C4A55',faint:'#86838F',line:'#E4E2EC',lineStrong:'#C9C6D8',
+  accent:'#2E3C72',accentSoft:'#DFE1F0',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',goldSoft:'#F4E9CF',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF9F4'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+var INDIGO_SCALE=[[0,'#E9EAF4'],[0.5,'#6E74AE'],[1,'#23285C']];
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:56,r:16,t:18,b:46},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.14,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+/* seedable RNG for reproducible scatter (mulberry32) */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function randnFrom(rng){var u,w,s;do{u=2*rng()-1;w=2*rng()-1;s=u*u+w*w;}while(s>=1||s===0);return u*Math.sqrt(-2*Math.log(s)/s);}
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],
+    throwOnError:false,strict:false});
+}
+/* ---- 2x2 linalg ---- */
+function inv2(M){var a=M[0][0],b=M[0][1],c=M[1][0],d=M[1][1],det=a*d-b*c;if(Math.abs(det)<1e-12)det=(det<0?-1:1)*1e-12;return [[d/det,-b/det],[-c/det,a/det]];}
+function chol2(M){var l11=Math.sqrt(Math.max(M[0][0],1e-12));var l21=M[1][0]/l11;var t=M[1][1]-l21*l21;var l22=Math.sqrt(Math.max(t,1e-12));return [[l11,0],[l21,l22]];}
+function eig2sym(M){var a=M[0][0],b=M[0][1],c=M[1][1],tr=a+c,disc=Math.sqrt(Math.max((a-c)*(a-c)/4+b*b,0));
+  var l1=tr/2+disc,l2=tr/2-disc,v1,v2;
+  if(Math.abs(b)<1e-12){if(a>=c){v1=[1,0];v2=[0,1];}else{v1=[0,1];v2=[1,0];}}
+  else{var vy=(l1-a)/b,n=Math.sqrt(1+vy*vy);v1=[1/n,vy/n];v2=[-v1[1],v1[0]];}
+  return {l1:l1,l2:l2,v1:v1,v2:v2};}
+function ellipsePts(mu,Cov,k,N){N=N||90;var e=eig2sym(Cov),ax=k*Math.sqrt(Math.max(e.l1,0)),bx=k*Math.sqrt(Math.max(e.l2,0));
+  var X=[],Y=[],i,th;for(i=0;i<=N;i++){th=2*Math.PI*i/N;
+    X.push(mu[0]+ax*Math.cos(th)*e.v1[0]+bx*Math.sin(th)*e.v2[0]);
+    Y.push(mu[1]+ax*Math.cos(th)*e.v1[1]+bx*Math.sin(th)*e.v2[1]);}
+  return {x:X,y:Y,ax:ax,bx:bx};}
+function setTxt(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function setHTML(id,v){var e=document.getElementById(id);if(e)e.innerHTML=v;}
+/* ===================== nav + sliders + seg ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){var rs=document.querySelectorAll('input[type=range]'),i;for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={bridge:C.accentSoft,gen:'#F4E9CF',test:'#DFEDE2',tool:'#E5E1F2',warn:'#F3E0DA'};
+var NODE_STROKE={bridge:C.accent,gen:C.gold,test:C.green,tool:C.violet,warn:C.rust};
+var NODE_TXT={bridge:'#2A356A',gen:'#8a6a1f',test:C.green,tool:C.violet,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+  {id:'seed', ty:'bridge',x:402,y:18, w:176,h:58,href:'#spine',    t:['本节主线','一个矩阵·五处改写']},
+  {id:'design',ty:'gen',  x:44, y:120,w:176,h:58,href:'#t-design', t:['① 最优设计','撑胖 MᵀM']},
+  {id:'orth', ty:'warn',  x:44, y:250,w:176,h:58,href:'#t-orth',   t:['正交 ⇒ 独立','p23 起点']},
+  {id:'omit', ty:'warn',  x:44, y:380,w:176,h:58,href:'#t-omit',   t:['② 遗漏偏差','列选错 → 有偏']},
+  {id:'trade',ty:'warn',  x:44, y:500,w:176,h:58,href:'#t-tradeoff',t:['多选 vs 少选','偏差换方差']},
+  {id:'core', ty:'bridge',x:400,y:300,w:184,h:78,href:'#t-fisher', t:['OLS 齿轮','β̂=(MᵀM)⁻¹MᵀY']},
+  {id:'ridge',ty:'gen',   x:760,y:120,w:176,h:58,href:'#t-ridge',  t:['③ 岭回归','MᵀM + λI']},
+  {id:'gls',  ty:'gen',   x:760,y:250,w:176,h:58,href:'#t-gls',    t:['④ GLS','MᵀM → MᵀW⁻¹M']},
+  {id:'bayes',ty:'gen',   x:760,y:380,w:176,h:58,href:'#t-bayes',  t:['⑤ 贝叶斯','精度 MᵀM + V⁻¹']},
+  {id:'bpred',ty:'test',  x:760,y:510,w:176,h:58,href:'#t-bpred',  t:['后验预测','+1 噪声 · 用 z']},
+  {id:'equiv',ty:'tool',  x:402,y:600,w:184,h:72,href:'#t-equiv',  t:['③ = ⑤','岭 = 正态先验贝叶斯']}
+];
+var MAP_EDGES=[
+  ['seed','core','derive'],
+  ['core','design','gen'],['core','omit','gen'],['core','ridge','gen'],['core','gls','gen'],['core','bayes','gen'],
+  ['design','orth','supply'],['orth','omit','warn'],['omit','trade','derive'],
+  ['ridge','equiv','tool'],['bayes','equiv','tool'],['bayes','bpred','derive']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong,p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(a.x>b.x+b.w-2){p1=anchor(a,'l');p2=anchor(b,'r');}
+    else if(Math.abs(b.x-a.x)<14){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+n.h/2+5-((n.t.length-1)*8);
+    n.t.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':12.5,'font-weight':600,fill:NODE_TXT[n.ty]});
+      tx.textContent=line;g.appendChild(tx);
+    });
+    N.appendChild(g);
+  });
+}
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}
+    else if(o.type==='dots'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      } else if(o.type==='dots'){o._V.map(proj).forEach(function(q){prims.push({z:q.d,k:2,sx:q.sx,sy:q.sy,r:o.r||3,color:o.color});});}
+    });
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,150,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else if(p.k===1){ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(p.sx,p.sy,p.r,0,6.2832);ctx.fillStyle=p.color;ctx.fill();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,150,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function edd(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',edd);cv.addEventListener('pointercancel',edd);cv.addEventListener('pointerleave',edd);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+/* ===================== §1.2 3D: det(MᵀM)=(x₁−x₂)² over the design square ===================== */
+function detSurface(){
+  var div=document.getElementById('dDet3d');if(!div)return;
+  var X=lin(-1,1,30),Y=lin(-1,1,30),Z=[],i,j;
+  for(i=0;i<Y.length;i++){var row=[];for(j=0;j<X.length;j++){var dd=X[j]-Y[i];row.push(dd*dd);}Z.push(row);}
+  var sc=Scene3D(div,{xr:[-1,1],yr:[-1,1],zr:[0,4],xlabel:'x₁',ylabel:'x₂',zlabel:'det = (x₁−x₂)²',yaw:-0.7,pitch:0.86});
+  if(sc)sc.setObjects([
+    {type:'surface',X:X,Y:Y,Z:Z,scale:INDIGO_SCALE,wire:true,alpha:0.95},
+    {type:'dots',pts:[[1,-1,4],[-1,1,4]],color:C.rust,r:5}
+  ]);
+}
+/* ===================== §3.1 3D: penalized RSS bowl, minimum pulled toward 0 ===================== */
+function ridgeBowl(){
+  var div=document.getElementById('dRidge3d');if(!div)return;
+  var bh=[1.4,1.0],lam=1.2;
+  var bt=[bh[0]/(1+lam),bh[1]/(1+lam)];           // ridge minimizer (orthonormal toy)
+  function L(b1,b2){return (b1-bh[0])*(b1-bh[0])+(b2-bh[1])*(b2-bh[1])+lam*(b1*b1+b2*b2);}
+  var X=lin(-0.4,2.3,30),Y=lin(-0.4,2.3,30),Z=[],i,j,zmin=1e9,zmax=-1e9;
+  for(i=0;i<Y.length;i++){var row=[];for(j=0;j<X.length;j++){var v=L(X[j],Y[i]);row.push(v);if(v<zmin)zmin=v;if(v>zmax)zmax=v;}Z.push(row);}
+  var zOLS=L(bh[0],bh[1]),zRid=L(bt[0],bt[1]);
+  var sc=Scene3D(div,{xr:[-0.4,2.3],yr:[-0.4,2.3],zr:[zmin,zmax],xlabel:'β₁',ylabel:'β₂',zlabel:'RSS + λ‖β‖²',yaw:-0.78,pitch:0.9});
+  if(sc)sc.setObjects([
+    {type:'surface',X:X,Y:Y,Z:Z,scale:INDIGO_SCALE,wire:true,alpha:0.9},
+    {type:'line',pts:[[bh[0],bh[1],zOLS],[bt[0],bt[1],zRid]],color:C.rust,width:2.6},
+    {type:'dots',pts:[[bh[0],bh[1],zOLS]],color:C.gold,r:5},
+    {type:'dots',pts:[[bt[0],bt[1],zRid]],color:C.rust,r:6}
+  ]);
+}
+/* ===================== §5.1 3D: bivariate posterior density bell ===================== */
+function bayesBell(){
+  var div=document.getElementById('dBayes3d');if(!div)return;
+  var Prec=[[1.6,0.4],[0.4,1.6]];                 // = MᵀM + λI (mild collinearity + prior)
+  var detP=Prec[0][0]*Prec[1][1]-Prec[0][1]*Prec[1][0];
+  var norm=Math.sqrt(detP)/(2*Math.PI);            // = 1/(2π√detΣ)
+  var mu=[0.8,0.5];
+  var X=lin(mu[0]-2.7,mu[0]+2.7,32),Y=lin(mu[1]-2.7,mu[1]+2.7,32),Z=[],i,j;
+  for(i=0;i<Y.length;i++){var row=[];for(j=0;j<X.length;j++){
+    var d1=X[j]-mu[0],d2=Y[i]-mu[1];
+    var q=d1*(Prec[0][0]*d1+Prec[0][1]*d2)+d2*(Prec[1][0]*d1+Prec[1][1]*d2);
+    row.push(norm*Math.exp(-0.5*q));}Z.push(row);}
+  var sc=Scene3D(div,{xr:[mu[0]-2.7,mu[0]+2.7],yr:[mu[1]-2.7,mu[1]+2.7],zr:[0,norm*1.05],xlabel:'β₁',ylabel:'β₂',zlabel:'后验密度',yaw:-0.7,pitch:0.84});
+  if(sc)sc.setObjects([{type:'surface',X:X,Y:Y,Z:Z,scale:INDIGO_SCALE,wire:true,alpha:0.96}]);
+}
+var K95=Math.sqrt(5.991);  // radius of a 2-D 95% confidence ellipse
+/* ===================== §1.1 pFisher: (MᵀM)⁻¹ = shape of uncertainty ===================== */
+function fisherEllipse(){
+  var div=document.getElementById('pFisher');if(!div||typeof Plotly==='undefined')return;
+  var sEl=document.getElementById('fSpread');
+  function draw(){
+    var spread=+sEl.value,n=16,xbar=1.0;
+    var x=lin(xbar-spread,xbar+spread,n),Sx=0,Sxx=0,i;
+    for(i=0;i<n;i++){Sx+=x[i];Sxx+=x[i]*x[i];}
+    var MtM=[[n,Sx],[Sx,Sxx]],det=n*Sxx-Sx*Sx,Cov=inv2(MtM);  // σ²=1
+    var corr=Cov[0][1]/Math.sqrt(Cov[0][0]*Cov[1][1]);
+    setTxt('fSpreadV',spread.toFixed(2));
+    setTxt('fDet',det.toFixed(2));
+    var ell=ellipsePts([2,1],Cov,K95,120),area=Math.PI*ell.ax*ell.bx;
+    setTxt('fArea',area.toFixed(2));
+    setTxt('fCorr',corr.toFixed(2));
+    var m=2,j;for(j=0;j<ell.x.length;j++){m=Math.max(m,Math.abs(ell.x[j]-2),Math.abs(ell.y[j]-1));}
+    m=Math.min(m*1.1,9);
+    var traces=[
+      {x:ell.x,y:ell.y,mode:'lines',fill:'toself',fillcolor:'rgba(46,60,114,0.12)',line:{color:C.accent,width:2.4},name:'≈95% 置信椭圆',showlegend:true},
+      {x:[2],y:[1],mode:'markers',marker:{size:8,color:C.rust,symbol:'x'},name:'β̂',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'β̂₀（截距）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[2-m,2+m]},
+      yaxis:{title:'β̂₁（斜率）',gridcolor:C.line,linecolor:C.lineStrong,range:[1-m,1+m],scaleanchor:'x',scaleratio:1}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  sEl.addEventListener('input',draw);draw();
+}
+/* ===================== §1.2 pDesignEll: 2-point design, det=(x₁−x₂)² ===================== */
+function designEllipse(){
+  var div=document.getElementById('pDesignEll');if(!div||typeof Plotly==='undefined')return;
+  var aEl=document.getElementById('dxa'),bEl=document.getElementById('dxb');
+  function draw(){
+    var x1=+aEl.value,x2=+bEl.value,det=(x1-x2)*(x1-x2);
+    setTxt('dxaV',x1.toFixed(2));setTxt('dxbV',x2.toFixed(2));
+    setTxt('dDetL',det.toFixed(2));
+    var MtM=[[2,x1+x2],[x1+x2,x1*x1+x2*x2]],Cov=inv2(MtM);
+    var ell=ellipsePts([0,0],Cov,K95,140),area=Math.PI*ell.ax*ell.bx;
+    setTxt('dVolL',(det<1e-3?'∞':area.toFixed(2)));
+    if(det<0.04)setTxt('dWarn','两点几乎重合 → MᵀM 接近奇异，椭圆爆开：数据分不清截距和斜率。');
+    else if(det>3.2)setTxt('dWarn','已接近 D-最优：两点顶到 ±1 两端，det→4，椭圆最小。');
+    else setTxt('dWarn','还能更好——把两点继续拉向 +1 / −1 两端。');
+    var traces=[
+      {x:ell.x,y:ell.y,mode:'lines',fill:'toself',fillcolor:'rgba(46,60,114,0.12)',line:{color:C.accent,width:2.4},name:'β̂ 的置信椭圆',showlegend:true},
+      {x:[0],y:[0],mode:'markers',marker:{size:7,color:C.rust,symbol:'x'},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'β̂₀',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-7,7]},
+      yaxis:{title:'β̂₁',gridcolor:C.line,linecolor:C.lineStrong,range:[-7,7],scaleanchor:'x',scaleratio:1},
+      annotations:[{x:0,y:1,xref:'paper',yref:'paper',xanchor:'center',yanchor:'top',showarrow:false,
+        text:'det(MᵀM) = (x₁−x₂)² = '+det.toFixed(2)+'　(最大 4)',font:{family:'Fraunces, serif',size:13,color:'#2A356A'}}]});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  aEl.addEventListener('input',draw);bEl.addEventListener('input',draw);draw();
+}
+/* ===================== §1.3 pOrth: orthogonal columns ⇒ independent estimates ===================== */
+function orthEllipse(){
+  var div=document.getElementById('pOrth');if(!div||typeof Plotly==='undefined')return;
+  var aEl=document.getElementById('oAngle');
+  function draw(){
+    var deg=+aEl.value,th=deg*Math.PI/180,ct=Math.cos(th);
+    var Cov=inv2([[1,ct],[ct,1]]),rho=-ct;
+    setTxt('oAngleV',deg+'°');setTxt('oCos',ct.toFixed(2));setTxt('oCorr',rho.toFixed(2));
+    if(deg>=89)setTxt('oState','正交！MᵀM = I，β̂ 两分量独立，椭圆是正圆。');
+    else if(deg<=20)setTxt('oState','夹角极小 → 列高度共线，椭圆又斜又长，两估计深度纠缠。');
+    else setTxt('oState','夹角越小，列越共线，椭圆越斜越长，相关 ρ 越接近 −1。');
+    var ell=ellipsePts([0,0],Cov,2,140),m=0,i;
+    for(i=0;i<ell.x.length;i++)m=Math.max(m,Math.abs(ell.x[i]),Math.abs(ell.y[i]));
+    m=Math.min(Math.max(m*1.12,2.2),12);
+    var traces=[
+      {x:ell.x,y:ell.y,mode:'lines',fill:'toself',fillcolor:'rgba(46,60,114,0.12)',line:{color:C.accent,width:2.4},name:'β̂ 的 2σ 椭圆',showlegend:true},
+      {x:[0],y:[0],mode:'markers',marker:{size:7,color:C.rust,symbol:'x'},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'β̂₁',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-m,m]},
+      yaxis:{title:'β̂₂',gridcolor:C.line,linecolor:C.lineStrong,range:[-m,m],scaleanchor:'x',scaleratio:1}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  aEl.addEventListener('input',draw);draw();
+}
+/* ===================== §2.1 pOmit: omitted-variable bias ===================== */
+function omitScatter(){
+  var div=document.getElementById('pOmit');if(!div||typeof Plotly==='undefined')return;
+  var rEl=document.getElementById('omR'),bEl=document.getElementById('omB2');
+  var n=60,rng=mulberry32(20240613),z1=[],z2=[],z3=[],i;
+  for(i=0;i<n;i++){z1.push(randnFrom(rng));z2.push(randnFrom(rng));z3.push(randnFrom(rng));}
+  function fitSlope(x,y){var mx=mean(x),my=mean(y),sxy=0,sxx=0,k;for(k=0;k<x.length;k++){sxy+=(x[k]-mx)*(y[k]-my);sxx+=(x[k]-mx)*(x[k]-mx);}var b1=sxy/sxx;return {b1:b1,b0:my-b1*mx};}
+  function draw(){
+    var rho=+rEl.value,b2=+bEl.value,sig=0.4,r2=Math.sqrt(Math.max(1-rho*rho,0)),k;
+    setTxt('omRV',rho.toFixed(2));setTxt('omB2V',b2.toFixed(2));
+    var x1=[],Y=[];for(k=0;k<n;k++){var xx1=z1[k],xx2=rho*z1[k]+r2*z2[k];x1.push(xx1);Y.push(1*xx1+b2*xx2+sig*z3[k]);}
+    var f=fitSlope(x1,Y);
+    setTxt('omEst',f.b1.toFixed(2));setTxt('omBias',(f.b1-1).toFixed(2));
+    var xs=lin(-2.7,2.7,2);
+    var traces=[
+      {x:x1,y:Y,mode:'markers',marker:{size:6,color:'rgba(46,60,114,0.42)'},name:'数据 (略去了 x₂)',showlegend:true},
+      {x:xs,y:[f.b0+f.b1*xs[0],f.b0+f.b1*xs[1]],mode:'lines',line:{color:C.rust,width:3},name:'漏掉 x₂ 的 OLS 线（有偏）',showlegend:true},
+      {x:xs,y:[xs[0],xs[1]],mode:'lines',line:{color:C.teal,width:2.4,dash:'dash'},name:'真实 β₁=1（控制住 x₂）',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'x₁',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-2.9,2.9]},
+      yaxis:{title:'Y',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      annotations:[{x:0,y:1,xref:'paper',yref:'paper',xanchor:'center',yanchor:'top',showarrow:false,
+        text:'偏差 ≈ ρ·β₂ = '+(rho*b2).toFixed(2)+'　（ρ=0 时两线重合）',font:{family:'Fraunces, serif',size:13,color:'#2A356A'}}]});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  rEl.addEventListener('input',draw);bEl.addEventListener('input',draw);draw();
+}
+/* ===================== §2.2 pTrade: variance inflation factor ===================== */
+function tradeVIF(){
+  var div=document.getElementById('pTrade');if(!div||typeof Plotly==='undefined')return;
+  var rEl=document.getElementById('trR');
+  function draw(){
+    var rho=+rEl.value,vif=1/Math.max(1-rho*rho,1e-3);
+    setTxt('trRV',rho.toFixed(2));setTxt('trVIF',vif.toFixed(2));
+    if(rho<0.5)setTxt('trState','共线性温和：多含一个相关变量，方差只略微变大。');
+    else if(rho<0.9)setTxt('trState','方差开始明显膨胀：多选的"价签"在变贵。');
+    else setTxt('trState','VIF 爆炸！多选的代价急剧上升——这正是岭回归要罚的东西。');
+    var R=lin(0,0.985,160),V=R.map(function(r){return 1/(1-r*r);});
+    var traces=[
+      {x:R,y:V,mode:'lines',line:{color:C.accent,width:2.6},name:'VIF = 1/(1−ρ²)',showlegend:true},
+      {x:[rho,rho],y:[1,Math.min(vif,40)],mode:'lines',line:{color:C.rust,width:1.6,dash:'dot'},showlegend:false},
+      {x:[rho],y:[Math.min(vif,40)],mode:'markers',marker:{size:9,color:C.rust},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'两列的相关 ρ',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,1]},
+      yaxis:{title:'方差膨胀因子 VIF',gridcolor:C.line,linecolor:C.lineStrong,range:[0,40]}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  rEl.addEventListener('input',draw);draw();
+}
+function circ(cx,cy,r,N){N=N||80;var x=[],y=[],i,th;for(i=0;i<=N;i++){th=2*Math.PI*i/N;x.push(cx+r*Math.cos(th));y.push(cy+r*Math.sin(th));}return {x:x,y:y};}
+/* ===================== §3.1 pRidgeBall + pRidgeMSE (shared λ) ===================== */
+function ridgeShrink(){
+  var ballDiv=document.getElementById('pRidgeBall'),mseDiv=document.getElementById('pRidgeMSE');
+  var lamEl=document.getElementById('rLam');if(!lamEl||typeof Plotly==='undefined')return;
+  var bh=[2.4,1.8];                                  // OLS (‖β̂‖=3), MᵀM=I toy
+  var P=5,B2=3,S2=1,lamStar=P*S2/B2;                 // λ* = 5/3
+  function mse(l){return (l*l*B2+P*S2)/((1+l)*(1+l));}
+  function bias2(l){return l*l*B2/((1+l)*(1+l));}
+  function vr(l){return P*S2/((1+l)*(1+l));}
+  function draw(){
+    var lam=+lamEl.value,sh=1/(1+lam),bt=[bh[0]*sh,bh[1]*sh],rad=Math.sqrt(bt[0]*bt[0]+bt[1]*bt[1]);
+    setTxt('rLamV',lam.toFixed(2));setTxt('rShrink',sh.toFixed(3));
+    setTxt('rMSE',mse(lam).toFixed(3));setTxt('rOLS',mse(0).toFixed(2));
+    if(lam<0.15)setTxt('rState','λ≈0：几乎就是 OLS，方差大、没收缩。');
+    else if(Math.abs(lam-lamStar)<0.4)setTxt('rState','接近最优 λ*≈1.67，MSE 最低（偏差与方差最佳平衡）。');
+    else if(lam>3.5)setTxt('rState','收缩过度：偏差主导，MSE 又爬回去了。');
+    else setTxt('rState','正在收缩——MSE 比 OLS 更低，但还没到谷底。');
+    if(ballDiv){
+      var c1=circ(bh[0],bh[1],0.6),c2=circ(bh[0],bh[1],1.2),c3=circ(bh[0],bh[1],1.9),bz=circ(0,0,rad);
+      var tB=[
+        {x:c1.x,y:c1.y,mode:'lines',line:{color:'rgba(132,128,150,0.5)',width:1},showlegend:false},
+        {x:c2.x,y:c2.y,mode:'lines',line:{color:'rgba(132,128,150,0.38)',width:1},showlegend:false},
+        {x:c3.x,y:c3.y,mode:'lines',line:{color:'rgba(132,128,150,0.28)',width:1},name:'RSS 等高线',showlegend:true},
+        {x:bz.x,y:bz.y,mode:'lines',line:{color:C.accent,width:2.4},name:'L2 预算圈 ‖β‖≤t',showlegend:true},
+        {x:[0,bh[0]],y:[0,bh[1]],mode:'lines',line:{color:'rgba(176,68,43,0.5)',width:1.4,dash:'dot'},showlegend:false},
+        {x:[bh[0]],y:[bh[1]],mode:'markers',marker:{size:10,color:C.gold},name:'OLS β̂',showlegend:true},
+        {x:[bt[0]],y:[bt[1]],mode:'markers',marker:{size:11,color:C.rust,symbol:'x'},name:'岭解 β̃=β̂/(1+λ)',showlegend:true},
+        {x:[0],y:[0],mode:'markers',marker:{size:6,color:C.inkSoft},showlegend:false}
+      ];
+      var layB=baseLayout({showlegend:true,xaxis:{title:'β₁',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-0.7,3.5]},
+        yaxis:{title:'β₂',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-0.7,3.5],scaleanchor:'x',scaleratio:1}});
+      Plotly.react(ballDiv,tB,layB,CONF);
+    }
+    if(mseDiv){
+      var L=lin(0,6,160),Mc=L.map(mse),Bc=L.map(bias2),Vc=L.map(vr);
+      var tM=[
+        {x:L,y:Mc,mode:'lines',line:{color:C.accent,width:3},name:'MSE(λ)',showlegend:true},
+        {x:L,y:Bc,mode:'lines',line:{color:C.rust,width:1.8,dash:'dash'},name:'偏差²',showlegend:true},
+        {x:L,y:Vc,mode:'lines',line:{color:C.teal,width:1.8,dash:'dash'},name:'方差',showlegend:true},
+        {x:[0,6],y:[mse(0),mse(0)],mode:'lines',line:{color:C.gold,width:1.6,dash:'dot'},name:'OLS 的 MSE',showlegend:true},
+        {x:[lamStar],y:[mse(lamStar)],mode:'markers',marker:{size:13,color:C.green,symbol:'star'},name:'λ*',showlegend:true},
+        {x:[lam,lam],y:[0,mse(0)*1.05],mode:'lines',line:{color:C.rust,width:1.4,dash:'dot'},showlegend:false},
+        {x:[lam],y:[mse(lam)],mode:'markers',marker:{size:9,color:C.rust},showlegend:false}
+      ];
+      var layM=baseLayout({showlegend:true,xaxis:{title:'岭参数 λ',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,6]},
+        yaxis:{title:'风险（MSE）',gridcolor:C.line,linecolor:C.lineStrong,rangemode:'tozero'}});
+      Plotly.react(mseDiv,tM,layM,CONF);
+    }
+  }
+  lamEl.addEventListener('input',draw);draw();
+}
+/* ===================== §3.2 pLOOCV: cross-validation curve ===================== */
+function loocvCurve(){
+  var div=document.getElementById('pLOOCV');if(!div||typeof Plotly==='undefined')return;
+  var lamEl=document.getElementById('cvLam'),n0=40;
+  function f(l){return n0*(1.0+(3*l*l+5)/((1+l)*(1+l)));}  // n·[噪声 + 偏差² + 方差]，谷底 λ=5/3
+  var Ls=lin(0.02,8,400),best=Ls[0],bestv=1e18,i;
+  for(i=0;i<Ls.length;i++){var v=f(Ls[i]);if(v<bestv){bestv=v;best=Ls[i];}}
+  function draw(){
+    var lam=+lamEl.value;setTxt('cvLamV',lam.toFixed(2));
+    setTxt('cvSSE',f(lam).toFixed(1));setTxt('cvBest',best.toFixed(2));
+    var X=lin(0.02,8,200),Y=X.map(f);
+    var traces=[
+      {x:X,y:Y,mode:'lines',line:{color:C.accent,width:2.8},name:'CVSSE(λ)（留一交叉验证）',showlegend:true},
+      {x:[best],y:[f(best)],mode:'markers',marker:{size:12,color:C.green,symbol:'star'},name:'谷底 λ_CV',showlegend:true},
+      {x:[lam,lam],y:[f(best)*0.92,f(0.02)],mode:'lines',line:{color:C.rust,width:1.4,dash:'dot'},showlegend:false},
+      {x:[lam],y:[f(lam)],mode:'markers',marker:{size:9,color:C.rust},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'岭参数 λ',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,8]},
+      yaxis:{title:'交叉验证误差 CVSSE',gridcolor:C.line,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  lamEl.addEventListener('input',draw);draw();
+}
+/* ===================== §4.1 pGLS: heteroskedastic funnel, OLS vs WLS ===================== */
+function glsFunnel(){
+  var div=document.getElementById('pGLS');if(!div||typeof Plotly==='undefined')return;
+  var hEl=document.getElementById('gHet'),sEl=document.getElementById('gSeed'),n=50;
+  function wls(x,y,w){var Sw=0,Swx=0,Swy=0,Swxx=0,Swxy=0,k;
+    for(k=0;k<x.length;k++){Sw+=w[k];Swx+=w[k]*x[k];Swy+=w[k]*y[k];Swxx+=w[k]*x[k]*x[k];Swxy+=w[k]*x[k]*y[k];}
+    var den=Sw*Swxx-Swx*Swx,b1=(Sw*Swxy-Swx*Swy)/den;return {b1:b1,b0:(Swy-b1*Swx)/Sw};}
+  function draw(){
+    var het=+hEl.value,seed=+sEl.value,rng=mulberry32(seed*9301+7),x=lin(0,4,n),y=[],sd=[],w1=[],wg=[],k;
+    setTxt('gHetV',het.toFixed(2));setTxt('gSeedV',seed);
+    for(k=0;k<n;k++){var s=0.6*(1+het*x[k]);sd.push(s);y.push(1+2*x[k]+s*randnFrom(rng));w1.push(1);wg.push(1/(s*s));}
+    var ols=wls(x,y,w1),gls=wls(x,y,wg),xs=[0,4];
+    setTxt('gOLS',ols.b1.toFixed(2));setTxt('gGLS',gls.b1.toFixed(2));
+    var traces=[
+      {x:x,y:y,mode:'markers',marker:{size:6,color:'rgba(46,60,114,0.4)'},name:'数据（方差随 x 张开）',showlegend:true},
+      {x:xs,y:[gls.b0+gls.b1*xs[0],gls.b0+gls.b1*xs[1]],mode:'lines',line:{color:C.accent,width:3},name:'GLS / 加权（权重 1/σᵢ²）',showlegend:true},
+      {x:xs,y:[ols.b0+ols.b1*xs[0],ols.b0+ols.b1*xs[1]],mode:'lines',line:{color:C.gold,width:2,dash:'dot'},name:'普通 OLS',showlegend:true},
+      {x:xs,y:[1,9],mode:'lines',line:{color:C.teal,width:2,dash:'dash'},name:'真实斜率 β₁=2',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'x',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-0.15,4.15]},
+      yaxis:{title:'Y',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  hEl.addEventListener('input',draw);sEl.addEventListener('input',draw);draw();
+}
+/* ===================== §4.2 pWhiten: W^{-1/2} turns correlated errors spherical ===================== */
+function whitenView(){
+  var div=document.getElementById('pWhiten');if(!div||typeof Plotly==='undefined')return;
+  var rEl=document.getElementById('wRho'),n=180;
+  function whalfInv(W){var e=eig2sym(W),a=1/Math.sqrt(Math.max(e.l1,1e-9)),b=1/Math.sqrt(Math.max(e.l2,1e-9));
+    var v1=e.v1,v2=e.v2;
+    return [[a*v1[0]*v1[0]+b*v2[0]*v2[0], a*v1[0]*v1[1]+b*v2[0]*v2[1]],
+            [a*v1[0]*v1[1]+b*v2[0]*v2[1], a*v1[1]*v1[1]+b*v2[1]*v2[1]]];}
+  function draw(){
+    var rho=+rEl.value,W=[[1,rho],[rho,1]],L=chol2(W),Wi=whalfInv(W),rng=mulberry32(777),k;
+    var ex=[],ey=[],wx=[],wy=[];
+    for(k=0;k<n;k++){var z1=randnFrom(rng),z2=randnFrom(rng);
+      var e1=L[0][0]*z1,e2=L[1][0]*z1+L[1][1]*z2;
+      ex.push(e1);ey.push(e2);
+      wx.push(Wi[0][0]*e1+Wi[0][1]*e2);wy.push(Wi[1][0]*e1+Wi[1][1]*e2);}
+    if(Math.abs(rho)<0.1)setHTML('wShow','ρ ≈ 0：误差本就近似球形，GLS 退化成普通最小二乘。');
+    else setHTML('wShow','ρ = '+rho.toFixed(2)+'：原始误差是<b>斜椭圆</b>（相关）；白化 W<sup>−1/2</sup> 把它<b>掰回正圆</b>，于是又能用普通最小二乘。');
+    var be=ellipsePts([0,0],W,2,120),uc=circ(0,0,2,120);
+    var traces=[
+      {x:ex,y:ey,mode:'markers',marker:{size:5,color:'rgba(46,60,114,0.4)'},name:'原始误差 e ~ N(0,W)',showlegend:true},
+      {x:wx,y:wy,mode:'markers',marker:{size:5,color:'rgba(31,107,102,0.5)'},name:'白化后 W^{-1/2}e ~ N(0,I)',showlegend:true},
+      {x:be.x,y:be.y,mode:'lines',line:{color:C.accent,width:2.2},showlegend:false},
+      {x:uc.x,y:uc.y,mode:'lines',line:{color:C.teal,width:2,dash:'dash'},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'分量 1',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-4,4]},
+      yaxis:{title:'分量 2',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-4,4],scaleanchor:'x',scaleratio:1}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  rEl.addEventListener('input',draw);draw();
+}
+/* ===================== §5.1 pBayesPLP: posterior = prior × likelihood (1D) ===================== */
+function bayesPLP(){
+  var div=document.getElementById('pBayesPLP');if(!div||typeof Plotly==='undefined')return;
+  var pEl=document.getElementById('bPrec'),mle=2,tauD=4;   // likelihood N(2, 1/4)
+  function draw(){
+    var prec=+pEl.value,tauPost=tauD+prec,mPost=(tauD*mle+prec*0)/tauPost,sdPost=1/Math.sqrt(tauPost);
+    var sdLik=1/Math.sqrt(tauD),sdPri=(prec>0.02?1/Math.sqrt(prec):1e6);
+    setTxt('bPrecV',prec.toFixed(1));setTxt('bMean',mPost.toFixed(2));setTxt('bSD',sdPost.toFixed(2));
+    setHTML('bPull','后验均值 = <b>'+mPost.toFixed(2)+'</b>，被先验从 MLE=2 拉向 0 了 <b>'+(mle-mPost).toFixed(2)+'</b>。');
+    var X=lin(-2.2,4.2,200),Lk=X.map(function(x){return normPdf(x,mle,sdLik);}),
+        Pr=X.map(function(x){return normPdf(x,0,sdPri);}),Po=X.map(function(x){return normPdf(x,mPost,sdPost);});
+    var traces=[
+      {x:X,y:Lk,mode:'lines',line:{color:C.faint,width:2,dash:'dash'},name:'似然 N(2, 1/4)',showlegend:true},
+      {x:X,y:Pr,mode:'lines',line:{color:C.gold,width:2,dash:'dot'},name:'先验 N(0, 1/精度)',showlegend:true},
+      {x:X,y:Po,mode:'lines',line:{color:C.accent,width:3},name:'后验',showlegend:true},
+      {x:[mPost,mPost],y:[0,normPdf(mPost,mPost,sdPost)],mode:'lines',line:{color:C.accent,width:1.2,dash:'dot'},showlegend:false},
+      {x:[2,2],y:[0,normPdf(2,mle,sdLik)],mode:'lines',line:{color:C.faint,width:1,dash:'dot'},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'β',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-2.2,4.2]},
+      yaxis:{title:'密度',gridcolor:C.line,linecolor:C.lineStrong,rangemode:'tozero'}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  pEl.addEventListener('input',draw);draw();
+}
+/* ===================== §5.2 pEquiv: ridge path === Gaussian-prior posterior means ===================== */
+function equivView(){
+  var div=document.getElementById('pEquiv');if(!div||typeof Plotly==='undefined')return;
+  var lamEl=document.getElementById('eqLam'),bh=[3,-2,1],col=[C.accent,C.teal,C.gold],nm=['β₁','β₂','β₃'];
+  function ridge(j,l){return bh[j]/(1+l);}             // (MᵀM+λI)⁻¹MᵀY with MᵀM=I
+  function bayes(j,l){return bh[j]/(1+l);}             // (MᵀM+V⁻¹)⁻¹MᵀY with V⁻¹=λI, MᵀM=I
+  function draw(){
+    var lam=+lamEl.value,L=lin(0,8,120),Lg=lin(0,8,17),traces=[],j,diff=0;
+    setTxt('eqLamV',lam.toFixed(2));
+    for(j=0;j<3;j++){
+      traces.push({x:L,y:L.map(function(l){return ridge(j,l);}),mode:'lines',line:{color:col[j],width:2.6},name:nm[j]+' 岭路径',showlegend:true});
+      traces.push({x:Lg,y:Lg.map(function(l){return bayes(j,l);}),mode:'markers',marker:{size:7,color:col[j],symbol:'circle-open',line:{width:1.6,color:col[j]}},showlegend:false});
+      traces.push({x:[lam],y:[ridge(j,lam)],mode:'markers',marker:{size:10,color:col[j]},showlegend:false});
+      diff=Math.max(diff,Math.abs(ridge(j,lam)-bayes(j,lam)));
+    }
+    var rv=[ridge(0,lam),ridge(1,lam),ridge(2,lam)].map(function(v){return v.toFixed(2);});
+    var bv=[bayes(0,lam),bayes(1,lam),bayes(2,lam)].map(function(v){return v.toFixed(2);});
+    setTxt('eqRidge','['+rv.join(', ')+']');setTxt('eqBayes','['+bv.join(', ')+']');
+    setTxt('eqDiff',diff.toExponential(1));
+    traces.push({x:[lam,lam],y:[-2.3,3.3],mode:'lines',line:{color:'rgba(176,68,43,0.4)',width:1.2,dash:'dot'},showlegend:false});
+    var lay=baseLayout({showlegend:true,xaxis:{title:'λ（= 先验精度）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,8]},
+      yaxis:{title:'系数取值',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[-2.4,3.4]},
+      annotations:[{x:1,y:1,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',showarrow:false,
+        text:'线 = 岭回归　○ = 正态先验后验均值　（严丝合缝叠在一起）',font:{family:'Fraunces, serif',size:12,color:'#2A356A'}}]});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  lamEl.addEventListener('input',draw);draw();
+}
+/* ===================== §5.3 pStd: standardized slope = half the min→max swing (static) ===================== */
+function stdView(){
+  var div=document.getElementById('pStd');if(!div||typeof Plotly==='undefined')return;
+  var b1=5,b2=3;                                      // E[y] = β₁ + β₂·m,  m=(ω−20)/10 ∈ [−1,1]
+  var W=lin(10,30,60),Y=W.map(function(w){return b1+b2*(w-20)/10;});
+  var traces=[
+    {x:W,y:Y,mode:'lines',line:{color:C.accent,width:3},name:'E[y] = 5 + 3·m',showlegend:true},
+    {x:[10,30],y:[2,8],mode:'markers',marker:{size:9,color:C.rust},name:'两端 (m=∓1)',showlegend:true},
+    {x:[20],y:[5],mode:'markers',marker:{size:9,color:C.gold},name:'中点 (m=0)',showlegend:true},
+    {x:[31,31],y:[2,8],mode:'lines',line:{color:C.teal,width:2},showlegend:false},
+    {x:[30.4,31.6],y:[2,2],mode:'lines',line:{color:C.teal,width:1.4},showlegend:false},
+    {x:[30.4,31.6],y:[8,8],mode:'lines',line:{color:C.teal,width:1.4},showlegend:false}
+  ];
+  var lay=baseLayout({showlegend:true,xaxis:{title:'原始预测变量 ω（如温度）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[8,34]},
+    yaxis:{title:'E[y]',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,10]},
+    annotations:[
+      {x:31,y:5,xref:'x',yref:'y',xanchor:'left',showarrow:false,text:'  全幅 Δ = 6',font:{family:'Fraunces, serif',size:12,color:C.teal}},
+      {x:0.5,y:1,xref:'paper',yref:'paper',xanchor:'center',yanchor:'top',showarrow:false,
+        text:'β₂ = 3 = 半幅：把变量标准化到 [−1,1] 后，系数 = 端到端摆动的一半',font:{family:'Fraunces, serif',size:12.5,color:'#2A356A'}}]});
+  Plotly.react(div,traces,lay,CONF);
+}
+/* ===================== §5.4 pBPred: posterior-predictive bands (mean band vs the "+1") ===================== */
+function bpredBands(){
+  var div=document.getElementById('pBPred');if(!div||typeof Plotly==='undefined')return;
+  var pEl=document.getElementById('bpPrec'),x=lin(0,4,9),bols=[1,1.2],z=1.96,n=x.length;
+  var Sx=0,Sxx=0,i;for(i=0;i<n;i++){Sx+=x[i];Sxx+=x[i]*x[i];}
+  var MtM=[[n,Sx],[Sx,Sxx]];
+  function mv(A,v){return [A[0][0]*v[0]+A[0][1]*v[1],A[1][0]*v[0]+A[1][1]*v[1]];}
+  function draw(){
+    var prec=+pEl.value;setTxt('bpPrecV',prec.toFixed(1));
+    var A=[[MtM[0][0],MtM[0][1]],[MtM[1][0],MtM[1][1]+prec]];   // + V⁻¹, 截距不罚
+    var Sg=inv2(A),bt=mv(Sg,mv(MtM,bols));                     // σ²=1
+    var xs=lin(0,4,60),fit=[],mhi=[],mlo=[],phi=[],plo=[],k;
+    for(k=0;k<xs.length;k++){var m=[1,xs[k]],yh=bt[0]+bt[1]*xs[k];
+      var v=m[0]*(Sg[0][0]*m[0]+Sg[0][1]*m[1])+m[1]*(Sg[1][0]*m[0]+Sg[1][1]*m[1]);
+      var hm=z*Math.sqrt(Math.max(v,0)),hp=z*Math.sqrt(Math.max(v+1,0));
+      fit.push(yh);mhi.push(yh+hm);mlo.push(yh-hm);phi.push(yh+hp);plo.push(yh-hp);}
+    var mc=[1,4],vC=mc[0]*(Sg[0][0]*mc[0]+Sg[0][1]*mc[1])+mc[1]*(Sg[1][0]*mc[0]+Sg[1][1]*mc[1]);
+    setTxt('bpMean',(z*Math.sqrt(vC)).toFixed(2));setTxt('bpPred',(z*Math.sqrt(vC+1)).toFixed(2));
+    var traces=[
+      {x:xs,y:phi,mode:'lines',line:{color:'rgba(46,60,114,0)'},showlegend:false},
+      {x:xs,y:plo,mode:'lines',line:{color:'rgba(46,60,114,0)'},fill:'tonexty',fillcolor:'rgba(46,60,114,0.10)',name:'预测带（含 +1 新噪声）',showlegend:true},
+      {x:xs,y:mhi,mode:'lines',line:{color:'rgba(46,60,114,0)'},showlegend:false},
+      {x:xs,y:mlo,mode:'lines',line:{color:'rgba(46,60,114,0)'},fill:'tonexty',fillcolor:'rgba(46,60,114,0.26)',name:'均值带（仅参数不确定）',showlegend:true},
+      {x:xs,y:fit,mode:'lines',line:{color:C.accent,width:3},name:'后验均值拟合线',showlegend:true},
+      {x:[2],y:[bt[0]+bt[1]*2],mode:'markers',marker:{size:7,color:C.rust},name:'x̄（均值带最窄处）',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,xaxis:{title:'x',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,4]},
+      yaxis:{title:'Y(x₀)',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  pEl.addEventListener('input',draw);draw();
+}
+/* ===================== init / boot ===================== */
+function safe(name,fn){try{fn();}catch(e){if(window.console&&console.warn)console.warn('[viz '+name+']',e);}}
+function init(){
+  safe('math',renderMath);
+  safe('sliders',wireSliderFill);
+  safe('nav',wireNav);
+  safe('menu',wireMenu);
+  safe('map',buildMap);
+  safe('detSurface',detSurface);
+  safe('ridgeBowl',ridgeBowl);
+  safe('bayesBell',bayesBell);
+  safe('fisherEllipse',fisherEllipse);
+  safe('designEllipse',designEllipse);
+  safe('orthEllipse',orthEllipse);
+  safe('omitScatter',omitScatter);
+  safe('tradeVIF',tradeVIF);
+  safe('ridgeShrink',ridgeShrink);
+  safe('loocvCurve',loocvCurve);
+  safe('glsFunnel',glsFunnel);
+  safe('whitenView',whitenView);
+  safe('bayesPLP',bayesPLP);
+  safe('equivView',equivView);
+  safe('stdView',stdView);
+  safe('bpredBands',bpredBands);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>

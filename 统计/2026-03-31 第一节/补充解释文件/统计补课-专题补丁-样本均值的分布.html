@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>专题补丁 · 样本均值的分布 X̄ ~ N(μ, σ²/n) —— 从 Thm 2.6.1 的两条原子法则，到完整解题链（含期望/方差逐步装配、缩放常数平方陷阱、独立性必需性、σ/√n 而非 σ/n、精确而非 CLT）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly（仅 2D SVG；3D 全部由内置 Canvas 引擎手绘，绝不调用 WebGL） -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F2EFE6;
+  --card:#FFFDF8;
+  --ink:#1B1A1F;
+  --ink-soft:#4C4A55;
+  --ink-faint:#86838F;
+  --line:#E2DECF;
+  --line-strong:#CFC9B6;
+  --accent:#0E6E8C;        /* 专题补丁主色：孔雀蓝 / 诊断蓝（这一份做的事，是把第二节那格只给了「零件」的方差法则，桥接装配成一条完整解题链——冷静、补缺、接驳的孔雀蓝） */
+  --accent-soft:#D6E8EF;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(25,22,40,.05), 0 8px 30px rgba(25,22,40,.06);
+  --shadow-lg:0 10px 50px rgba(25,22,40,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #D6E8EF 0%, rgba(214,232,239,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1680px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,64px) 56px; max-width:1230px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.toc a.star-link .num{color:var(--accent)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(15,12,20,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,50px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:90px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(56px,12vw,104px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,38px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:90ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px; max-width:95ch}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F6F2E9)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 16px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+.steps.amber li::before{background:var(--accent)}
+
+/* prose bullet list */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#E5F1F5; border:1px solid #AED2DE; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+
+/* plot containers */
+.plot{width:100%; height:380px}
+.plot.tall{height:450px}
+.plot.d3{height:520px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #9EC8D6; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px; font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(14,110,140,.04))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:90ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-fine{font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar">
+  <a class="brand" href="#top">样本均值的分布<small>专题补丁 · X̄ ~ N(μ, σ²/n) · 从 Thm 2.6.1 到完整解题链</small></a>
+  <h4>诊断</h4>
+  <nav class="toc">
+    <a href="#t-gap" class="trap-link"><span class="num">0</span>缺口在哪：零件 ≠ 装配</a>
+  </nav>
+  <h4>解题链</h4>
+  <nav class="toc">
+    <a href="#t-setup"><span class="num">1</span>起点：把 X̄ 拆成 (1/n)·S</a>
+    <a href="#t-mean"><span class="num">2</span>期望那一半 = μ</a>
+    <a href="#t-var" class="star-link"><span class="num">3</span>方差那一半 = σ²/n ★</a>
+    <a href="#t-case"><span class="num">4</span>案例 · 代进真数字</a>
+  </nav>
+  <h4>看得见</h4>
+  <nav class="toc">
+    <a href="#t-decay"><span class="num">5</span>2D · √n 还是 n？陷阱可视化</a>
+    <a href="#t-samp"><span class="num">6</span>2D · 抽样分布随 n 收紧</a>
+    <a href="#t-ridge"><span class="num">7</span>3D · 收紧山脊（纯 Canvas）</a>
+    <a href="#t-mc"><span class="num">8</span>交互 · 蒙特卡洛验证公式</a>
+  </nav>
+  <h4>收口</h4>
+  <nav class="toc">
+    <a href="#t-normal" class="star-link"><span class="num">9</span>它「精确是正态」≠ CLT</a>
+    <a href="#t-traps" class="trap-link"><span class="num">10</span>陷阱合集 · 一页带走</a>
+  </nav>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="content" id="top">
+
+  <p class="h-eyebrow">统计补课 · 专题补丁 · Supplement</p>
+  <h1 class="title cjk">从 Thm 2.6.1 的「零件」，<br>到 X̄ ~ N(μ, σ²/n) 的「解题链」</h1>
+  <p class="lead cjk">第二节 §1.2 那张方差卡片，给的是三条<b>孤立的原子法则</b>；要解「i.i.d. 正态的样本均值服从什么分布」这道填空，你得把它们<b>装配</b>起来，而中间有三步装配从没被写出来。这一份就只做一件事：把那条断掉的装配链<b>一步一步焊回去</b>，再用 2D / 3D / 蒙特卡洛三种方式让你<u>亲眼</u>确认 $\bar X\sim N(\mu,\sigma^2/n)$ 这个结论。</p>
+
+  <div class="guide cjk">
+    <div class="gchip flow"><div class="ic">→</div><h5>流程</h5><p>逐步装配，每步标清用了哪条法则、需不需要独立。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>期望半、方差半两条链，连缩放常数怎么平方都写出来。</p></div>
+    <div class="gchip case"><div class="ic">▢</div><h5>案例</h5><p>代进 μ=170、σ=10、n=25 的真数字看结果。</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5>2D①</h5><p>σ/√n vs σ/n，把最常踩的那个陷阱画出来。</p></div>
+    <div class="gchip d2"><div class="ic">▥</div><h5>2D②</h5><p>抽样分布随 n 增大如何「越站越高、越收越窄」。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D</h5><p>沿 n 轴堆成山脊，看方差 σ²/n→0 的几何长相。</p></div>
+    <div class="gchip live"><div class="ic">⊕</div><h5>交互</h5><p>真的去抽样几千次，让经验直方图压上理论曲线。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>陷阱</h5><p>平方常数、独立性、√n、精确 vs CLT——一次钉死。</p></div>
+  </div>
+
+  <!-- ===== 0 GAP ===== -->
+  <section class="topic-block" id="t-gap">
+    <h3 class="topic cjk">0　缺口在哪：第二节给了「零件」，没给「装配」</h3>
+    <p class="topic-en">The atomic rules vs. the assembly chain — pinpointing exactly what was left unwritten</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 ← 第二节 §1.2 Thm 2.6.1（方差三法则）</span>
+      <span class="rel warn"><span class="dot"></span>补缺 → 三步从未写出的装配</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>第二节 §1.2 卡片给你的全部「零件」（Thm 2.6.1）</div>
+      <p class="cjk">原讲义那一格，把方差的可用法则列成了三条，<b>各自都对，但都是「单件」</b>：</p>
+      <p>$$\textbf{① 算法}\quad \mathbb V(X)=\mathbb E[X^2]-\mu_X^2;\qquad \textbf{② 缩放平移}\quad \mathbb V(aX+b)=a^2\,\mathbb V(X);$$</p>
+      <p>$$\textbf{③ 两变量独立可加}\quad X_1\perp X_2\ \Rightarrow\ \mathbb V(X_1+X_2)=\mathbb V(X_1)+\mathbb V(X_2).$$</p>
+      <p class="cjk">题目要的是 $\bar X=\frac1n\sum_{i=1}^n X_i$ 的分布。你盯着上面三条，会发现<b>没有一条能直接套上去</b>——②是「一个变量乘常数」，③是「两个变量相加」，而 $\bar X$ 是「<b>n 个变量先相加、再整体乘一个常数</b>」。差的就是把这些零件接起来的那几根焊缝。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>三步「从未被写出来」的装配（这就是你哪里卡住）</div>
+      <ol class="steps cjk">
+        <li><b>把③从「2 个」推广到「n 个」。</b> 讲义只写了 $\mathbb V(X_1+X_2)$。但 $\bar X$ 里有 $n$ 个。要靠<b>数学归纳</b>把它推成 $\mathbb V\!\big(\sum_{i=1}^n X_i\big)=\sum_{i=1}^n\mathbb V(X_i)$（仍然要求两两独立）。这一步讲义跳过了。</li>
+        <li><b>把②的常数套在「整个求和 S」上，常数会平方。</b> 记 $S=\sum X_i$，则 $\bar X=\frac1n S$。用②令 $a=\frac1n$：$\mathbb V(\bar X)=\mathbb V(\frac1n S)=\frac{1}{n^2}\mathbb V(S)$。<b>注意是 $\frac{1}{n^2}$ 不是 $\frac1n$</b>——方差里常数一律平方。这一步是全题最容易错的地方，讲义也没演示。</li>
+        <li><b>用 i.i.d. 让 n 个方差全部相等，塌成 nσ²。</b> 因为每个 $X_i$ 都是同一个 $N(\mu,\sigma^2)$，所以 $\mathbb V(X_i)=\sigma^2$ 对每个 $i$ 都成立，$\sum_{i=1}^n\sigma^2=n\sigma^2$。这步「同分布 ⇒ 同方差 ⇒ 直接乘 n」也没单独点明。</li>
+      </ol>
+      <p class="cap cjk">把这三步接上，$\frac{1}{n^2}\cdot n\sigma^2=\frac{\sigma^2}{n}$ 才水落石出。<b>下面第 1–3 节，就是把这三根焊缝一根一根焊给你看。</b></p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>批判 · 这不是你看漏，是讲义的真实欠账</p>
+      <p class="cjk">你的判断是对的：从那张卡片<b>无法</b>一眼推出我上一轮给的过程，因为它默认你会自己补完上面三步「隐式的一般化」。这正是 AI 讲义最典型的毛病——<b>把结论和原子法则都摆出来了，却省掉了把它们缝合的中间动作</b>，于是「看起来什么都讲了」，真要解题却接不上。你要求独立成文、专门补这段，是对的。</p>
+    </div>
+  </section>
+
+  <!-- ===== 1 SETUP ===== -->
+  <section class="topic-block" id="t-setup">
+    <h3 class="topic cjk">1　起点：先把 X̄ 改写成「一个常数 × 一个求和」</h3>
+    <p class="topic-en">Rewrite the mean as a scalar times a sum — so the two atomic rules can bite</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>供给 → 第 2 / 3 节都从这个改写出发</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">◆</span>直觉 · 让零件「咬得上」</div>
+      <p class="cjk">原子法则②管「常数 × 变量」，③管「变量相加」。$\bar X$ 同时含这两件事，所以<b>第一步永远是把它拆成这两层</b>：先认出里面那个「求和」是一个整体，再认出外面挂着一个常数 $\frac1n$。</p>
+      <p>$$\bar X=\frac1n\sum_{i=1}^n X_i=\frac1n\,S,\qquad\text{其中 }S:=\sum_{i=1}^n X_i.$$</p>
+      <p class="cjk">拆完之后，期望走一条链、方差走另一条链——而且<b>两条链的「难度」完全不同</b>：期望那条不挑独立性，方差那条挑。下面分开走。</p>
+    </div>
+  </section>
+
+  <!-- ===== 2 MEAN ===== -->
+  <section class="topic-block" id="t-mean">
+    <h3 class="topic cjk">2　期望那一半：E[X̄] = μ（这条链不需要独立）</h3>
+    <p class="topic-en">The expectation half — pure linearity, independence not required</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 ← 第二节 §1.7 期望线性（Thm 2.4）</span>
+      <span class="rel dual"><span class="dot"></span>对照 → 与方差链的「挑独立」形成反差</span>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>三步链 · 每步标清依据</div>
+      <ol class="steps cjk">
+        <li><b>把常数提出来。</b> $\mathbb E[\bar X]=\mathbb E\big[\frac1n S\big]=\frac1n\,\mathbb E[S]$。依据：期望对常数倍线性（$\mathbb E[cY]=c\,\mathbb E[Y]$）。<b>常数在期望里是一次方，不平方</b>——这点和方差正相反，记牢。</li>
+        <li><b>把求和的期望拆成期望的求和。</b> $\mathbb E[S]=\mathbb E\big[\sum_i X_i\big]=\sum_i\mathbb E[X_i]$。依据：<mark>期望线性，无论 $X_i$ 是否独立都成立</mark>（§1.7 里那句「期望最甜的性质」）。这是期望链比方差链好走的根本原因。</li>
+        <li><b>同分布 ⇒ 同期望 ⇒ 乘 n。</b> 每个 $X_i\sim N(\mu,\sigma^2)$，故 $\mathbb E[X_i]=\mu$，$\sum_{i=1}^n\mu=n\mu$。合并：$\mathbb E[\bar X]=\frac1n\cdot n\mu=\mu$。</li>
+      </ol>
+      <p>$$\boxed{\ \mathbb E[\bar X]=\mu\ }$$</p>
+      <p class="cap cjk"><b>读这个结果</b>：样本均值<b>无偏</b>——平均来说它正好落在真值 $\mu$ 上，不偏不倚。注意这条链<b>从头到尾没用到独立</b>，哪怕 $X_i$ 之间高度相关，$\mathbb E[\bar X]=\mu$ 照样成立。独立的代价，全都压在下一节的方差上。</p>
+    </div>
+  </section>
+
+  <!-- ===== 3 VARIANCE ===== -->
+  <section class="topic-block" id="t-var">
+    <h3 class="topic cjk">3　方差那一半：Var(X̄) = σ²/n　★ 全题题眼</h3>
+    <p class="topic-en">The variance half — where the squared constant and independence both matter</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 ← Thm 2.6.1 法则 ②③</span>
+      <span class="rel warn"><span class="dot"></span>陷阱 → 常数平方 · 独立必需</span>
+      <span class="rel general"><span class="dot"></span>推广 → §1.7 一般式 V(ΣaᵢXᵢ) 的最简特例</span>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>四步链 · 这才是讲义没接上的那段</div>
+      <ol class="steps cjk">
+        <li><b>把常数提出来——它会平方（用法则②）。</b> $\mathbb V(\bar X)=\mathbb V\big(\frac1n S\big)=\big(\frac1n\big)^2\mathbb V(S)=\dfrac{1}{n^2}\mathbb V(S)$。这里把整个求和 $S$ 当成法则②里的那个「$X$」，常数 $a=\frac1n$ <b>进了平方</b>。<u>这一步是全题最容易写错的地方</u>，详见下方陷阱卡。</li>
+        <li><b>拆求和的方差——这里才用到独立（②③推广到 n 个）。</b> $\mathbb V(S)=\mathbb V\big(\sum_{i=1}^n X_i\big)\overset{\perp}{=}\sum_{i=1}^n\mathbb V(X_i)$。<b>等号上那个 $\perp$ 是这一步的全部分量</b>：只有当 $X_i$ 两两独立（i.i.d. 当然满足）时，所有协方差交叉项才消失，求和的方差才等于方差的求和。详见下方独立性提示。</li>
+        <li><b>同分布 ⇒ 同方差 ⇒ 塌成 nσ²。</b> 每个 $X_i\sim N(\mu,\sigma^2)$，故 $\mathbb V(X_i)=\sigma^2$，于是 $\sum_{i=1}^n\sigma^2=n\sigma^2$。</li>
+        <li><b>合并，约分。</b> $\mathbb V(\bar X)=\dfrac{1}{n^2}\cdot n\sigma^2=\dfrac{n}{n^2}\sigma^2=\dfrac{\sigma^2}{n}$。</li>
+      </ol>
+      <p>$$\boxed{\ \mathbb V(\bar X)=\frac{\sigma^2}{n},\qquad \operatorname{SD}(\bar X)=\frac{\sigma}{\sqrt n}\ }$$</p>
+      <p class="cap cjk"><b>读这个结果</b>：样本越多（$n$ 越大），均值的方差越小、越被「钉」在真值附近——这就是「多测几次取平均更准」的数学本体，也是大数定律、置信区间、标准误（standard error）三件事共同的根。那个 $\operatorname{SD}(\bar X)=\sigma/\sqrt n$ 有个专名叫<b>标准误</b>，你做计量天天会见到它。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>陷阱 1 · 常数提出方差时<b>一定平方</b>，这是第一步最常见的错</p>
+      <p class="cjk">很多人下意识写成 $\mathbb V(\frac1n S)=\frac1n\mathbb V(S)$（常数只提一次方），那就错了。方差是「平方尺度」的量（单位是原始单位的平方），所以任何乘进随机变量的常数，提到方差外面都要<b>平方</b>：$\mathbb V(aX)=a^2\mathbb V(X)$。把 $\frac1n$ 误当一次方，你会得到 $\sigma^2$（根本没缩小！），与「样本越多越准」的直觉直接打架——这是一个能自我报警的错误，一旦结果里 $n$ 没了，就回头查这一步。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>陷阱 2 · 第二步<b>必须有独立</b>，否则要补协方差项</p>
+      <p class="cjk">「求和的方差 = 方差的求和」<b>不是无条件的</b>。完整展开是（§1.7 / Thm 2.8）：</p>
+      <p style="text-align:center">$$\mathbb V\Big(\sum_{i}X_i\Big)=\sum_i\mathbb V(X_i)+\underbrace{\sum_{i\neq j}\operatorname{cov}(X_i,X_j)}_{\text{独立时整块}=0}.$$</p>
+      <p class="cjk">i.i.d. 里「independent」保证了所有 $\operatorname{cov}(X_i,X_j)=0$，那一大块才整体消失。<b>一旦 $X_i$ 相关</b>（比如时间序列里前后相关、或抽样有放回/分层），协方差项不为零，$\mathbb V(\bar X)$ 就<b>不再是</b> $\sigma^2/n$——通常更大（正相关）或更小（负相关）。所以这道题答案里的 $\sigma^2/n$，是「i.i.d.」这三个字母里的「<b>independent</b>」用钱买来的。把这条记成<b>独立的「价格标签」</b>。</p>
+    </div>
+
+    <div class="note cjk"><b>一句话对照两条链的差别：</b>期望链的常数是<b>一次方</b>、且<b>不挑独立</b>；方差链的常数是<b>平方</b>、且第二步<b>非独立不可</b>。这组反差本身就是「期望是线性的、方差不是线性的」最具体的体现——务必转过这个弯。</p></div>
+  </section>
+
+  <!-- ===== 4 CASE ===== -->
+  <section class="topic-block" id="t-case">
+    <h3 class="topic cjk">4　案例 · 代进真数字，看这个公式到底在说什么</h3>
+    <p class="topic-en">Plug in real numbers — averaging shrinks the spread by √n</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>应用 ← 第 2 / 3 节的两条结论</span>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 量 25 个人的身高取平均</div>
+      <p class="cjk">设单个成年人身高 $X_i\sim N(\mu=170,\ \sigma^2=10^2)$（单位 cm，标准差 $\sigma=10$）。随机抽 $n=25$ 人取平均 $\bar X$。直接套公式：</p>
+      <p>$$\bar X\sim N\!\Big(\mu,\ \frac{\sigma^2}{n}\Big)=N\!\Big(170,\ \frac{100}{25}\Big)=N(170,\ 4),\qquad \operatorname{SD}(\bar X)=\frac{10}{\sqrt{25}}=\frac{10}{5}=2.$$</p>
+      <p class="cjk">读出来的故事：<b>单个人</b>的身高波动很大（SD = 10cm，random 抽一个，落在 150–190 都不稀奇）；但<b>25 个人的平均</b>，波动只剩 SD = 2cm，几乎稳稳压在 170 附近。波动从 10 缩到 2，正好缩了 $\sqrt{25}=5$ 倍——<mark>是 $\sqrt n$ 倍，不是 $n$ 倍</mark>。这就是「样本量翻 4 倍、精度只翻 2 倍」这条贵得让人肉痛的统计学铁律的来历：要让标准误减半，样本量得翻<b>四</b>倍。</p>
+      <table class="tab cjk scrollx" style="margin-top:10px">
+        <tr><th>样本量 n</th><th>1</th><th>4</th><th>25</th><th>100</th><th>400</th></tr>
+        <tr><td class="lbl">Var(X̄)=σ²/n</td><td>100</td><td>25</td><td>4</td><td>1</td><td>0.25</td></tr>
+        <tr><td class="lbl">SD(X̄)=σ/√n</td><td>10</td><td>5</td><td>2</td><td>1</td><td>0.5</td></tr>
+        <tr><td class="lbl">比单个收窄几倍</td><td>1×</td><td>2×</td><td>5×</td><td>10×</td><td>20×</td></tr>
+      </table>
+      <p class="cap cjk">看最后一行：收窄倍数走的是 $\sqrt n$（1,2,5,10,20），不是 $n$（1,4,25,100,400）。下一节用图把这条「$\sqrt n$ 而非 $n$」彻底钉死。</p>
+    </div>
+  </section>
+
+  <!-- ===== 5 DECAY 2D ===== -->
+  <section class="topic-block" id="t-decay">
+    <h3 class="topic cjk">5　2D① · 到底是 √n 还是 n？把最常踩的陷阱画出来</h3>
+    <p class="topic-en">σ/√n vs σ/n — visualising the most common error head-on</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span>对应 → §10 陷阱 3（√n 还是 n）</span>
+      <span class="rel dual"><span class="dot"></span>呼应 → §4 案例表最后一行</span>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>2D · 两条衰减曲线，看正确与错误差多远</div>
+      <p class="cjk"><b style="color:var(--accent)">实线</b>是正确的标准误 $\sigma/\sqrt n$；<b style="color:var(--rust)">虚线</b>是一个极常见的误区——<b>以为标准差按 $1/n$ 收窄</b>而写成的 $\sigma/n$（注意：这跟 §3 陷阱 1「常数没平方」是<u>两个不同的错</u>——后者会得到一条不收窄的平线 $\sigma$，这里画的是「收窄太快」那个错）。两条都随 $n$ 下降，但<b>下降速度天差地别</b>：$\sigma/n$ 掉得太快（暗示「样本一多精度立刻爆表」，假到离谱），正确的 $\sigma/\sqrt n$ 掉得稳健而缓慢（这才是现实里「精度很贵」的样子）。拖动 $\sigma$ 看整体被抬高/压低，但两条线的<b>相对快慢关系永远不变</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">个体标准差 σ <span class="val" id="dec-s-v">10</span></label><input type="range" id="dec-s" min="2" max="20" step="0.5" value="10"></div>
+      </div>
+      <div class="plotwrap"><div id="p-decay" class="plot"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk">横轴 $n$，纵轴是「均值的标准差」。在 $n=4$ 处两条线就已经分叉明显：正确值 $\sigma/2$，错误值 $\sigma/4$。记住正确那条是「<b>开方</b>慢降」，错误那条是「成反比快降」。</p>
+    </div>
+  </section>
+
+  <!-- ===== 6 SAMPLING DIST 2D ===== -->
+  <section class="topic-block" id="t-samp">
+    <h3 class="topic cjk">6　2D② · 抽样分布随 n 增大，越站越高、越收越窄</h3>
+    <p class="topic-en">The sampling distribution N(μ, σ²/n) tightens as n grows</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>展示 ← §3 的结论 N(μ, σ²/n)</span>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▥</span>2D · 母分布（灰）对比样本均值的分布（蓝）</div>
+      <p class="cjk"><b style="color:var(--ink-faint)">灰色阴影</b>是单个个体 $X_i\sim N(\mu,\sigma^2)$ 的分布（永远那么胖）；<b style="color:var(--accent)">蓝色实线</b>是样本均值 $\bar X\sim N(\mu,\sigma^2/n)$。<b>两者重心都钉在 $\mu$ 上</b>（因为 $\mathbb E[\bar X]=\mu$，第 2 节的结论），区别只在胖瘦。拖动 $n$：蓝色曲线<b>原地收紧、长高</b>——总概率守恒，窄了就必须高。阴影标出的是 $\mu\pm\operatorname{SD}(\bar X)=\mu\pm\sigma/\sqrt n$ 的区间，肉眼可见它随 $n$ 缩小。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="samp-n-v">9</span></label><input type="range" id="samp-n" min="1" max="100" step="1" value="9"></div>
+      </div>
+      <div class="plotwrap"><div id="p-samp" class="plot tall"><div class="loading cjk">加载中…</div></div></div>
+      <p class="readout cjk">μ=170, σ=10 · 当前 n=<b id="samp-n2">9</b> → Var(X̄)=σ²/n=<b id="samp-var">11.1</b>，SD(X̄)=σ/√n=<b id="samp-sd">3.33</b></p>
+      <p class="cap cjk">注意一个关键澄清：<b>这里的收紧靠的是公式 $\sigma^2/n$，不是中心极限定理</b>。母分布本来就是正态，样本均值在每个 $n$ 都<b>精确</b>是正态——下一步往大处推不会改变形状，只会继续收窄。CLT 处理的是「母分布<b>不</b>正态」的情形，那是另一回事（§9 分清）。</p>
+    </div>
+  </section>
+
+  <!-- ===== 7 RIDGE 3D ===== -->
+  <section class="topic-block" id="t-ridge">
+    <h3 class="topic cjk">7　3D · 沿 n 轴堆成「收紧山脊」（纯 Canvas，无需 WebGL）</h3>
+    <p class="topic-en">Stack the sampling densities along the n-axis — the geometry of σ²/n → 0</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>升维 ← §6 的 2D 抽样分布</span>
+      <span class="rel tool"><span class="dot"></span>工具：自研 Canvas 伪 3D（画家算法 / 面法线打光）</span>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label cjk"><span class="ic">◈</span>3D · 拖动旋转：一排抽样分布，由近及远 n 越来越大</div>
+      <p class="cjk">把 $\bar X\sim N(\mu,\sigma^2/n)$ 的密度沿 $n$ 轴一排排堆成一座<b>山脊</b>。沿纵深方向 $n$ 从小到大：<b>$n$ 越大的那条脊越高越窄</b>（方差 $\sigma^2/n\to0$，被越来越紧地钉在真值 $\mu$ 上）；$n$ 越小越矮越宽。这正是第 3 节那个公式、和「大数定律 / 估计量一致性」的<b>几何长相</b>——你能直接看着方差「塌向一条竖线」。拖动 $\sigma$（个体波动）看整座山一起变胖/变瘦。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">个体标准差 σ <span class="val" id="ridge-s-v">10</span></label><input type="range" id="ridge-s" min="5" max="18" step="0.5" value="10"></div>
+      </div>
+      <div class="plotwrap"><div id="p-ridge" class="plot d3"><div class="loading cjk">渲染 3D 山脊（纯 Canvas）…</div></div></div>
+      <p class="cap cjk">横轴＝$\bar X$ 的取值（真值 $\mu=170$ 在正中），纵深轴＝样本量 $n$，高度＝密度。颜色越深＝越高。手绘的 2D 投影，不依赖浏览器图形加速。</p>
+    </div>
+  </section>
+
+  <!-- ===== 8 MONTE CARLO ===== -->
+  <section class="topic-block" id="t-mc">
+    <h3 class="topic cjk">8　交互 · 真的去抽样，让经验直方图压上理论曲线</h3>
+    <p class="topic-en">Monte Carlo — empirical histogram of X̄ vs the theoretical N(μ, σ²/n)</p>
+    <div class="rels cjk">
+      <span class="rel dual"><span class="dot"></span>验证 → §3 公式的数值「实证」</span>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊕</span>交互 · 抽 n 个求均值，重复 4000 次，画直方图</div>
+      <p class="cjk">每次从母分布 $N(170,10^2)$ 抽 $n$ 个数、算一个 $\bar X$，重复 <b>4000</b> 次，把这 4000 个 $\bar X$ 堆成<b style="color:var(--accent)">直方图</b>，再叠上理论曲线 $N(\mu,\sigma^2/n)$（<b style="color:var(--rust)">红线</b>）。<b>看点：</b>直方图每次都严丝合缝贴住红线——这就是第 3 节那条纯代数推导的<b>实证</b>。拖动 $n$：直方图和红线<b>同步收紧</b>。下方读出<b>经验标准差</b>与理论 $\sigma/\sqrt n$ 的对比，两者应当几乎相等（差异只是 4000 次的抽样噪声）。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="mc-n-v">16</span></label><input type="range" id="mc-n" min="1" max="100" step="1" value="16"></div>
+        <div class="ctrl" style="flex:0 0 auto"><label>&nbsp;</label><button class="btn accent cjk" id="mc-run">重新抽 4000 组</button></div>
+      </div>
+      <div class="plotwrap"><div id="p-mc" class="plot tall"><div class="loading cjk">抽样中…</div></div></div>
+      <p class="readout cjk">理论 SD(X̄)=σ/√n=<b id="mc-th">2.50</b>　|　经验 SD(X̄)=<b id="mc-emp" class="okval">·</b>　<span class="rd-note">两者贴得越近，越说明公式是对的</span></p>
+    </div>
+  </section>
+
+  <!-- ===== 9 NORMAL not CLT ===== -->
+  <section class="topic-block" id="t-normal">
+    <h3 class="topic cjk">9　最后一块：它「精确是正态」，靠的不是 CLT　★</h3>
+    <p class="topic-en">Why the answer is exactly normal — closure, not the central limit theorem</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span>继承 ← 第六节 MGF：独立正态之和仍是正态</span>
+      <span class="rel warn"><span class="dot"></span>划清 → 与第二节 CLT 的近似区分开</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">◆</span>直觉 · 期望和方差只定了「两个数」，没定「形状」</div>
+      <p class="cjk">注意第 2、3 节只算出了 $\bar X$ 的<b>均值 $\mu$ 和方差 $\sigma^2/n$</b>——可任何分布都能有这两个数，凭它俩还<b>不能</b>断言 $\bar X$ 是正态。「是不是正态」是独立的第三个问题，得另找依据。</p>
+      <p class="cjk">依据来自<b>正态家族的封闭性</b>（第六节用 MGF 证过）：<mark>独立正态的任意线性组合，仍然精确是正态</mark>。而 $\bar X=\frac1n\sum X_i$ 正是一个线性组合，所以它<b>精确</b>落在正态家族里。把这一步和已算好的两个矩拼起，才得到完整答案：</p>
+      <p>$$\boxed{\ \bar X\sim N\!\Big(\mu,\ \frac{\sigma^2}{n}\Big)\quad\text{——精确，对任意 }n\ge1\ }$$</p>
+    </div>
+    <div class="crit">
+      <p class="who"><span>⚠</span>陷阱 3 · 别在这道题里掏出中心极限定理</p>
+      <p class="cjk">CLT 也给 $\bar X\approx N(\mu,\sigma^2/n)$，于是很多人条件反射就写 CLT。但两者是<b>两码事</b>：</p>
+      <table class="tab cjk scrollx" style="margin-top:6px">
+        <tr><th></th><th>本题（正态封闭性）</th><th>中心极限定理 CLT</th></tr>
+        <tr><td class="lbl">关系符号</td><td><b style="color:var(--green)">$=$ 精确</b></td><td><b style="color:var(--rust)">$\approx$ 近似</b></td></tr>
+        <tr><td class="lbl">对 n 的要求</td><td>任意 $n\ge1$（连 $n=2$ 都精确）</td><td>需 $n$ 足够大</td></tr>
+        <tr><td class="lbl">对母分布要求</td><td><b>母分布必须是正态</b></td><td>任意母分布（有限方差即可）</td></tr>
+        <tr><td class="lbl">依据</td><td>正态线性组合仍正态（MGF）</td><td>$n\to\infty$ 的极限定理</td></tr>
+      </table>
+      <p class="cjk" style="margin-top:8px">这道题母分布<b>给定就是正态</b>，所以用封闭性拿到精确等号，根本不必动用 CLT。填空里写「$\approx$」或心里想「要 $n$ 大才行」都是<b>用错了工具</b>。一句话区分：<b>母分布已经是正态 → 封闭性（精确）；母分布不是正态 → 只能靠 CLT（近似、要大 n）。</b></p>
+    </div>
+  </section>
+
+  <!-- ===== 10 TRAPS ===== -->
+  <section class="topic-block" id="t-traps">
+    <h3 class="topic cjk">10　陷阱合集 · 一页带走</h3>
+    <p class="topic-en">All the traps on one page</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span>汇总 ← 全文四个陷阱</span>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>解这道题，四个地方最容易翻车</div>
+      <ul class="ul cjk">
+        <li><b>常数提进方差要平方。</b> $\mathbb V(\frac1n S)=\frac{1}{n^2}\mathbb V(S)$，不是 $\frac1n$。自检：结果里若 $n$ 消失了，准是这一步错。</li>
+        <li><b>「求和方差 = 方差求和」非独立不可。</b> 缺了独立，要补 $\sum_{i\neq j}\operatorname{cov}$。$\sigma^2/n$ 这个答案是「independent」三个字母买来的。</li>
+        <li><b>收窄走 $\sqrt n$，不是 $n$。</b> 方差除以 $n$，但<b>标准差</b>除以 $\sqrt n$。标准误减半要样本量翻<b>四</b>倍。别把 $\sigma/\sqrt n$ 写成 $\sigma/n$。</li>
+        <li><b>是精确等号，不是 CLT 近似。</b> 母分布已是正态，靠封闭性拿 $=$；别写 $\approx$、别假设要大 $n$。</li>
+      </ul>
+      <p class="cjk" style="margin-top:8px"><b>一句话答题模板：</b>「因 $X_i$ i.i.d. $N(\mu,\sigma^2)$，由期望线性得 $\mathbb E[\bar X]=\mu$；由独立可加与缩放（常数平方）得 $\mathbb V(\bar X)=\frac{1}{n^2}\cdot n\sigma^2=\frac{\sigma^2}{n}$；又因独立正态的线性组合仍精确为正态，故 $\bar X\sim N(\mu,\sigma^2/n)$。」</p>
+    </div>
+
+    <div class="xander">
+      <p class="who cjk"><span>✦</span>批判便签 · 这道「水题」其实在替三个大概念探路</p>
+      <p class="cjk">别因为它是填空就轻看。$\sigma/\sqrt n$ 这个标准误，往后会以三种面孔反复出现：<b>(a)</b> 置信区间的半径（$\bar X\pm z\cdot\sigma/\sqrt n$）；<b>(b)</b> 假设检验里 $t$/$z$ 统计量的分母；<b>(c)</b> 计量里几乎所有「系数显著性」的标准误本质都是它的推广（把标量 $\sigma^2/n$ 换成矩阵 $(M^\top M)^{-1}\sigma^2$，就是你第十一、十二节见过的 $\mathbb V(\hat\beta)$）。所以把这道题的<b>装配链</b>吃透——常数平方、独立买单、$\sqrt n$ 收窄、精确而非近似——等于提前把后面一长串内容的地基打好了。</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="foot-wrap cjk">
+    <p class="foot-title">专题补丁 · 样本均值的分布 X̄ ~ N(μ, σ²/n)</p>
+    <p>本文针对一个具体缺口而作：第二节 §1.2（Thm 2.6.1）只给出方差的三条<b>原子法则</b>，未演示如何把它们装配成 $\bar X$ 的分布。本补丁把缺失的三步装配（②③推广到 n 个、缩放常数平方、i.i.d. 同方差塌缩）逐根焊出，并以 2D / 3D / 蒙特卡洛三种方式实证 $\mathbb V(\bar X)=\sigma^2/n$。</p>
+    <p>关联：期望线性见第二节 §1.7（Thm 2.4）；方差非线性与协方差项见 §1.7（Thm 2.8）；「独立正态线性组合仍精确正态」的 MGF 证明见第六节；与中心极限定理（近似、需大 n）的区分见第二节 CLT 节。</p>
+    <p class="foot-fine">交互与 2D 绘图基于 Plotly（仅 SVG），3D 山脊由内置 Canvas 引擎手绘（画家算法 + 面法线打光，不调用 WebGL），公式排版基于 KaTeX。所有模拟在你的浏览器本地实时运行，可反复拖动、重抽。遇到与课本/严格定义冲突处，以原始课件为准，并欢迎继续质疑这份补丁本身。</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1B1A1F',inkSoft:'#4C4A55',faint:'#86838F',line:'#E2DECF',lineStrong:'#CFC9B6',
+  accent:'#0E6E8C',accentSoft:'#D6E8EF',teal:'#1F6B66',gold:'#B7892A',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:56,r:16,t:18,b:46},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.14,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var BLUE_SCALE=[[0,'#E7F1F5'],[0.5,'#3E93AE'],[1,'#0C4659']];
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function sd(a){var m=mean(a),s=0,i;for(i=0;i<a.length;i++)s+=(a[i]-m)*(a[i]-m);return Math.sqrt(s/a.length);}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function setTxt(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],
+    throwOnError:false,strict:false});
+}
+/* ===================== nav + sliders + seg ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){var rs=document.querySelectorAll('input[type=range]'),i;for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}
+    else if(o.type==='dots'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      } else if(o.type==='dots'){o._V.map(proj).forEach(function(q){prims.push({z:q.d,k:2,sx:q.sx,sy:q.sy,r:o.r||3,color:o.color});});}
+    });
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else if(p.k===1){ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(p.sx,p.sy,p.r,0,6.2832);ctx.fillStyle=p.color;ctx.fill();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function edd(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',edd);cv.addEventListener('pointercancel',edd);cv.addEventListener('pointerleave',edd);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+/* ===================== shared constants ===================== */
+var MU=170, SIG=10;
+/* ===================== §5 σ/√n vs σ/n decay ===================== */
+function decay2D(){
+  var div=document.getElementById('p-decay');if(!div)return;
+  var sEl=document.getElementById('dec-s');
+  function draw(){
+    var s=+sEl.value;setTxt('dec-s-v',s);
+    var ns=lin(1,60,120),corr=[],wrong=[],i;
+    for(i=0;i<ns.length;i++){corr.push(s/Math.sqrt(ns[i]));wrong.push(s/ns[i]);}
+    var traces=[
+      {x:ns,y:corr,mode:'lines',line:{color:C.accent,width:3},name:'正确 σ/√n',showlegend:true},
+      {x:ns,y:wrong,mode:'lines',line:{color:C.rust,width:2.4,dash:'dash'},name:'误区 σ/n（以为按 1/n 收窄）',showlegend:true},
+      {x:[4,4],y:[0,s/2],mode:'lines',line:{color:C.lineStrong,width:1,dash:'dot'},showlegend:false},
+      {x:[4],y:[s/2],mode:'markers+text',marker:{size:7,color:C.accent},text:['n=4: σ/2'],textposition:'top right',textfont:{size:11,color:C.accent},showlegend:false},
+      {x:[4],y:[s/4],mode:'markers+text',marker:{size:7,color:C.rust},text:['σ/4'],textposition:'bottom right',textfont:{size:11,color:C.rust},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,
+      xaxis:{title:'样本量 n',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,60]},
+      yaxis:{title:'均值的标准差',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,s*1.05]}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  sEl.addEventListener('input',draw);draw();
+}
+/* ===================== §6 sampling distribution ===================== */
+function sampDist2D(){
+  var div=document.getElementById('p-samp');if(!div)return;
+  var nEl=document.getElementById('samp-n');
+  function draw(){
+    var n=+nEl.value;setTxt('samp-n-v',n);setTxt('samp-n2',n);
+    var se=SIG/Math.sqrt(n);
+    setTxt('samp-var',(SIG*SIG/n).toFixed(SIG*SIG/n<10?2:1));
+    setTxt('samp-sd',se.toFixed(2));
+    var xs=lin(MU-38,MU+38,260),parent=[],samp=[],i;
+    for(i=0;i<xs.length;i++){parent.push(normPdf(xs[i],MU,SIG));samp.push(normPdf(xs[i],MU,se));}
+    /* shaded ±se band on sampling dist */
+    var bx=[],by=[];for(i=0;i<xs.length;i++){if(xs[i]>=MU-se&&xs[i]<=MU+se){bx.push(xs[i]);by.push(normPdf(xs[i],MU,se));}}
+    if(bx.length){bx.unshift(MU-se);by.unshift(0);bx.push(MU+se);by.push(0);}
+    var traces=[
+      {x:xs,y:parent,mode:'lines',fill:'tozeroy',fillcolor:'rgba(134,131,143,0.16)',line:{color:'rgba(134,131,143,0.55)',width:1.6},name:'单个个体 X_i ~ N(μ,σ²)',showlegend:true},
+      {x:bx,y:by,mode:'lines',fill:'toself',fillcolor:'rgba(14,110,140,0.16)',line:{color:'rgba(0,0,0,0)'},showlegend:false,hoverinfo:'skip'},
+      {x:xs,y:samp,mode:'lines',line:{color:C.accent,width:3.2},name:'样本均值 X̄ ~ N(μ,σ²/n)',showlegend:true},
+      {x:[MU,MU],y:[0,normPdf(MU,MU,se)],mode:'lines',line:{color:C.rust,width:1,dash:'dot'},showlegend:false}
+    ];
+    var peak=normPdf(MU,MU,SIG/Math.sqrt(100));
+    var lay=baseLayout({showlegend:true,
+      xaxis:{title:'取值（真值 μ=170 在正中）',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[MU-38,MU+38]},
+      yaxis:{title:'密度',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[0,peak*1.05]}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  nEl.addEventListener('input',draw);draw();
+}
+/* ===================== §7 ridge 3D ===================== */
+function ridge3D(){
+  var div=document.getElementById('p-ridge');if(!div)return;
+  var sc=Scene3D(div,{xr:[MU-45,MU+45],yr:[1,49],zr:[0,0.4],
+    xlabel:'X̄',ylabel:'n',zlabel:'密度',yaw:-0.62,pitch:0.84});
+  if(!sc)return;
+  var sEl=document.getElementById('ridge-s');
+  function build(){
+    var s=+sEl.value;setTxt('ridge-s-v',s);
+    var X=lin(MU-45,MU+45,56), Y=lin(1,49,26), Z=[],maxZ=0,i,j;
+    for(i=0;i<Y.length;i++){var row=[],se=s/Math.sqrt(Y[i]);
+      for(j=0;j<X.length;j++){var z=normPdf(X[j],MU,se);if(z>maxZ)maxZ=z;row.push(z);}Z.push(row);}
+    sc.zr=undefined; /* reset via new scene not needed; clamp zr */
+    var obj=[{type:'surface',X:X,Y:Y,Z:Z,scale:BLUE_SCALE,wire:true,alpha:0.93}];
+    /* rebuild scene with proper z range */
+    sc=Scene3D(div,{xr:[MU-45,MU+45],yr:[1,49],zr:[0,maxZ*1.04],
+      xlabel:'X̄',ylabel:'n',zlabel:'密度',yaw:-0.62,pitch:0.84});
+    sc.setObjects(obj);
+  }
+  sEl.addEventListener('input',build);build();
+}
+/* ===================== §8 Monte Carlo ===================== */
+function mcSim(){
+  var div=document.getElementById('p-mc');if(!div)return;
+  var nEl=document.getElementById('mc-n'),btn=document.getElementById('mc-run');
+  var TRIALS=4000;
+  function simAndDraw(){
+    var n=+nEl.value;setTxt('mc-n-v',n);
+    var se=SIG/Math.sqrt(n);setTxt('mc-th',se.toFixed(2));
+    var xb=[],i,k;
+    for(i=0;i<TRIALS;i++){var sm=0;for(k=0;k<n;k++)sm+=randn();xb.push(MU+SIG*(sm/n));}
+    setTxt('mc-emp',sd(xb).toFixed(2));
+    var half=Math.max(4*se,1.5), lo=MU-half, hi=MU+half;
+    var xs=lin(lo,hi,200),pdf=[];for(i=0;i<xs.length;i++)pdf.push(normPdf(xs[i],MU,se));
+    var traces=[
+      {x:xb,type:'histogram',histnorm:'probability density',
+        xbins:{start:lo,end:hi,size:(hi-lo)/46},marker:{color:'rgba(14,110,140,0.42)',line:{color:'rgba(14,110,140,0.7)',width:0.5}},name:'经验直方图（4000 个 X̄）',showlegend:true},
+      {x:xs,y:pdf,mode:'lines',line:{color:C.rust,width:3},name:'理论 N(μ, σ²/n)',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,bargap:0.02,
+      xaxis:{title:'X̄ 的取值',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,range:[lo,hi]},
+      yaxis:{title:'密度',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  nEl.addEventListener('input',simAndDraw);
+  if(btn)btn.addEventListener('click',simAndDraw);
+  simAndDraw();
+}
+/* ===================== init / boot ===================== */
+function safe(name,fn){try{fn();}catch(e){if(window.console&&console.warn)console.warn('[viz '+name+']',e);}}
+function init(){
+  safe('math',renderMath);
+  safe('sliders',wireSliderFill);
+  safe('nav',wireNav);
+  safe('menu',wireMenu);
+  safe('decay2D',decay2D);
+  safe('sampDist2D',sampDist2D);
+  safe('ridge3D',ridge3D);
+  safe('mcSim',mcSim);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>

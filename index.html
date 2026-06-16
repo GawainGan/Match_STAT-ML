@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Match STAT-ML · 机器学习补课导航</title>
+<title>Match STAT-ML · 统计 & 机器学习补课导航</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -15,12 +15,15 @@
   --ink-soft: #5A544B;
   --ink-faint: #8C857A;
   --line: #E4D8C2;
-  --accent: #1F5C8C;
-  --accent-soft: #DCE7F0;
-  --accent-2: #6B3F7A;
-  --accent-2-soft: #EDE3F0;
-  --accent-3: #2D6A4F;
-  --accent-3-soft: #D8EDE3;
+  --stat: #8B4513;
+  --stat-soft: #F5E8DC;
+  --stat-accent: #A0522D;
+  --ml: #1F5C8C;
+  --ml-soft: #DCE7F0;
+  --ml-2: #6B3F7A;
+  --ml-2-soft: #EDE3F0;
+  --ml-3: #2D6A4F;
+  --ml-3-soft: #D8EDE3;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -31,13 +34,13 @@ body {
   min-height: 100vh;
 }
 .wrap {
-  max-width: 920px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 3rem 1.5rem 4rem;
 }
 header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid var(--line);
 }
@@ -48,67 +51,81 @@ header h1 {
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
 }
-header p {
-  color: var(--ink-soft);
-  font-size: 1.05rem;
-}
-section {
-  margin-bottom: 2.5rem;
-}
-.section-label {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-faint);
-  margin-bottom: 0.75rem;
-}
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-a.card {
-  display: block;
+header p { color: var(--ink-soft); font-size: 1.05rem; }
+.block {
+  margin-bottom: 3rem;
+  padding: 1.75rem;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 1.1rem 1.25rem;
+  border-radius: 14px;
+}
+.block.stat { border-top: 3px solid var(--stat); }
+.block.ml { border-top: 3px solid var(--ml); }
+.block-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.block.stat .block-title { color: var(--stat); }
+.block.ml .block-title { color: var(--ml); }
+.block-desc {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin-bottom: 1.5rem;
+}
+section { margin-bottom: 1.75rem; }
+section:last-child { margin-bottom: 0; }
+.section-label {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-faint);
+  margin-bottom: 0.6rem;
+}
+.card-list { display: flex; flex-direction: column; gap: 0.65rem; }
+a.card {
+  display: block;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.95rem 1.1rem;
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 a.card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 4px 16px rgba(31, 92, 140, 0.08);
   transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
 }
+.block.stat a.card:hover { border-color: var(--stat-accent); }
+.block.ml a.card:hover { border-color: var(--ml); }
 a.card .tag {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.15rem 0.55rem;
+  padding: 0.12rem 0.5rem;
   border-radius: 4px;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
-.tag.s1 { background: var(--accent-soft); color: var(--accent); }
-.tag.s1b { background: #F0E8F5; color: var(--accent-2); }
+.tag.main-stat { background: var(--stat-soft); color: var(--stat); }
+.tag.sup-stat { background: #F0EBE4; color: #6B5344; }
+.tag.s1 { background: var(--ml-soft); color: var(--ml); }
+.tag.s1b { background: var(--ml-2-soft); color: var(--ml-2); }
 .tag.s2 { background: #E8F0F8; color: #2A5080; }
-.tag.s3 { background: var(--accent-3-soft); color: var(--accent-3); }
+.tag.s3 { background: var(--ml-3-soft); color: var(--ml-3); }
 a.card h2 {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
-a.card .desc {
-  font-size: 0.92rem;
-  color: var(--ink-soft);
-}
+a.card .desc { font-size: 0.88rem; color: var(--ink-soft); }
 footer {
   text-align: center;
-  margin-top: 3rem;
+  margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);
   font-size: 0.85rem;
@@ -120,46 +137,202 @@ footer {
 <div class="wrap">
   <header>
     <h1>Match STAT-ML</h1>
-    <p>机器学习补课 · 交互式讲义导航</p>
+    <p>数理统计 & 机器学习补课 · 交互式讲义导航</p>
   </header>
 
-  <section>
-    <div class="section-label">第一节 · 2026-06-12</div>
-    <div class="card-list">
-      <a class="card" href="Machine%20Learning/2026-06-12%20第一节/ML补课第一节-交互式讲义-完整增补版.html">
-        <span class="tag s1">主讲义</span>
-        <h2>学习问题、可行性与线性模型（上）</h2>
-        <p class="desc">PAC 学习框架、线性分类、感知机与可行性分析</p>
-      </a>
-      <a class="card" href="Machine%20Learning/2026-06-12%20第一节/ML_PAC_第补课一节_盲点延展.html">
-        <span class="tag s1b">延展</span>
-        <h2>PAC、预测、因果与泛化</h2>
-        <p class="desc">第一节盲点延展：PAC 边界、预测与因果辨析</p>
-      </a>
-    </div>
-  </section>
+  <div class="block stat">
+    <div class="block-title">统计</div>
+    <p class="block-desc">概率论、数理统计与回归分析 · 共十三节</p>
 
-  <section>
-    <div class="section-label">第二节 · 2026-06-14</div>
-    <div class="card-list">
-      <a class="card" href="Machine%20Learning/2026-06-14%20第二节/ML补课第二节-交互式讲义.html">
-        <span class="tag s2">主讲义</span>
-        <h2>误差与噪声 · 训练 vs 测试</h2>
-        <p class="desc">增长函数、断点与样本复杂度直觉</p>
-      </a>
-    </div>
-  </section>
+    <section>
+      <div class="section-label">第一节 · 2026-03-31</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-03-31%20%E7%AC%AC%E4%B8%80%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B8%80%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89-V6-%E5%90%88%E5%B9%B6%E5%8D%95%E6%96%87%E4%BB%B6.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>概率论与随机变量（第一章 1–39 页）</h2>
+          <p class="desc">V6 合并单文件 · 完整第一章交互讲义</p>
+        </a>
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-03-31%20%E7%AC%AC%E4%B8%80%E8%8A%82/%E8%A1%A5%E5%85%85%E8%A7%A3%E9%87%8A%E6%96%87%E4%BB%B6/1.2%E6%A0%B7%E6%9C%AC%E7%A9%BA%E9%97%B4%20%E6%8B%93%E5%B1%95%E8%A7%A3%E9%87%8Alimsup-liminf-%E4%BA%A4%E4%BA%92%E8%AF%A6%E8%A7%A3.html">
+          <span class="tag sup-stat">补充</span>
+          <h2>limsup / liminf 逐点详解</h2>
+          <p class="desc">1.2 样本空间拓展 · 第一节补充</p>
+        </a>
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-03-31%20%E7%AC%AC%E4%B8%80%E8%8A%82/%E8%A1%A5%E5%85%85%E8%A7%A3%E9%87%8A%E6%96%87%E4%BB%B6/Part%204_Q4%20%E9%9B%85%E5%8F%AF%E6%AF%94%E5%8F%98%E6%8D%A2_%E5%BD%A2%E5%BC%8F%E5%8C%96%E8%A1%A5%E5%85%85%E8%AE%B2%E4%B9%89.html">
+          <span class="tag sup-stat">补充</span>
+          <h2>§3.2 雅可比变换的形式化操作手册</h2>
+          <p class="desc">Part 4 Q4 · 变量变换推导</p>
+        </a>
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-03-31%20%E7%AC%AC%E4%B8%80%E8%8A%82/%E8%A1%A5%E5%85%85%E8%A7%A3%E9%87%8A%E6%96%87%E4%BB%B6/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE-%E4%B8%93%E9%A2%98%E8%A1%A5%E4%B8%81-%E6%A0%B7%E6%9C%AC%E5%9D%87%E5%80%BC%E7%9A%84%E5%88%86%E5%B8%83.html">
+          <span class="tag sup-stat">补充</span>
+          <h2>样本均值的分布 X̄ ~ N(μ, σ²/n)</h2>
+          <p class="desc">专题补丁 · Thm 2.6.1 到完整解题链</p>
+        </a>
+      </div>
+    </section>
 
-  <section>
-    <div class="section-label">第三节 · 2026-06-15</div>
-    <div class="card-list">
-      <a class="card" href="Machine%20Learning/2026-06-15%20第三节/ML补课第三节-交互式讲义.html">
-        <span class="tag s3">主讲义</span>
-        <h2>泛化理论：把「可学习」钉死</h2>
-        <p class="desc">B(N,k) · Sauer 引理 · VC 不等式</p>
-      </a>
-    </div>
-  </section>
+    <section>
+      <div class="section-label">第二节 · 2026-04-07</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-04-07%20%E7%AC%AC%E4%BA%8C%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%BA%8C%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>从矩到极限（Ch1 P39+ & Ch2–3）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第三节 · 2026-04-12</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-04-12%20%E7%AC%AC%E4%B8%89%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B8%89%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>Ch2–3 p33+ & Ch4 p1–23</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第四节 · 2026-04-19</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-04-19%20%E7%AC%AC%E5%9B%9B%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%9B%9B%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>Ch4 p23–30 & Ch5 p1–20</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第五节 · 2026-04-27</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-04-27%20%E7%AC%AC%E4%BA%94%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%BA%94%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>信息、精度与优化（Ch5 p20–50）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第六节 · 2026-05-01</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-01%20%E7%AC%AC%E5%85%AD%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%85%AD%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>多元正态（Ch5 p51–60）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第七节 · 2026-05-12</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-12%20%E7%AC%AC%E4%B8%83%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B8%83%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>贝叶斯推断入门（Ch6 p1–10）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第八节 · 2026-05-14</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-14%20%E7%AC%AC%E5%85%AB%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%85%AB%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>贝叶斯机器：共轭先验与双未知正态（Ch6 p10–31）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第九节 · 2026-05-20</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-20%20%E7%AC%AC%E4%B9%9D%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B9%9D%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>数值案例、多元 t 与频率检验（Ch6 p31–38）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第十节 · 2026-05-27</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-27%20%E7%AC%AC%E5%8D%81%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%8D%81%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>MCMC / Metropolis–Hastings 与 Gibbs（Ch6 p38–55）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第十一节 · 2026-05-30</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-30%20%E7%AC%AC%E5%8D%81%E4%B8%80%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%8D%81%E4%B8%80%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>Gibbs 真模型 & 线性回归入门（Ch6–7）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第十二节 · 2026-05-31</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-05-31%20%E7%AC%AC%E5%8D%81%E4%BA%8C%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%8D%81%E4%BA%8C%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>t / F 分布、置信区间与预测（Ch7 p8–23）</h2>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第十三节 · 2026-06-08</div>
+      <div class="card-list">
+        <a class="card" href="%E7%BB%9F%E8%AE%A1/2026-06-08%20%E7%AC%AC%E5%8D%81%E4%B8%89%E8%8A%82/%E7%BB%9F%E8%AE%A1%E8%A1%A5%E8%AF%BE%E7%AC%AC%E5%8D%81%E4%B8%89%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag main-stat">主讲义</span>
+          <h2>MᵀM 五件武器：岭回归、GLS 与贝叶斯回归（Ch7 p23–39）</h2>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <div class="block ml">
+    <div class="block-title">机器学习</div>
+    <p class="block-desc">PAC 学习、VC 维与泛化理论</p>
+
+    <section>
+      <div class="section-label">第一节 · 2026-06-12</div>
+      <div class="card-list">
+        <a class="card" href="Machine%20Learning/2026-06-12%20%E7%AC%AC%E4%B8%80%E8%8A%82/ML%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B8%80%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89-%E5%AE%8C%E6%95%B4%E5%A2%9E%E8%A1%A5%E7%89%88.html">
+          <span class="tag s1">主讲义</span>
+          <h2>学习问题、可行性与线性模型（上）</h2>
+          <p class="desc">PAC 学习框架、线性分类、感知机与可行性分析</p>
+        </a>
+        <a class="card" href="Machine%20Learning/2026-06-12%20%E7%AC%AC%E4%B8%80%E8%8A%82/ML_PAC_%E7%AC%AC%E8%A1%A5%E8%AF%BE%E4%B8%80%E8%8A%82_%E7%9B%B2%E7%82%B9%E5%BB%B6%E5%B1%95.html">
+          <span class="tag s1b">延展</span>
+          <h2>PAC、预测、因果与泛化</h2>
+          <p class="desc">第一节盲点延展</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第二节 · 2026-06-14</div>
+      <div class="card-list">
+        <a class="card" href="Machine%20Learning/2026-06-14%20%E7%AC%AC%E4%BA%8C%E8%8A%82/ML%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%BA%8C%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag s2">主讲义</span>
+          <h2>误差与噪声 · 训练 vs 测试</h2>
+          <p class="desc">增长函数、断点与样本复杂度直觉</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-label">第三节 · 2026-06-15</div>
+      <div class="card-list">
+        <a class="card" href="Machine%20Learning/2026-06-15%20%E7%AC%AC%E4%B8%89%E8%8A%82/ML%E8%A1%A5%E8%AF%BE%E7%AC%AC%E4%B8%89%E8%8A%82-%E4%BA%A4%E4%BA%92%E5%BC%8F%E8%AE%B2%E4%B9%89.html">
+          <span class="tag s3">主讲义</span>
+          <h2>泛化理论：把「可学习」钉死</h2>
+          <p class="desc">B(N,k) · Sauer 引理 · VC 不等式</p>
+        </a>
+      </div>
+    </section>
+  </div>
 
   <footer>交互式 HTML 讲义 · GitHub Pages</footer>
 </div>

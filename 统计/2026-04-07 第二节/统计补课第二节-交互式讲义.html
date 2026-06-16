@@ -1,0 +1,2330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>从矩到极限 · 直觉式交互讲义（第二节 · Ch1 P39+ & Ch2–3）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly (2D + 3D, interactive) -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F4ECDC;
+  --card:#FFFDF8;
+  --ink:#211E1A;
+  --ink-soft:#5A544B;
+  --ink-faint:#8C857A;
+  --line:#E4D8C2;
+  --line-strong:#D2C2A4;
+  --accent:#1F5C8C;       /* 第二节主色：深靛蓝（极限/收敛的“冷静”气质） */
+  --accent-soft:#DCE7F0;
+  --teal:#1F6B66;         /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;         /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;       /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;
+  --rust:#B0442B;         /* 盲点 / 陷阱 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(40,30,15,.05), 0 8px 30px rgba(40,30,15,.06);
+  --shadow-lg:0 10px 50px rgba(40,30,15,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 85% -5%, #EEF4FA 0%, rgba(238,244,250,0) 60%),
+    radial-gradient(900px 500px at -10% 10%, #F3EAD7 0%, rgba(243,234,215,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,60px) 140px; max-width:980px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:296px; flex:0 0 296px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14.5px; line-height:1.45;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:8px; font-size:12.5px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:19px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:300px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(20,15,8,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(34px,6vw,58px); line-height:1.02; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(64px,12vw,120px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(26px,4.4vw,40px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:64ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(22px,3vw,29px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+
+.form{background:linear-gradient(180deg,#FFFDF7,#F3F6FA)}
+.form .katex-display{margin:.4em 0}
+
+/* plot containers */
+.plot{width:100%; height:340px}
+.plot.tall{height:420px}
+.plot.d3{height:440px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent)}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #BFD3E6; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(210,194,164,.16) 27px, rgba(210,194,164,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:820px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.05)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin:18px 0 8px}
+@media(max-width:860px){.guide{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:13px 14px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:20px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:8px 0 3px; font-size:15px}
+.gchip p{font-size:12.5px; color:var(--ink-soft); margin:0; line-height:1.5}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+.footer{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:13.5px}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+  <a href="#top" class="brand">从矩到极限<small class="cjk">第二节 · 期望 / 矩 / 不等式 / 收敛 / 大数定律 / CLT</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>导引</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图</a>
+    <a href="#spine"><span class="num">★</span>这节课的主线</a>
+    <h4>一 · 随机变量的数字指纹</h4>
+    <a href="#t-exp"><span class="num">1.1</span>期望 · 平均水平 / 重心</a>
+    <a href="#t-var"><span class="num">1.2</span>方差 · 标准差 · 离散程度</a>
+    <a href="#t-cov"><span class="num">1.3</span>协方差 · 相关系数 · 协方差阵</a>
+    <a href="#t-covtrap" class="trap-link"><span class="num">1.4</span>⚠ 协方差为0 ≠ 独立</a>
+    <a href="#t-moment"><span class="num">1.5</span>高阶矩 · 偏度与峰度</a>
+    <a href="#t-table"><span class="num">1.6</span>常见分布的期望与方差</a>
+    <a href="#t-rules"><span class="num">1.7</span>期望/方差的运算法则</a>
+    <h4>二 · 条件与分解</h4>
+    <a href="#t-condexp"><span class="num">2.1</span>条件期望 · 投影视角</a>
+    <a href="#t-tower"><span class="num">2.2</span>全期望公式（塔性质）</a>
+    <a href="#t-totvar"><span class="num">2.3</span>全方差公式 · 风险分解</a>
+    <h4>三 · 刻画分布的压缩工具</h4>
+    <a href="#t-mgf"><span class="num">3.1</span>矩生成函数 MGF</a>
+    <a href="#t-mgfuse"><span class="num">3.2</span>MGF 的三大用途</a>
+    <a href="#t-charf"><span class="num">3.3</span>特征函数（永不缺席）</a>
+    <h4>四 · 不等式工具箱</h4>
+    <a href="#t-markov"><span class="num">4.1</span>马尔可夫不等式</a>
+    <a href="#t-cheby"><span class="num">4.2</span>切比雪夫不等式</a>
+    <a href="#t-cs"><span class="num">4.3</span>柯西–施瓦茨不等式</a>
+    <a href="#t-jensen"><span class="num">4.4</span>詹森不等式 · 风险厌恶</a>
+    <h4>五 · 极限理论：从样本到真相</h4>
+    <a href="#t-conv"><span class="num">5.1</span>三种收敛 + 强弱关系</a>
+    <a href="#t-convtrap" class="trap-link"><span class="num">5.2</span>⚠ “最强收敛”的边界</a>
+    <a href="#t-cmt"><span class="num">5.3</span>收敛的运算与连续映射</a>
+    <a href="#t-lln"><span class="num">5.4</span>大数定律（弱/强澄清）</a>
+    <a href="#t-clt"><span class="num">5.5</span>中心极限定理</a>
+    <a href="#t-clt2"><span class="num">5.6</span>CLT 第二版 → t 分布</a>
+    <a href="#t-delta"><span class="num">附</span>Delta 方法</a>
+    <h4>六 · 应用与警示</h4>
+    <a href="#t-tails"><span class="num">6.1</span>瘦尾 vs 肥尾 · 巴塞尔之坑</a>
+    <a href="#t-mvn"><span class="num">6.2</span>多元正态 · 协方差的几何形状</a>
+  </nav>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main class="content" id="top">
+
+  <p class="h-eyebrow">City U · Ch1 (P39+) &amp; Ch2–3 · Expectation, Inequalities, Convergence</p>
+  <h1 class="title">从「矩」<br>到「极限」</h1>
+  <p class="lead muted cjk">这是<b style="color:var(--ink)">第二节</b>讲义，接着第一节往下走。第一节我们把随机变量「立」起来（CDF / PMF / PDF / 分布家族）；
+  这一节要回答两个问题：<b style="color:var(--ink)">①</b> 怎么用几个数把一个分布<b style="color:var(--ink)">概括</b>出来（期望、方差、矩、MGF）；
+  <b style="color:var(--ink)">②</b> 当样本越来越多，样本里的统计量会<b style="color:var(--ink)">收敛到</b>什么、收敛得<b style="color:var(--ink)">多快</b>（不等式、收敛、大数定律、中心极限定理）。</p>
+  <p class="lead muted cjk">每个知识点尽量给：<b style="color:var(--ink)">大白话直觉</b> + <b style="color:var(--gold)">案例</b> + 能看的 <b style="color:var(--teal)">2D 图</b> + 能拖的 <b style="color:var(--accent)">交互</b>，3D 只在<b style="color:var(--violet)">真正需要</b>时出现。凡是我觉得材料里有坑、或大家容易误解的地方，我会用 <b style="color:var(--rust)">⚠ 盲点</b> 卡片直说。</p>
+
+  <div class="guide">
+    <div class="gchip idea"><div class="ic">✦</div><h5 class="cjk">直觉 / 文字</h5><p class="cjk">先把「它到底在说什么、为什么要它」讲透。</p></div>
+    <div class="gchip case"><div class="ic">▢</div><h5 class="cjk">案例</h5><p class="cjk">保险、金融违约、信号处理等真实场景。</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5 class="cjk">2D 图</h5><p class="cjk">曲线、散点、边界，一眼看出形状。</p></div>
+    <div class="gchip d3"><div class="ic">◳</div><h5 class="cjk">3D 图</h5><p class="cjk">协方差曲面、投影几何，可旋转。</p></div>
+    <div class="gchip live"><div class="ic">⊹</div><h5 class="cjk">交互</h5><p class="cjk">拖参数、亲手模拟大数定律 / CLT。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5 class="cjk">盲点</h5><p class="cjk">材料里的错处、常见误解，批判地纠正。</p></div>
+  </div>
+
+  <div class="xander">
+    <p class="who cjk"><span>“</span>课堂主线（来自补课录音）</p>
+    <p class="cjk" style="font-size:15.5px">老师那条线索是：<b>先用几个「数」（矩）去概括一个随机变量</b> → 期望是「平均水平/重心」，方差是「胖瘦/离散」，协方差是「一起动不动」 →
+    <b>把所有矩一次性打包</b>的工具是<b>矩生成函数（像傅里叶变换）</b> → 当我们只知道一点点信息时，用<b>不等式</b>给出概率的「天花板」 →
+    最后是全章的高潮：当样本量 $n\to\infty$，样本均值会<b>收敛到真值（大数定律）</b>，而且它的<b>波动形状会趋于正态（中心极限定理）</b>——这就是统计推断敢「用样本猜总体」的底气。</p>
+  </div>
+
+  <!-- ============ CONCEPT MAP ============ -->
+  <h2 id="map" class="topic" style="font-size:clamp(20px,3vw,26px); margin-top:46px">0 · 知识全景地图<span style="font-family:Spectral;font-style:italic;font-weight:400;color:var(--ink-faint);font-size:16px"> — 点任意节点跳到对应讲解</span></h2>
+  <p class="muted cjk" style="margin-top:-2px">连线代表关系：<b style="color:var(--green)">绿=派生/继承</b>，<b style="color:var(--accent)">蓝=推广</b>，<b style="color:var(--gold)">黄=极限/逼近</b>，<b style="color:var(--violet)">紫=作为工具</b>，<b style="color:var(--rust)">红=关键盲点</b>。最左一列灰字是<b>第一节</b>已学的地基。</p>
+
+  <div class="mapwrap">
+    <svg id="conceptmap" viewBox="0 0 1240 700" xmlns="http://www.w3.org/2000/svg" font-family="'Fraunces', serif">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+        </marker>
+      </defs>
+      <text x="105" y="28" font-size="14" fill="#8C857A" letter-spacing="2">第一节地基</text>
+      <text x="370" y="28" font-size="14" fill="#8C857A" letter-spacing="2">数字指纹（矩）</text>
+      <text x="660" y="28" font-size="14" fill="#8C857A" letter-spacing="2">打包 / 不等式</text>
+      <text x="960" y="28" font-size="14" fill="#8C857A" letter-spacing="2">极限理论</text>
+      <g id="edges" stroke-width="1.8" fill="none" opacity=".72"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+  <div class="legend cjk">
+    <span><i style="border-color:#3E7C4E"></i>派生 / 继承</span>
+    <span><i style="border-color:#1F5C8C"></i>推广</span>
+    <span><i style="border-color:#B7892A"></i>极限 / 逼近</span>
+    <span><i style="border-color:#574AA6"></i>作为工具</span>
+    <span><i style="border-color:#B0442B"></i>关键盲点</span>
+  </div>
+
+  <!-- ============ SPINE ============ -->
+  <section class="topic-block" id="spine">
+    <h3 class="topic cjk">★ 这节课的主线：一句话串起来</h3>
+    <p class="topic-en">The single thread that ties everything together</p>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>一条主线</div>
+      <p class="cjk">如果只让你记一句话，记这句：<b>「我们用矩去概括分布、用 MGF 去打包矩、用不等式给概率封顶、用极限定理保证样本能逼近总体。」</b></p>
+      <p class="cjk">这四块是<b>层层递进</b>的：</p>
+      <p class="cjk">① <b style="color:var(--teal)">概括</b>：一个完整的分布信息太多了（整条 PDF/CDF）。我们想用<b>有限几个数</b>抓住它的关键特征——位置（期望）、胖瘦（方差）、是否一起动（协方差）、对称不对称、尾巴厚不厚（高阶矩）。这些数统称<b>矩</b>。</p>
+      <p class="cjk">② <b style="color:var(--violet)">打包</b>：能不能用<u>一个函数</u>把所有阶的矩一次装好？能——<b>矩生成函数 MGF</b>。它像「分布的指纹/身份证」，求导取零点就把各阶矩一个个抖出来。</p>
+      <p class="cjk">③ <b style="color:var(--gold)">封顶</b>：很多时候我们<u>不知道完整分布</u>，只知道期望、或期望加方差。<b>不等式</b>（马尔可夫、切比雪夫、柯西–施瓦茨、詹森）能仅凭这点信息，给出「某件极端事件发生概率」的<b>上界</b>。</p>
+      <p class="cjk">④ <b style="color:var(--accent)">逼近</b>：统计学的全部底气在这——当样本量变大，<b>样本均值收敛到真均值（大数定律）</b>，而且<b>它的波动近似正态（中心极限定理）</b>。前面学的不等式，正是证明这两条定律的工具。</p>
+      <p class="cjk muted">往下读时，可以一直拿这条主线对照：你现在在第几块、它解决的是「概括 / 打包 / 封顶 / 逼近」里的哪个问题。</p>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 1 : 数字指纹 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part1">
+    <div class="pk">I</div>
+    <h2 class="cjk">随机变量的「数字指纹」</h2>
+    <p class="cjk">一个分布的完整信息（整条 PDF/CDF）太多。这一部分学的，是怎么用<b>有限几个数</b>抓住它的灵魂：在哪儿（期望）、有多散（方差）、和别人一起动不动（协方差）、长什么形状（高阶矩）。这些数统称<b>矩（moments）</b>。</p>
+  </header>
+
+  <!-- 1.1 期望 -->
+  <section class="topic-block" id="t-exp">
+    <h3 class="topic cjk">1.1　期望 · 平均水平 / 重心</h3>
+    <p class="topic-en">Expectation — a measure of location（Def 2.1）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-var">派生 → 方差 / 协方差</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-rules">运算 → 线性 / 懒人法则</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-lln">逼近 → 大数定律</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 期望就是「重心」</div>
+      <p class="cjk">老师说期望是「随机变量取值的<b>平均水平</b>」，更准确地说它是一个<b>泛函</b>——吃进一个随机变量，吐出一个数。这个数你可以这样想：把 PMF/PDF 想成一根<b>质量分布的杆</b>，每个取值 $x$ 处压着重量 $f(x)$，那么<mark>期望 $\mathbb{E}[X]$ 就是这根杆的「重心」</mark>——你用一根手指顶在哪里，杆才不会倒。</p>
+      <p class="cjk">为什么强调「水平/位置（location）」这个词？因为期望<b>不管胖瘦</b>。两个分布可以重心一模一样，但一个挤成一团、一个摊得很开——位置相同，离散不同。离散那部分留给方差。</p>
+      <p class="cjk muted">⚠ 小提醒：期望<b>不一定等于「最可能出现的值」</b>（那是众数），也<b>不一定是中点</b>（那是中位数）。重心会被远处的「重物」拽过去——这正是后面肥尾分布出问题的根源。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>定义（Def 2.1）· 离散是求和，连续是积分</div>
+      <p class="cjk">两种写法其实是同一件事，用 Stieltjes 积分 $\int x\,dF(x)$ 统一了：</p>
+      <p>$$\mathbb{E}[X]=\int_{\mathbb{R}} x\,dF(x)=\begin{cases}\displaystyle\sum_{x} x\,f(x), & X\ \text{离散}\\[2mm]\displaystyle\int_{\mathbb{R}} x\,f(x)\,dx, & X\ \text{连续}\end{cases}\qquad \mu_X:=\mathbb{E}[X]$$</p>
+      <p class="cjk" style="font-size:14.5px">向量版：若 $X=(X_1,\dots,X_k)^{\top}$，则 $\mathbb{E}[X]=(\mathbb{E}[X_1],\dots,\mathbb{E}[X_k])^{\top}$，叫<b>一阶矩 / 均值向量</b>。注意：<b>积分（或求和）必须良定义</b>（绝对收敛），否则期望不存在——后面柯西分布就是反例。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 重心会骗人：保险公司的「平均赔付」</div>
+      <p class="cjk">一份意外险，99.9% 的人一年赔 $0$ 元，0.1% 的人出大事赔 100 万。期望赔付 $=0.999\times 0 + 0.001\times 10^6=\textbf{1000}$ 元。注意：<b>没有任何一个人真的赔 1000 元</b>——要么 0，要么 100 万。期望是个「会计意义上的平均」，它决定保费定价，却描述不了任何单个客户的体验。这就是「重心」被极端值拽动的现实版。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 拖动质量，看重心怎么动</div>
+      <p class="cjk">下面有几个「砝码」摆在数轴上（高度=权重，已自动归一化为概率）。拖动滑块改变<b>最右那个极端值的权重</b>，看红色重心线（期望）怎样被它拽走——哪怕它出现的概率很小。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">极端值($x=10$)的权重 <span class="val" id="exp-w-v">0.05</span></label><input type="range" id="exp-w" min="0" max="0.6" step="0.01" value="0.05"></div>
+      </div>
+      <div class="plotwrap"><div id="p-exp" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">体会一点：<b>众数（最高那根）几乎不动，重心（红线）一直在跑</b>。期望对尾部极端值很敏感，这是它的优点也是它的软肋。</p>
+    </div>
+  </section>
+
+  <!-- 1.2 方差 -->
+  <section class="topic-block" id="t-var">
+    <h3 class="topic cjk">1.2　方差 · 标准差 · 离散程度</h3>
+    <p class="topic-en">Variance &amp; standard deviation — a measure of spread（Def 2.2–2.3）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">承接 ← 期望（先有重心）</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-cov">推广 → 协方差（两个变量）</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-cheby">被用于 → 切比雪夫</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「平均而言离重心多远」</div>
+      <p class="cjk">有了重心（期望），下一个问题是：大家都挤在重心附近，还是散得到处都是？<b>方差衡量随机变量偏离它平均水平的程度</b>。做法很自然：算每个点到重心的距离 $X-\mu_X$，但有正有负会抵消，所以<b>平方</b>一下再取平均：$\mathbb{V}(X)=\mathbb{E}[(X-\mu_X)^2]$。</p>
+      <p class="cjk">为什么平方而不取绝对值？两个原因：① 平方处处可导，数学上好处理；② 它和「二阶矩、内积、欧氏距离」是同一套语言（后面柯西–施瓦茨、$L^2$ 空间都靠它）。代价是<b>方差的单位是原始单位的平方</b>（赔付是元，方差是元²），不好解释。于是开个根号还原单位，得到<b>标准差 $\sigma_X=\sqrt{\mathbb{V}(X)}$</b>——这才是和数据同单位、能直接说「平均波动约 ±σ」的量。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>定义与最常用的计算公式（Thm 2.6.1）</div>
+      <p>$$\mathbb{V}(X)=\mathbb{E}\!\big[(X-\mu_X)^2\big]=\underbrace{\mathbb{E}[X^2]-\mu_X^2}_{\text{算的时候几乎只用这个}},\qquad \sigma_X=\sqrt{\mathbb{V}(X)}$$</p>
+      <p class="cjk" style="font-size:14.5px">「二阶矩减一阶矩平方」是手算方差的主力公式。还有两条要背熟：<b>缩放平移</b> $\mathbb{V}(aX+b)=a^2\,\mathbb{V}(X)$（加常数不改变离散，乘常数把离散放大 $a^2$ 倍；注意 $b$ 不见了）；<b>独立可加</b> 若 $X_1\perp X_2$ 则 $\mathbb{V}(X_1+X_2)=\mathbb{V}(X_1)+\mathbb{V}(X_2)$。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 同一个重心，不同的胖瘦</div>
+      <p class="cjk">两条正态曲线<b>重心都钉在 0</b>（期望相同），拖动滑块只改标准差 $\sigma$。看「位置」和「离散」是两件完全独立的事：重心不动，胖瘦在变。阴影是 $\mu\pm\sigma$ 区间。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">标准差 σ <span class="val" id="var-s-v">1.5</span></label><input type="range" id="var-s" min="0.4" max="3.2" step="0.05" value="1.5"></div>
+      </div>
+      <div class="plotwrap"><div id="p-var" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">正态分布里，约 <b>68%</b> 的概率落在 $\mu\pm\sigma$、<b>95%</b> 落在 $\mu\pm2\sigma$。记住这个「68–95–99.7」，后面 CLT 和置信区间天天用。</p>
+    </div>
+  </section>
+
+  <!-- 1.3 协方差 -->
+  <section class="topic-block" id="t-cov">
+    <h3 class="topic cjk">1.3　协方差 · 相关系数 · 协方差矩阵</h3>
+    <p class="topic-en">Covariance, correlation, covariance matrix（Def 2.4, Thm 2.7–2.9）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-var">推广 ← 方差（一个变量→两个）</a></span>
+      <span class="rel warn"><span class="dot"></span><a href="#t-covtrap">关键盲点 → 协方差为0 ≠ 独立</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-mvn">几何形状 → 多元正态</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「两个变量是不是一起动」</div>
+      <p class="cjk">方差问「一个变量自己散不散」，协方差问「<b>两个变量是不是一起偏离各自的重心</b>」。把方差公式里的 $(X-\mu_X)(X-\mu_X)$ 换成 $(X-\mu_X)(Y-\mu_Y)$ 就是协方差。</p>
+      <p class="cjk">逐点看符号：当 $X$ 高于自己均值时 $Y$ 往往也高（两个因子同号，乘积为正）→ 正协方差，<b>同涨同跌</b>；当 $X$ 高时 $Y$ 反而低 → 负协方差，<b>此消彼长</b>；如果方向时正时负互相抵消 → 协方差约 0，<b>没有线性的「一起动」</b>。</p>
+      <p class="cjk">但协方差有个毛病：<b>它带量纲、量级随单位乱跑</b>（身高用厘米还是米，协方差差 100 倍）。于是除以两个标准差，把它「无量纲化、归一化」，得到<b>相关系数 $\rho$</b>，永远落在 $[-1,1]$，可以横向比较。$\rho=\pm1$ 意味着 $Y$ 是 $X$ 的<b>完美线性函数</b>。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>定义 + 矩阵推广</div>
+      <p>$$\operatorname{cov}(X,Y)=\mathbb{E}\big[(X-\mu_X)(Y-\mu_Y)\big]=\underbrace{\mathbb{E}[XY]-\mathbb{E}[X]\mathbb{E}[Y]}_{\text{Thm 2.7，常用}},\qquad \rho_{X,Y}=\frac{\operatorname{cov}(X,Y)}{\sigma_X\sigma_Y}\in[-1,1]$$</p>
+      <p class="cjk" style="font-size:14.5px">多维时，把 $k$ 个变量两两的协方差排成一张表，就是<b>协方差矩阵</b> $\operatorname{cov}(X)$：第 $(i,j)$ 格放 $\operatorname{cov}(X_i,X_j)$，<b>对角线就是各自的方差</b>。它一定是对称、半正定的。线性变换下它这样变（Thm 2.9）：</p>
+      <p>$$\mathbb{E}[AX]=A\,\mathbb{E}[X],\qquad \operatorname{cov}(AX)=A\,\operatorname{cov}(X)\,A^{\top}$$</p>
+      <p class="cjk" style="font-size:14px">这条 $A\Sigma A^{\top}$ 在 PCA、投资组合方差、卡尔曼滤波里反复出现，值得刻进肌肉记忆。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 投资组合：协方差决定能不能「分散风险」</div>
+      <p class="cjk">两只股票各自方差 $\sigma_1^2,\sigma_2^2$，各投一半。组合方差 $=\tfrac14\sigma_1^2+\tfrac14\sigma_2^2+\tfrac12\operatorname{cov}(X_1,X_2)$。<b>关键全在那个协方差项</b>：若两只股票负相关（一个跌一个涨），协方差为负，组合方差被压下去——这就是「不要把鸡蛋放一个篮子」的数学。反之若它们高度正相关（齐涨齐跌，比如同一行业），分散几乎无效，2008 年很多「分散」组合一起崩，就是相关性在危机里突然冲到接近 1。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 拖动相关系数 ρ，看散点云变形</div>
+      <p class="cjk">下面是一团二元正态样本点。拖 $\rho$：从 $-1$（完美负相关，点贴在一条下降直线上）到 $0$（圆形无关云）再到 $+1$（完美正相关，贴在上升直线上）。<b>相关系数控制的就是这团云被「捏」成多扁、朝哪个方向斜</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="cov-r-v">0.00</span></label><input type="range" id="cov-r" min="-0.98" max="0.98" step="0.02" value="0"></div>
+        <button class="btn ghost" id="cov-resample">重新采样</button>
+      </div>
+      <div class="plotwrap"><div id="p-cov" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label cjk"><span class="ic">◳</span>3D · 协方差到底把分布「掰」成什么形状</div>
+      <p class="cjk">这是上面同一个二元正态的<b>联合密度曲面</b>（一座山）。$\rho=0$ 时是个对称的圆锥山；调大 $\rho$，整座山被压扁、沿对角线拉长成一条<b>山脊</b>。鼠标可旋转、缩放。<u>这就是「协方差矩阵决定分布几何形状」最直观的一幕</u>——2D 散点是从这座山顶往下拍的俯视图。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="cov3-r-v">0.60</span></label><input type="range" id="cov3-r" min="-0.95" max="0.95" step="0.05" value="0.6"></div>
+      </div>
+      <div class="plotwrap"><div id="p-cov3" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 1.4 盲点：cov=0 ≠ 独立 -->
+  <section class="topic-block" id="t-covtrap">
+    <h3 class="topic cjk">1.4　⚠ 盲点 · 「协方差为 0」 ≠ 「独立」</h3>
+    <p class="topic-en">Zero covariance does NOT imply independence</p>
+    <div class="rels">
+      <span class="rel warn"><span class="dot"></span><a href="#t-cov">纠正 ← 协方差</a></span>
+      <span class="rel dual"><span class="dot"></span><a href="#t-mvn">唯一例外 → 多元正态里两者等价</a></span>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>盲点 · 这是最常被记反的一条</div>
+      <p class="cjk">老师在课上特别强调，这也是材料纪要里说得对、但极易被学生记混的一点。请一次性记牢这条<b>单向</b>关系：</p>
+      <p>$$X\perp Y\ \Longrightarrow\ \operatorname{cov}(X,Y)=0\qquad\textbf{但反过来不成立！}$$</p>
+      <p class="cjk"><b>「独立」是最强的结论</b>：$X$ 不携带关于 $Y$ 的<u>任何</u>信息（联合分布 = 边缘相乘）。<b>「协方差为 0 / 不相关」只是说没有<i>线性</i>的共同趋势</b>。两个变量完全可以「不相关却深度依赖」——只要它们的关系是<b>弯的</b>（非线性、对称），线性度量就探测不到。</p>
+      <p class="cjk muted">一句口诀：<b>不相关 = 没有「直线」关系；独立 = 没有「任何」关系。</b>独立 ⊋ 不相关。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 亲眼看「协方差=0，却明明高度相关」</div>
+      <p class="cjk">经典反例：令 $X\sim\text{Uniform}(-1,1)$，$Y=X^2$。$Y$ <b>完全被 $X$ 决定</b>（知道 $X$ 就 100% 知道 $Y$，依赖到顶），可是因为这条抛物线左右对称，$\operatorname{cov}(X,Y)=\mathbb{E}[X^3]-\mathbb{E}[X]\mathbb{E}[X^2]=0-0=0$。换几个对称形状看看——协方差始终趴在 0 附近，但点根本不是「一团没关系的云」。</p>
+      <div class="controls">
+        <div class="seg" id="trap-seg">
+          <button data-shape="parab" class="on">Y = X²（抛物线）</button>
+          <button data-shape="circle">圆环</button>
+          <button data-shape="abs">Y = |X|（V 形）</button>
+          <button data-shape="sin">Y = cos(2πX)</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-trap" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk" id="trap-info">实测协方差 ≈ —　|　相关系数 ≈ —</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>唯一的「赦免」：联合正态</div>
+      <p class="cjk">老师补了关键一句：在<b>（多元）正态分布</b>这个特例里，<mark>「不相关」和「独立」恰好等价</mark>。正因如此，做线性回归、做 PCA 时，「正交/不相关」常被直接当「独立」用——但这是<b>正态给的特权</b>，离开正态就失效。这也是 6.2 节多元正态值得单独讲的原因之一。</p>
+    </div>
+  </section>
+
+  <!-- 1.5 高阶矩 -->
+  <section class="topic-block" id="t-moment">
+    <h3 class="topic cjk">1.5　高阶矩 · 偏度与峰度</h3>
+    <p class="topic-en">Higher-order moments — shape of the distribution（Def 2.5–2.6, Thm 2.3）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-var">承接 ← 一阶/二阶矩</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-tails">应用 → 肥尾 / 厚尾</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-mgf">一次打包 → MGF</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 一阶看位置，二阶看胖瘦，三四阶看「形状」</div>
+      <p class="cjk">矩可以一直往上数：$\mathbb{E}[X^j]$ 是<b>第 $j$ 阶矩</b>，$\mathbb{E}[(X-\mu)^j]$ 是<b>第 $j$ 阶中心矩</b>（先减掉重心，专看形状）。它们各管一件事：</p>
+      <p class="cjk">· <b>1 阶</b>（期望）：分布在哪儿——<b>位置</b>。<br>
+      · <b>2 阶</b>（方差）：散得多开——<b>胖瘦</b>。<br>
+      · <b>3 阶 → 偏度（skewness）</b>：左右对不对称。正偏=右边拖一条长尾（如收入分布），负偏=左边拖长尾。<br>
+      · <b>4 阶 → 峰度（kurtosis）</b>：尾巴厚不厚、中间尖不尖。高峰度=<b>又尖又厚尾</b>（极端值比正态多），这正是金融数据的典型特征。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>一条很有用的「存在性」定理（Thm 2.3）</div>
+      <p>$$\text{第 }j\text{ 阶矩：}\ \mathbb{E}[X^j],\qquad \text{第 }j\text{ 阶中心矩：}\ \mathbb{E}\big[(X-\mu_X)^j\big]$$</p>
+      <p class="cjk"><b>Thm 2.3：若第 $k$ 阶矩存在且有限，则对所有 $j<k$，第 $j$ 阶矩也存在。</b>直觉：高阶矩对尾部的「惩罚」更重（$x^k$ 比 $x^j$ 涨得快），高阶都被尾部摁住了（有限），低阶自然更稳。<u>所以矩是「从高往低塌陷」的</u>——高阶有限是更苛刻的条件。反过来不对：低阶有限不保证高阶有限（柯西分布连一阶都没有，更别说更高）。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 分别拨动「偏度」和「峰度」</div>
+      <p class="cjk">左边滑块控制<b>偏度</b>（把对称钟形往一边拽出长尾），右边控制<b>峰度</b>（在「又矮又薄尾」和「又尖又厚尾」之间切换）。灰色虚线是标准正态做参照。注意看<b>尾巴</b>：峰度一高，远处的概率（极端事件）明显抬起来。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">偏度（左偏 ↔ 右偏） <span class="val" id="mo-skew-v">0.0</span></label><input type="range" id="mo-skew" min="-0.9" max="0.9" step="0.05" value="0"></div>
+        <div class="ctrl"><label class="cjk">峰度（薄尾 ↔ 厚尾） <span class="val" id="mo-kurt-v">0.0</span></label><input type="range" id="mo-kurt" min="-0.6" max="1" step="0.05" value="0"></div>
+      </div>
+      <div class="plotwrap"><div id="p-moment" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">为什么形状重要？两个分布可以期望、方差<b>完全相同</b>，但一个温顺、一个动不动就给你来个极端值——差别全藏在三阶、四阶里。VaR、压力测试、保险定价，都得看尾。</p>
+    </div>
+  </section>
+
+  <!-- 1.6 速查表 -->
+  <section class="topic-block" id="t-table">
+    <h3 class="topic cjk">1.6　常见分布的期望与方差（速查表）</h3>
+    <p class="topic-en">Mean &amp; variance of common distributions</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">汇总 ← 期望 / 方差</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>不要死背，看「参数怎么影响均值和散度」</div>
+      <p class="cjk">这些结果第一节的分布家族里都有，这里汇总成一张表方便查（与课件 P5–P7、P40 一致）。建议看<b>结构</b>：泊松「均值=方差=$\theta$」很特别；几何/指数的均值是参数的倒数；正态的两个参数 $(\mu,\sigma^2)$ 直接<b>就是</b>均值和方差，干净到不真实——这也是它好用的原因之一。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>速查</div>
+      <div class="scrollx">
+      <table class="tab">
+        <tr><th>分布</th><th>记号</th><th>期望 𝔼[X]</th><th>方差 𝕍(X)</th><th>备注</th></tr>
+        <tr><td class="lbl">伯努利</td><td>$\text{Bern}(\theta)$</td><td>$\theta$</td><td>$\theta(1-\theta)$</td><td>$\theta=\tfrac12$ 时方差最大</td></tr>
+        <tr><td class="lbl">二项</td><td>$\text{Bin}(n,\theta)$</td><td>$n\theta$</td><td>$n\theta(1-\theta)$</td><td>$n$ 个独立伯努利之和</td></tr>
+        <tr><td class="lbl">几何</td><td>$\text{Geom}(\theta)$</td><td>$1/\theta$</td><td>$(1-\theta)/\theta^2$</td><td>首次成功的等待次数</td></tr>
+        <tr><td class="lbl">泊松</td><td>$\text{Poisson}(\theta)$</td><td>$\theta$</td><td>$\theta$</td><td><b>均值=方差</b>，很特别</td></tr>
+        <tr><td class="lbl">正态</td><td>$N(\mu,\sigma^2)$</td><td>$\mu$</td><td>$\sigma^2$</td><td>参数即均值方差</td></tr>
+        <tr><td class="lbl">指数</td><td>$\text{Exp}(\theta)$</td><td>$1/\theta$</td><td>$1/\theta^2$</td><td>$\theta$=速率；无记忆性</td></tr>
+        <tr><td class="lbl">Gamma</td><td>$\text{Gamma}(a,b)$</td><td>$ab$</td><td>$ab^2$</td><td>$b$=尺度；$a$ 个指数之和</td></tr>
+        <tr><td class="lbl">多元正态</td><td>$N_k(\mu,\Sigma)$</td><td>$\mu$</td><td>$\operatorname{cov}(X)=\Sigma$</td><td>见 6.2 节</td></tr>
+      </table>
+      </div>
+      <p class="cap cjk">求这些的常用招数：泊松方差先求 $\mathbb{E}[X(X-1)]$；正态方差用<b>分部积分</b>；Gamma 靠 $\Gamma(a+1)=a\Gamma(a)$。MGF（3.1 节）会给你一个<b>统一的「求导取值」流水线</b>，把这些一次性算出来。</p>
+    </div>
+  </section>
+
+  <!-- 1.7 运算法则 -->
+  <section class="topic-block" id="t-rules">
+    <h3 class="topic cjk">1.7　期望 / 方差的运算法则</h3>
+    <p class="topic-en">Rules of expectation &amp; variance（Thm 2.1, 2.4–2.8）</p>
+    <div class="rels">
+      <span class="rel tool"><span class="dot"></span><a href="#t-exp">服务于 ← 一切期望计算</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-clt">支撑 → CLT 的标准化</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>四条「肌肉记忆」+ 一个大坑</div>
+      <p class="cjk"><b>① 懒人统计学家定理（Thm 2.1）</b>：要算 $Y=r(X)$ 的期望，<u>不用</u>先去求 $Y$ 的分布——直接 $\mathbb{E}[r(X)]=\int r(x)\,dF_X(x)$，拿 $X$ 自己的分布去加权 $r(x)$ 就行。名字虽然叫「懒」，但它是后面一切的基础。</p>
+      <p class="cjk"><b>② 期望是线性的（Thm 2.4）</b>：$\mathbb{E}[\sum a_i X_i]=\sum a_i\mathbb{E}[X_i]$，<mark>无论 $X_i$ 是否独立都成立</mark>——这是期望最甜的性质。</p>
+      <p class="cjk"><b>③ 独立才能拆乘积（Thm 2.5）</b>：$\mathbb{E}[\prod X_i]=\prod \mathbb{E}[X_i]$，<b>这条要独立</b>。</p>
+      <p class="cjk"><b>④ 方差不是线性的</b>：$\mathbb{V}(aX+b)=a^2\mathbb{V}(X)$；而 $\mathbb{V}(X_1+X_2)=\mathbb{V}(X_1)+\mathbb{V}(X_2)+2\operatorname{cov}(X_1,X_2)$——<b>只有独立时那个协方差项才消失</b>。</p>
+      <p class="cjk muted">⚠ 大坑：很多人把「期望线性」的直觉错误搬到方差上，以为 $\mathbb{V}(X+Y)=\mathbb{V}(X)+\mathbb{V}(Y)$ 永远成立。<b>不对</b>，除非独立。相关的变量相加，波动会被协方差放大或抵消。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>一般化的协方差/方差（Thm 2.8）</div>
+      <p>$$\operatorname{cov}\Big(\sum_{i=1}^{n} a_i X_i,\ \sum_{j=1}^{k} b_j Y_j\Big)=\sum_{i=1}^{n}\sum_{j=1}^{k} a_i b_j\,\operatorname{cov}(X_i,Y_j)$$</p>
+      <p class="cjk" style="font-size:14.5px">这就是「协方差对线性组合的双线性」。把它用到 $\mathbb{V}(\sum a_iX_i)=\operatorname{cov}(\sum a_iX_i,\sum a_iX_i)$，就得到一般的方差展开式——投资组合方差、回归里 $\mathbb{V}(\hat\beta)$，本质都是这一行。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 相关性如何放大/抵消「和」的波动</div>
+      <p class="cjk">两个标准化变量（各自方差 1）相加，理论方差 $=1+1+2\rho=2+2\rho$。拖 $\rho$，看 $X+Y$ 的样本直方图怎么从「窄」（$\rho=-1$，几乎抵消成常数）变到「宽」（$\rho=+1$，波动叠满）。这就是「方差非线性」的现场。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">X 与 Y 的相关系数 ρ <span class="val" id="addvar-r-v">0.00</span></label><input type="range" id="addvar-r" min="-0.95" max="0.95" step="0.05" value="0"></div>
+      </div>
+      <div class="plotwrap"><div id="p-addvar" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk" id="addvar-info">理论 𝕍(X+Y) = 2 + 2ρ ≈ —　|　样本方差 ≈ —</p>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 2 : 条件与分解 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part2">
+    <div class="pk">II</div>
+    <h2 class="cjk">条件与分解</h2>
+    <p class="cjk">前面的矩都是「无条件」的——对整个总体取平均。现实里我们常常<b>已经知道一部分信息</b>（知道了 $Y$，问 $X$ 还剩多少不确定）。这一部分把期望/方差「条件化」，并得到一个极美的分解：<b>总不确定 = 已被解释的 + 仍然剩下的</b>。它是回归、ANOVA、风险分解的共同源头。</p>
+  </header>
+
+  <!-- 2.1 条件期望 -->
+  <section class="topic-block" id="t-condexp">
+    <h3 class="topic cjk">2.1　条件期望 · 投影视角</h3>
+    <p class="topic-en">Conditional expectation — as a projection（Def 2.7）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">承接 ← 期望</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-tower">引出 → 全期望公式</a></span>
+      <span class="rel dual"><span class="dot"></span>对应 → 回归 = 最优预测</span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「知道了 Y，X 的最佳猜测是多少」</div>
+      <p class="cjk"><b>条件期望 $\mathbb{E}[X\mid Y=y]$</b> 就是：在<b>已知 $Y=y$ 这个子人群里</b>，$X$ 的平均水平。例：全国人均收入是无条件期望 $\mathbb{E}[\text{收入}]$；「已知是 35 岁博士」这个子群的平均收入，就是条件期望 $\mathbb{E}[\text{收入}\mid \text{年龄}=35,\text{学历}=\text{博士}]$。</p>
+      <p class="cjk">注意一个微妙但重要的层次：$\mathbb{E}[X\mid Y=y]$ 对每个具体的 $y$ 是一个<b>数</b>；但把 $y$ 放开当变量，$\mathbb{E}[X\mid Y]$ 就成了一个<b>关于 $Y$ 的随机变量</b>（$Y$ 随机，它就随机）。<mark>「$\mathbb{E}[X\mid Y]$ 是随机变量」这件事是后面全期望、全方差公式能成立的前提</mark>，务必转过这个弯。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>定义（Def 2.7）</div>
+      <p>$$\mathbb{E}[X\mid Y=y]=\int_{\mathbb{R}} x\,dF_{X\mid Y}(x\mid y)=\begin{cases}\displaystyle\sum_x x\,f_{X\mid Y}(x\mid y),&\text{离散}\\[1mm]\displaystyle\int x\,f_{X\mid Y}(x\mid y)\,dx,&\text{连续}\end{cases}$$</p>
+      <p class="cjk" style="font-size:14.5px">就是把无条件期望里的「整体分布 $F$」换成「条件分布 $F_{X\mid Y}$」。函数版同理：$\mathbb{E}[r(X,Y)\mid Y=y]=\int r(x,y)\,dF_{X\mid Y}(x\mid y)$。</p>
+    </div>
+
+    <div class="mod idea" style="border-style:dashed">
+      <div class="mod-label cjk"><span class="ic">↻</span>老师强调的「投影」视角（这是精华，也是难点）</div>
+      <p class="cjk">老师说「条件期望可以理解为把随机变量<b>投影</b>到已知条件所在的平面上」。这句话的严格版很深刻，值得花力气搞懂：</p>
+      <p class="cjk">把所有「方差有限的随机变量」看成一个<b>向量空间 $L^2$</b>，并用<b>内积 $\langle X,Z\rangle=\mathbb{E}[XZ]$</b> 赋予它「长度」和「夹角」。在这个几何里，「所有能由 $Y$ 算出来的函数 $g(Y)$」构成一个<b>子空间</b>（一张「平面」）。那么——</p>
+      <p style="text-align:center">$$\mathbb{E}[X\mid Y]\ =\ X\ \text{在子空间}\ \{g(Y)\}\ \text{上的正交投影}$$</p>
+      <p class="cjk">也就是：在所有「只用 $Y$ 做出来的预测」里，$\mathbb{E}[X\mid Y]$ 是<b>离 $X$ 最近的那个</b>（均方误差最小的预测）。剩下的 $X-\mathbb{E}[X\mid Y]$ 是<b>残差</b>，它和子空间<b>正交</b>（与任何 $g(Y)$ 不相关）。<u>这正是线性回归「最小二乘」的灵魂</u>——回归就是在「线性函数」这个更小的子空间里做同样的投影。</p>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label cjk"><span class="ic">◳</span>3D · 把「投影」真的画成几何（这里 3D 不可替代）</div>
+      <p class="cjk">这是上面那段话的几何缩影：紫色平面是「能由 $Y$ 做出的预测」子空间，蓝色向量是随机变量 $X$。它在平面上的<b>影子（绿色）就是 $\mathbb{E}[X\mid Y]$</b>，而从 $X$ 到影子的那段<b>垂线（红色）就是残差</b>——它和平面成<b>直角</b>。可旋转着看：无论怎么转，「最近 = 垂直」这件事不变。这就是为什么条件期望同时是「最优预测」又「残差正交」。</p>
+      <div class="plotwrap"><div id="p-proj" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+      <p class="cap cjk">勾股定理在这里变成了：$\;\|X\|^2=\|\mathbb{E}[X\mid Y]\|^2+\|X-\mathbb{E}[X\mid Y]\|^2$。把它「去掉均值」再翻译回方差，<b>下一节的全方差公式就是这条勾股定理</b>。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 条件期望 = 一条「回归曲线」</div>
+      <p class="cjk">具体版：散点是 $(X,Y)$ 样本。把 $X$ 轴切成一条条竖窄条，每条里 $Y$ 的平均值连起来，就是<b>条件均值函数 $\mathbb{E}[Y\mid X=x]$</b>（红线）——它穿过每一竖条点云的「重心」。拖动滑块改变 $Y$ 对 $X$ 的<b>弯曲程度</b>，看这条「最优预测线」怎么跟着弯。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">关系的弯曲度 <span class="val" id="ce-c-v">0.50</span></label><input type="range" id="ce-c" min="-1" max="1" step="0.05" value="0.5"></div>
+        <div class="ctrl"><label class="cjk">噪声大小 <span class="val" id="ce-n-v">0.60</span></label><input type="range" id="ce-n" min="0.1" max="1.5" step="0.05" value="0.6"></div>
+      </div>
+      <div class="plotwrap"><div id="p-ce" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">红线就是「给定 $X$ 时对 $Y$ 的最佳猜测」。点的上下散开（红线解释不掉的部分）就是<b>条件方差</b>，正是下一节「组内方差」的来源。</p>
+    </div>
+  </section>
+
+  <!-- 2.2 全期望公式 -->
+  <section class="topic-block" id="t-tower">
+    <h3 class="topic cjk">2.2　全期望公式（塔性质）</h3>
+    <p class="topic-en">Law of iterated expectations / tower property（Thm 2.10）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-condexp">承接 ← 条件期望</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-totvar">配套 → 全方差公式</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「先分组算平均，再对各组平均加权平均」</div>
+      <p class="cjk">想算全校学生的平均身高，有两条路：① 直接全校 5000 人加总除以 5000；② 先算<b>每个班</b>的平均身高，再按班级人数<b>加权平均</b>这些班均值。两条路结果<b>必然相同</b>——这就是全期望公式。</p>
+      <p class="cjk">关键在于第二步是「对随机变量 $\mathbb{E}[X\mid Y]$（各组的平均，随组而变）<b>再取一次期望</b>」。先按 $Y$ 分组求条件期望，再对 $Y$ 求期望，<u>分组这件事就被「平均掉」了</u>，回到无条件期望。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>公式（Thm 2.10）</div>
+      <p>$$\mathbb{E}\big[\mathbb{E}[X\mid Y]\big]=\mathbb{E}[X]$$</p>
+      <p class="cjk" style="font-size:14.5px">外层期望对 $Y$ 取，内层对 $X$ 取。在投影几何里它对应一句话：<b>影子的平均 = 原向量的平均</b>（投影不改变「均值高度」）。这条公式是因果推断里「调整混杂」「分层估计」的命根子。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 辛普森悖论的解药就在这条公式里</div>
+      <p class="cjk">直接看总体平均常常被「分组结构」误导（辛普森悖论：分组内每组都是 A 优于 B，合起来却 B 优于 A，因为各组样本量权重不同）。全期望公式提醒你：合并平均 = <b>各组条件均值按组概率加权</b>。如果你忽略权重直接合并，就会被结构骗。因果推断里 $\mathbb{E}[Y]=\mathbb{E}_X\big[\mathbb{E}[Y\mid X]\big]$ 正是「按混杂变量 $X$ 分层再加权」的标准动作。</p>
+    </div>
+  </section>
+
+  <!-- 2.3 全方差公式 -->
+  <section class="topic-block" id="t-totvar">
+    <h3 class="topic cjk">2.3　全方差公式 · 风险分解</h3>
+    <p class="topic-en">Law of total variance — within + between（Thm 2.11）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-tower">承接 ← 全期望</a></span>
+      <span class="rel dual"><span class="dot"></span>对应 → ANOVA 方差分解</span>
+      <span class="rel general"><span class="dot"></span>应用 → 系统性风险 vs 个体风险</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「总波动 = 组内波动 + 组间波动」</div>
+      <p class="cjk">这是这一部分的高潮，也是 2.1 节投影几何里那条勾股定理的「方差版」。一句话：<mark>$Y$ 的总不确定性，可以拆成「在每组内部还剩多少波动」+「各组的平均值彼此差多远」</mark>。</p>
+      <p class="cjk">· <b>$\mathbb{E}[\mathbb{V}(Y\mid X)]$ ＝组内方差</b>：在每个 $X$ 子群<b>内部</b>，$Y$ 还散不散，对各组取平均。代表「就算分了组，组里仍然解释不掉的、个体层面的随机」。<br>
+      · <b>$\mathbb{V}(\mathbb{E}[Y\mid X])$ ＝组间方差</b>：各组的<b>平均值</b>之间差异有多大。代表「不同组之间的系统性差别」——这部分是 $X$ <b>能解释</b>的。</p>
+      <p class="cjk">回归里的 $R^2$ 本质就是「组间方差 ÷ 总方差」：$X$ 把总波动解释掉了多大比例。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>公式（Thm 2.11）</div>
+      <p>$$\mathbb{V}(Y)=\underbrace{\mathbb{E}\big[\mathbb{V}(Y\mid X)\big]}_{\text{组内 · 解释不掉}}+\underbrace{\mathbb{V}\big(\mathbb{E}[Y\mid X]\big)}_{\text{组间 · 被 }X\text{ 解释}}$$</p>
+      <p class="cjk" style="font-size:14.5px">这与 2.1 的勾股 $\|X\|^2=\|\text{投影}\|^2+\|\text{残差}\|^2$ 同构：组间方差 = 投影长度²（被解释），组内方差 = 残差长度²（没被解释）。<b>两项都非负，所以分组只会让「剩余不确定」不增</b>——多看一个变量，信息只会变多不会变少。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 金融风险分解：系统性风险 vs 个体风险</div>
+      <p class="cjk">设 $Y$ 是一只股票的收益，$X$ 是整个市场的收益（「大盘」这个分组变量）。则：<b>组间方差 $\mathbb{V}(\mathbb{E}[Y\mid X])$ = 系统性风险</b>（随大盘一起动的部分，分散投资也躲不掉）；<b>组内方差 $\mathbb{E}[\mathbb{V}(Y\mid X)]$ = 个体/特异风险</b>（这家公司自己的事，可以靠分散持仓摊薄）。CAPM 模型说「只有系统性风险该被定价」，逻辑起点就是这条分解。老师在课上把它对应到「内部波动 vs 群体波动」，是一回事。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 拖动「组间差距」，看两部分此消彼长</div>
+      <p class="cjk">三个组（三种颜色），每组内部都有自己的散布（组内方差），三组的<b>中心</b>又彼此分开（组间方差）。拖「组间间距」滑块：把三个中心拉开，组间方差↑、占总方差比例↑（$X$ 解释力变强）；拖「组内散度」滑块改变每组的胖瘦。下方实时显示分解。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">组间间距（中心拉多开） <span class="val" id="tv-b-v">2.0</span></label><input type="range" id="tv-b" min="0" max="5" step="0.1" value="2"></div>
+        <div class="ctrl"><label class="cjk">组内散度 <span class="val" id="tv-w-v">1.0</span></label><input type="range" id="tv-w" min="0.2" max="2.5" step="0.05" value="1"></div>
+      </div>
+      <div class="plotwrap"><div id="p-tv" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk" id="tv-info">组内 ≈ — ＋ 组间 ≈ — ＝ 总 ≈ —　|　被解释比例 (≈R²) ≈ —</p>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 3 : 压缩工具 MGF / 特征函数 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part3">
+    <div class="pk">III</div>
+    <h2 class="cjk">刻画分布的「压缩工具」</h2>
+    <p class="cjk">前面我们一个一个地求矩。能不能用<b>一个函数</b>把所有阶的矩一次性装好、还能反过来唯一确定整个分布？能——这就是<b>矩生成函数 MGF</b>。老师把它类比成<b>傅里叶变换</b>：换一个「域」去看分布，很多在原域里难缠的事（求矩、判独立、求和的分布）在新域里变成简单的代数。</p>
+  </header>
+
+  <!-- 3.1 MGF -->
+  <section class="topic-block" id="t-mgf">
+    <h3 class="topic cjk">3.1　矩生成函数 MGF · 像傅里叶变换</h3>
+    <p class="topic-en">Moment generating function（Def 2.9, Thm 2.12）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-moment">打包 ← 各阶矩</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-charf">局限 → 特征函数</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-clt">用于证明 → CLT</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「把整个分布压成一个函数指纹」</div>
+      <p class="cjk">老师的类比很到位：傅里叶变换把一个信号展开成无穷多正弦波的叠加，<b>那一组系数就唯一代表了这个信号的「身份」</b>。MGF 干的是类似的事——它用算子 $e^{tX}$ 去「探测」分布，把分布的全部矩信息<b>编码进一个关于 $t$ 的函数</b> $\psi_X(t)$。</p>
+      <p class="cjk">为什么 $e^{tX}$ 能装下所有矩？因为指数函数的泰勒展开 $e^{tX}=1+tX+\tfrac{t^2}{2!}X^2+\tfrac{t^3}{3!}X^3+\cdots$ 把 $X$ 的<b>每一个幂次</b>都摆了进去。取期望（期望线性，逐项过）：</p>
+      <p>$$\psi_X(t)=\mathbb{E}[e^{tX}]=1+t\,\mathbb{E}[X]+\frac{t^2}{2!}\mathbb{E}[X^2]+\frac{t^3}{3!}\mathbb{E}[X^3]+\cdots$$</p>
+      <p class="cjk">看见没——<b>各阶矩就是这条幂级数的系数</b>。所以从 $\psi_X(t)$ 里「抠」出第 $j$ 阶矩，只要对 $t$ 求 $j$ 次导、再令 $t=0$（把别的项全打掉，只留下含 $\mathbb{E}[X^j]$ 那一项）。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>定义 + 取矩定理（Def 2.9, Thm 2.12）</div>
+      <p>$$\psi_X(t)=\mathbb{E}\big[e^{tX}\big]=\int_{\mathbb{R}} e^{tx}\,dF_X(x),\qquad t\in(\text{0 附近的开区间})$$</p>
+      <p>$$\boxed{\ \psi_X^{(j)}(0)=\left.\frac{d^j}{dt^j}\psi_X(t)\right|_{t=0}=\mathbb{E}[X^j]\ }\qquad j=1,2,\dots$$</p>
+      <p class="cjk" style="font-size:14px"><b>⚠ 注意「在 0 附近的开区间」这个限定。</b>老师提到，取矩定理（求导与期望/积分换序）背后靠的是<b>控制收敛定理</b>——要在 0 的某个邻域内 $\psi_X(t)$ 有限，才允许把「先求导」和「先取期望」交换次序。这不是技术性废话：正是这个条件，使得「MGF 不一定存在」（见下个盲点）。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 三个分布的 MGF（课件 P13）</div>
+      <p class="cjk" style="font-size:14.5px">体会「换域后代数变简单」：</p>
+      <div class="scrollx">
+      <table class="tab">
+        <tr><th>分布</th><th>MGF $\psi_X(t)$</th><th>对 $t$ 求一阶导取 0 → 𝔼[X]</th></tr>
+        <tr><td class="lbl">二项 $\text{Bin}(n,\theta)$</td><td>$\big(1-\theta+\theta e^{t}\big)^{n}$</td><td>$n\theta$ ✓</td></tr>
+        <tr><td class="lbl">泊松 $\text{Poisson}(\theta)$</td><td>$\exp\!\big(\theta(e^{t}-1)\big)$</td><td>$\theta$ ✓</td></tr>
+        <tr><td class="lbl">正态 $N(\mu,\sigma^2)$</td><td>$\exp\!\big(\mu t+\tfrac12\sigma^2 t^2\big)$</td><td>$\mu$ ✓</td></tr>
+      </table>
+      </div>
+      <p class="cap cjk">正态的 MGF 只有「一次项 + 二次项」，再无更高次——这件事和「正态完全由前两阶矩 $(\mu,\sigma^2)$ 决定」是同一个事实的两面。后面证 CLT 时，就是去证「标准化样本均值的 MGF 趋近 $e^{t^2/2}$（标准正态的 MGF）」。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 「求导取零点」如何把矩一个个抖出来</div>
+      <p class="cjk">以泊松 $\psi(t)=e^{\theta(e^t-1)}$ 为例。拖 $\theta$，看 MGF 曲线（蓝）和它在 $t=0$ 处的<b>切线斜率</b>（红点+红切线）——这个斜率正是 $\psi'(0)=\mathbb{E}[X]=\theta$。下方实时报出由「数值求导取 0」得到的一阶矩、二阶矩，和理论值对照。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">泊松参数 θ <span class="val" id="mgf-t-v">2.0</span></label><input type="range" id="mgf-t" min="0.3" max="5" step="0.1" value="2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-mgf" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk" id="mgf-info">𝔼[X]=ψ′(0)≈ —（理论 θ）　|　𝔼[X²]=ψ″(0)≈ —（理论 θ+θ²）</p>
+    </div>
+  </section>
+
+  <!-- 3.2 MGF三大用途 -->
+  <section class="topic-block" id="t-mgfuse">
+    <h3 class="topic cjk">3.2　MGF 的三大用途</h3>
+    <p class="topic-en">Why MGF is powerful（Thm 2.13–2.16）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-mgf">承接 ← MGF 定义</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-clt">直接支撑 → CLT 证明</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>除了「求矩」，MGF 还有三大杀手锏</div>
+      <p class="cjk"><b>① 唯一确定身份（Thm 2.14 / 2.15）</b>：如果两个随机变量的 MGF 在 0 的某邻域内<b>完全相等</b>，那它们<mark>必然同分布</mark>。这就是「指纹」的意思——MGF 一样，分布就是同一个。证明「某个量服从某分布」，常常就是去证它的 MGF 和目标分布的 MGF 对上。</p>
+      <p class="cjk"><b>② 独立之和 = MGF 相乘（Thm 2.13）</b>：若 $X_1\perp X_2$，则 $\psi_{aX_1+bX_2}(t)=\psi_{X_1}(at)\,\psi_{X_2}(bt)$。<u>原域里「求两个独立变量之和的分布」要做卷积（很烦）；换到 MGF 域，卷积变成<b>乘法</b></u>——这正是傅里叶变换最爽的那条性质。「$n$ 个独立正态之和还是正态」「$n$ 个独立泊松之和还是泊松」都被这条一句话证完。</p>
+      <p class="cjk"><b>③ 判独立（Thm 2.16）</b>：联合 MGF 能<b>分块拆成乘积</b> $\psi_X(t_1,t_2)=\psi_X(t_1,0)\,\psi_X(0,t_2)$，则对应的分块 $X_1,X_2$ 独立。把「独立」这个看似要查整个联合分布的事，化成了 MGF 的代数可分性。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>三条性质一览 + 多元推广（Def 2.10）</div>
+      <p>$$\textbf{相乘：}\ \psi_{aX_1+bX_2}(t)=\psi_{X_1}(at)\,\psi_{X_2}(bt)\quad(X_1\perp X_2)$$</p>
+      <p>$$\textbf{多元 MGF：}\ \psi_X(t)=\mathbb{E}\big[e^{\,t^{\top}X}\big],\quad t\in\mathbb{R}^k\qquad\textbf{唯一性：}\ \psi_X\equiv\psi_Y\ \text{在 }0\text{ 邻域}\ \Rightarrow\ X\stackrel{d}{=}Y$$</p>
+      <p class="cjk" style="font-size:14px">多元版把指数里的标量 $tX$ 换成内积 $t^{\top}X$——这就是老师说的「用向量内积把多个变量的指数项拼成一个矩阵结构」。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 「独立之和」在 MGF 域里就是乘法</div>
+      <p class="cjk">三个独立的同分布随机变量相加。拖动「相加个数 $n$」，看左边样本和的直方图（蓝），它的 MGF 等于单个 MGF 的 $n$ 次方。<b>注意</b>：随着 $n$ 增大，这个「独立之和」的形状会悄悄向钟形靠拢——这不是巧合，正是下一部分中心极限定理的预演。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相加的独立变量个数 n <span class="val" id="sum-n-v">1</span></label><input type="range" id="sum-n" min="1" max="40" step="1" value="1"></div>
+        <div class="seg" id="sum-seg">
+          <button data-d="exp" class="on">指数（右偏）</button>
+          <button data-d="unif">均匀</button>
+          <button data-d="bern">伯努利</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-sum" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 3.3 特征函数 -->
+  <section class="topic-block" id="t-charf">
+    <h3 class="topic cjk">3.3　特征函数 · 永不缺席的备胎</h3>
+    <p class="topic-en">Characteristic function（课堂延伸，非课件正文）</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span><a href="#t-mgf">补全 ← MGF 的局限</a></span>
+      <span class="rel warn"><span class="dot"></span>关键 → 它「一定存在」</span>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>盲点 · MGF 有个致命缺陷：它可能根本不存在</div>
+      <p class="cjk">老师明确点出：<b>并非所有随机变量都有 MGF</b>。原因在定义里——$\psi_X(t)=\mathbb{E}[e^{tX}]$ 要求这个期望在 0 的某个<b>邻域</b>内有限。但对<b>肥尾分布</b>（尾巴衰减得慢，比如对数正态、$t$ 分布、柯西），$e^{tX}$ 增长太快，尾部一压不住，积分<b>发散</b>，MGF 在 $t\ne0$ 处不存在。<mark>肥尾分布偏偏是金融里最重要的一类</mark>，所以这个缺陷不是学术洁癖，是真会卡住你。</p>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 把实指数换成「转圈」的复指数，就永远收敛</div>
+      <p class="cjk">补救办法很优雅：把 $e^{tX}$ 里的实数指数，换成<b>纯虚数指数</b> $e^{itX}$（$i$ 是虚数单位）。由欧拉公式 $e^{i\theta}=\cos\theta+i\sin\theta$，$e^{itX}$ 不再是「爆炸式增长」，而是<b>在单位圆上转圈</b>——它的模长<b>恒等于 1</b>。模长有界，期望就<b>一定收敛</b>。于是得到<b>特征函数</b>：</p>
+      <p>$$\varphi_X(t)=\mathbb{E}\big[e^{itX}\big]\qquad\text{——对任何随机变量都存在！}$$</p>
+      <p class="cjk">代价是它取值在<b>复数域</b>，处理起来稍麻烦。但它继承了 MGF 的全部好处（唯一确定分布、独立之和相乘），还多了「永远存在」这个铁保证。<u>真正严格版的中心极限定理，就是用特征函数证的</u>——因为要处理一般分布，不能假设 MGF 存在。这也是为什么老师把它作为 MGF 的「补充」郑重提一句。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>2D · 为什么复指数「转圈」就不会爆炸</div>
+      <p class="cjk">左：实指数 $e^{tx}$ 随 $x$ <b>指数级冲出天际</b>（遇上肥尾就压不住 → MGF 发散）。右：复指数 $e^{itx}$ 在复平面上<b>绕单位圆打转</b>，实部虚部都在 $[-1,1]$ 里振荡，模长恒为 1（永远收敛 → 特征函数总存在）。一张图说清 MGF 和特征函数的根本区别。</p>
+      <div class="plotwrap"><div id="p-charf" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 4 : 不等式工具箱 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part4">
+    <div class="pk">IV</div>
+    <h2 class="cjk">不等式工具箱：只知道一点点，也能给概率封顶</h2>
+    <p class="cjk">现实里我们常常<b>不知道完整分布</b>，手上只有期望、或期望加方差。这一部分的四个不等式，能仅凭这点信息，给「极端事件发生的概率」一个<b>上界（天花板）</b>。它们也是下一部分证明大数定律的<b>砖块</b>——尤其切比雪夫。</p>
+  </header>
+
+  <!-- 4.1 马尔可夫 -->
+  <section class="topic-block" id="t-markov">
+    <h3 class="topic cjk">4.1　马尔可夫不等式 · 只用期望</h3>
+    <p class="topic-en">Markov's inequality（Thm 3.1）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">只需 ← 期望</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-cheby">被推广为 → 切比雪夫</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-lln">砖块 → 大数定律</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「非负的东西，不可能经常比平均值大很多」</div>
+      <p class="cjk">设 $X\geq 0$。马尔可夫说：$X$ 取到「远大于它平均值」的概率，被它的平均值死死压住。直觉是一句大白话——<mark>一堆非负数的平均是 $\mu$，那么超过 $10\mu$ 的那些数，最多只能占 $1/10$</mark>，否则光它们就把平均拉过去了。</p>
+      <p class="cjk">它的<b>好处</b>是要求极低：只要非负、只要知道期望，分布长什么样完全不用管。<b>代价</b>是上界<b>非常松</b>——因为它没用任何「形状」信息，只能给最保守的估计。老师原话：「形式简洁，仅利用期望，缺点是上界宽松。」</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>形式（Thm 3.1）</div>
+      <p>$$X\geq 0,\ t>0\quad\Longrightarrow\quad \mathbb{P}(X\geq t)\ \leq\ \frac{\mathbb{E}[X]}{t}$$</p>
+      <p class="cjk" style="font-size:14.5px">一行证明的精神：$\mathbb{E}[X]\geq \mathbb{E}[X\cdot\mathbf{1}\{X\geq t\}]\geq t\,\mathbb{P}(X\geq t)$。把 $t$ 除过去就得到结论。注意 $t$ 越大上界越小，但永远是个<b>上界</b>，不是真实概率。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 上界有多松？</div>
+      <p class="cjk">下面取一个指数分布（$\mathbb{E}[X]=1$，非负）。拖动阈值 $t$：<b style="color:var(--accent)">蓝柱</b>是真实概率 $\mathbb{P}(X\geq t)$，<b style="color:var(--rust)">红线</b>是马尔可夫上界 $1/t$。看红线总在蓝柱<b>上方</b>（永远成立），但两者差距常常大得离谱——这就是「松」。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">阈值 t <span class="val" id="mk-t-v">2.0</span></label><input type="range" id="mk-t" min="1" max="8" step="0.1" value="2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-markov" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">读出：当 $t=2$，真实 $\mathbb{P}(X\geq2)=e^{-2}\approx0.135$，而马尔可夫只敢说「$\leq 0.5$」。信息越少，越只能给宽松的保证。</p>
+    </div>
+  </section>
+
+  <!-- 4.2 切比雪夫 -->
+  <section class="topic-block" id="t-cheby">
+    <h3 class="topic cjk">4.2　切比雪夫不等式 · 加上方差</h3>
+    <p class="topic-en">Chebyshev's inequality（Thm 3.2）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-markov">承接 ← 马尔可夫</a></span>
+      <span class="rel inherit"><span class="dot"></span><a href="#t-var">还需 ← 方差</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-lln">直接证明 → 弱大数定律</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「方差小，就不该离重心太远」</div>
+      <p class="cjk">马尔可夫只用了期望；切比雪夫多塞进一个<b>方差</b>，于是能管「偏离均值多远」这件事。直觉正如老师说的：<mark>方差小 ⇒ 数据集中 ⇒ 取值跑到离 $\mu$ 很远处的概率必然小</mark>。它对分布形状<b>仍然零假设</b>，所以是个普适但偏保守的保证。</p>
+      <p class="cjk">怎么从马尔可夫得到它？一个漂亮的小技巧：把「$|X-\mu|\geq t$」这件事<b>平方</b>变成「$(X-\mu)^2\geq t^2$」。$(X-\mu)^2$ 是非负随机变量，对它用马尔可夫，它的期望恰好就是方差 $\sigma^2$——切比雪夫就这么蹦出来了。所以老师说它是「马尔可夫的推广」。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>形式（Thm 3.2）· 常用「k 个标准差」版</div>
+      <p>$$\mathbb{P}\big(|X-\mu|\geq t\big)\ \leq\ \frac{\sigma^2}{t^2}\qquad\xrightarrow{\,t=k\sigma\,}\qquad \mathbb{P}\big(|X-\mu|\geq k\sigma\big)\ \leq\ \frac{1}{k^2}$$</p>
+      <p class="cjk" style="font-size:14.5px">右边这个 $1/k^2$ 版本最好记：不管什么分布，落在「$\mu\pm k\sigma$ 之外」的概率最多 $1/k^2$。$k=2$ 时 $\leq 25\%$，$k=3$ 时 $\leq 11\%$。对正态分布而言真实值（$3\sigma$ 外约 $0.3\%$）远小于此——因为切比雪夫没用「正态」这个信息。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 「k 个标准差之外」</div>
+      <p class="cjk">这里画一条标准正态。拖动 $k$：<b style="color:var(--accent)">蓝色阴影</b>是真实的「$k\sigma$ 之外」概率，<b style="color:var(--rust)">红线</b>是切比雪夫上界 $1/k^2$。对正态来说红线<b>松得多</b>——但切比雪夫的价值正在于：哪怕你<b>不知道</b>这是正态，它依然成立。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">几个标准差 k <span class="val" id="cb-k-v">2.0</span></label><input type="range" id="cb-k" min="1" max="4" step="0.05" value="2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-cheby" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">体会：<b>普适</b>和<b>紧</b>是一对矛盾。切比雪夫买的是「对任何分布都对」，卖的是「数值不紧」。知道得越多（比如确认是正态），就能换更紧的界。</p>
+    </div>
+  </section>
+
+  <!-- 4.3 柯西-施瓦茨 -->
+  <section class="topic-block" id="t-cs">
+    <h3 class="topic cjk">4.3　柯西–施瓦茨不等式 · 内积的几何</h3>
+    <p class="topic-en">Cauchy–Schwarz inequality（Thm 3.3）</p>
+    <div class="rels">
+      <span class="rel dual"><span class="dot"></span><a href="#t-cov">解释 → 为什么 |ρ|≤1</a></span>
+      <span class="rel tool"><span class="dot"></span>来自 → L² 内积空间</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「内积 ≤ 模长之积」，就是「cos 不会超过 1」</div>
+      <p class="cjk">老师把它放回最本质的地方：<b>内积空间</b>。在普通几何里，两个向量的内积 $\langle u,v\rangle=\|u\|\,\|v\|\cos\theta$。因为 $|\cos\theta|\leq 1$，所以 $|\langle u,v\rangle|\leq\|u\|\,\|v\|$——这就是柯西–施瓦茨，<mark>它说的其实是「夹角余弦的绝对值不超过 1」这件几乎显然的事</mark>。</p>
+      <p class="cjk">神奇的是，<b>随机变量也构成一个内积空间</b>（叫 $L^2$ 空间）：把「$\mathbb{E}[XY]$」当作 $X$ 和 $Y$ 的内积，把「$\sqrt{\mathbb{E}[X^2]}$」当作 $X$ 的模长。同一条几何不等式翻译过来，就成了概率版的柯西–施瓦茨。这也是它和<b>相关系数</b>的关系：相关系数 $\rho$ 本质就是「随机变量之间的 $\cos\theta$」，柯西–施瓦茨正好保证了 $-1\leq\rho\leq1$。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>三种面孔，同一件事（Thm 3.3）</div>
+      <p>$$\underbrace{|\langle u,v\rangle|\leq\|u\|\,\|v\|}_{\text{几何向量}}\qquad\underbrace{\mathbb{E}|XY|\leq\sqrt{\mathbb{E}[X^2]\,\mathbb{E}[Y^2]}}_{\text{概率 / }L^2}\qquad\underbrace{|\mathrm{cov}(X,Y)|\leq\sigma_X\sigma_Y}_{\Rightarrow\,|\rho|\leq1}$$</p>
+      <p class="cjk" style="font-size:14.5px">取等当且仅当 $u,v$ <b>共线</b>（概率版：$X,Y$ 几乎处处成<b>线性关系</b>）。这与第一部分「$\rho=\pm1$ 当且仅当完全线性相关」严丝合缝。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>2D · 转动一个向量，看 |内积| 永远顶不破 ‖u‖‖v‖</div>
+      <p class="cjk">两个向量 $u$（固定）与 $v$（可转）。拖动夹角 $\theta$：<b style="color:var(--accent)">实际内积 $\langle u,v\rangle$</b> 随 $\cos\theta$ 起伏，但它的绝对值<b>始终 ≤ </b>那条灰色的上界 $\|u\|\|v\|$。只有当两向量<b>共线</b>（$\theta=0$ 或 $180°$）时才贴到上界——对应概率里的「完全线性相关」。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">夹角 θ（度） <span class="val" id="cs-a-v">60</span></label><input type="range" id="cs-a" min="0" max="180" step="1" value="60"></div>
+      </div>
+      <div class="plotwrap"><div id="p-cs" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 4.4 詹森 -->
+  <section class="topic-block" id="t-jensen">
+    <h3 class="topic cjk">4.4　詹森不等式 · 凸函数 + 风险厌恶</h3>
+    <p class="topic-en">Jensen's inequality（Thm 3.4）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">作用于 ← 期望</a></span>
+      <span class="rel limit"><span class="dot"></span><a href="#t-tails">经济直觉 → 风险厌恶</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「先平均再变换」≤「先变换再平均」（凸函数）</div>
+      <p class="cjk">设 $g$ 是<b>凸函数</b>（开口向上，像 $x^2$、$e^x$）。詹森说：</p>
+      <p>$$g\big(\mathbb{E}[X]\big)\ \leq\ \mathbb{E}\big[g(X)\big]\qquad(g\ \text{凸})$$</p>
+      <p class="cjk">左边是「先把 $X$ 平均成重心 $\mu$，再喂给 $g$」；右边是「先让每个 $X$ 各自过 $g$，再平均」。凸函数<b>开口向上、底下是空的</b>，所以把曲线上几点连成弦，<mark>弦永远在曲线上方</mark>——而「先平均再变换」落在曲线上、「先变换再平均」落在弦上，于是后者更大。凹函数（如 $\log$、$\sqrt{\cdot}$）则不等号反向。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 经济学里的「风险厌恶」</div>
+      <p class="cjk">老师特意点了这个解释。设效用函数 $u$ 是<b>凹</b>的（钱越多，每多一块带来的快乐越少——边际效用递减）。一个赌局期望收益是 $\mathbb{E}[X]$。詹森（凹版）说：$\mathbb{E}[u(X)]\leq u(\mathbb{E}[X])$，即<mark>「赌局的期望效用」低于「直接拿到期望金额的效用」</mark>。翻译成人话：<b>面对同样期望值的不确定，理性人宁愿要确定的钱</b>——这就是风险厌恶，也是保险、风险溢价存在的根。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 弦永远在凸曲线上方</div>
+      <p class="cjk">设 $X$ 只取两个值 $\mu\pm d$（各 50%），所以 $\mathbb{E}[X]=\mu$。拖动「分散度 $d$」：曲线上 $g(\mu)$（<b style="color:var(--teal)">绿点</b>）对比两点连线中点 $\mathbb{E}[g(X)]$（<b style="color:var(--accent)">蓝点</b>）。$d$ 越大、不确定性越强，两点拉得越开，<b>蓝点比绿点高出越多</b>——这块高度差正是「凸性带来的代价 / 风险溢价」。切换 $g$ 看 $x^2$ 与 $e^x$。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">分散度 d <span class="val" id="jen-d-v">1.2</span></label><input type="range" id="jen-d" min="0" max="2.2" step="0.05" value="1.2"></div>
+        <div class="seg" id="jen-seg">
+          <button data-g="sq" class="on">g(x) = x²</button>
+          <button data-g="exp">g(x) = eˣ</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-jensen" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">当 $d\to0$（没有不确定性）两点合一，等号成立；不确定性一出现，凸性立刻让「平均后的变换」吃亏。这正是詹森不等式的全部精神。</p>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 5 : 极限理论 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part5">
+    <div class="pk">V</div>
+    <h2 class="cjk">极限理论：为什么「用样本猜总体」是靠谱的</h2>
+    <p class="cjk">这是整章的高潮，也是<b>统计推断的合法性证明</b>。核心问题只有两个：当样本量 $n\to\infty$，<b>① 样本均值会收敛到真值吗？</b>（大数定律）<b>② 它的波动长什么样？</b>（中心极限定理）。要严格说清「收敛」，得先把「收敛」本身分清楚。</p>
+  </header>
+
+  <!-- 5.1 三种收敛 -->
+  <section class="topic-block" id="t-conv">
+    <h3 class="topic cjk">5.1　随机变量的三种收敛</h3>
+    <p class="topic-en">Convergence in probability / distribution / quadratic mean（Def 3.1）</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span><a href="#t-convtrap">⚠ 注意 → “最强”的边界</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-lln">用于 → 表述大数定律</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-clt">用于 → 表述 CLT</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「收敛」对随机变量有好几种含义</div>
+      <p class="cjk">对普通数列，「收敛」只有一个意思。但 $X_n$ 是<b>随机变量</b>，每个都带着一整条分布，于是「$X_n\to X$」可以从不同角度衡量，强弱不同。课件给三种：</p>
+      <p class="cjk"><b>① 依概率收敛 $X_n\xrightarrow{P}X$</b>：对任意小的 $\varepsilon$，「偏差超过 $\varepsilon$」的概率趋于 0。即 $\mathbb{P}(|X_n-X|>\varepsilon)\to0$。直觉：$n$ 够大时，$X_n$ 几乎总是离 $X$ 很近，<b>偶尔</b>偏大也可以，但越来越少见。</p>
+      <p class="cjk"><b>② 依分布收敛 $X_n\xrightarrow{d}X$</b>：分布函数<b>逐点收敛</b>（在 $F$ 的连续点上 $F_n(x)\to F(x)$）。这是<b>最弱</b>的一种——它只管「形状像不像」，<u>甚至不要求 $X_n$ 和 $X$ 活在同一个概率空间</u>。CLT 就是这种收敛。</p>
+      <p class="cjk"><b>③ 均方收敛 $X_n\xrightarrow{qm}X$</b>：平方误差的期望趋于 0，即 $\mathbb{E}[(X_n-X)^2]\to0$。它直接控制「二阶矩层面的距离」，是这三者里<b>最强</b>的（下面有重要前提）。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>三种定义 + 强弱链（Thm 3.5）</div>
+      <p>$$\xrightarrow{qm}:\ \mathbb{E}[(X_n-X)^2]\to0\qquad \xrightarrow{P}:\ \forall\varepsilon,\ \mathbb{P}(|X_n-X|>\varepsilon)\to0\qquad \xrightarrow{d}:\ F_n(x)\to F(x)\ \text{(连续点)}$$</p>
+      <p>$$\boxed{\ \xrightarrow{qm}\ \Longrightarrow\ \xrightarrow{P}\ \Longrightarrow\ \xrightarrow{d}\ }\qquad\text{(反向一般不成立；但}\ \xrightarrow{d}\text{到“常数”时可反推}\ \xrightarrow{P}\text{)}$$</p>
+      <p class="cjk" style="font-size:14.5px">从 $qm$ 到 $P$ 用的正是<b>切比雪夫</b>：$\mathbb{P}(|X_n-X|>\varepsilon)\leq \mathbb{E}[(X_n-X)^2]/\varepsilon^2\to0$。看，第四部分的不等式在这里直接当螺丝刀用。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 一个序列「收敛到常数」长什么样</div>
+      <p class="cjk">最常见的情形：$X_n$ 是 $n$ 个样本的均值，它会<b>收敛到一个常数 $\mu$</b>（这里 $\mu=0$）。拖动 $n$，看 $\bar X_n$ 的密度<b>越缩越窄、向 $\mu$ 处塌成一根针</b>。这同时满足三种收敛——分布在塌（依分布）、偏差概率在缩（依概率）、平方误差在掉（均方）。这就是大数定律的「画面」。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="cv-n-v">4</span></label><input type="range" id="cv-n" min="1" max="200" step="1" value="4"></div>
+      </div>
+      <div class="plotwrap"><div id="p-conv" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 5.2 “最强收敛”的边界 (TRAP) -->
+  <section class="topic-block" id="t-convtrap">
+    <h3 class="topic cjk">5.2　⚠ 盲点：「均方收敛是最强的」——这话只对了一半</h3>
+    <p class="topic-en">Critical correction: where "qm is strongest" stops being true</p>
+    <div class="rels">
+      <span class="rel warn"><span class="dot"></span>纠正 → 材料里的口径问题</span>
+      <span class="rel inherit"><span class="dot"></span><a href="#t-conv">承接 ← 三种收敛</a></span>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>盲点 · 思维导图与 AI 纪要都写「均方收敛（最强）」，要加一句前提</div>
+      <p class="cjk">这句话<b>只在这门课给的「三选一」框架里成立</b>：在 $\{$依分布, 依概率, 均方$\}$ 这三种之中，确实有 $qm\Rightarrow P\Rightarrow d$，所以均方最强。</p>
+      <p class="cjk">但概率论里还有一种非常重要、<b>课件没列</b>的收敛：<b>几乎必然收敛（almost sure, $\xrightarrow{a.s.}$）</b>。一旦把它加进来，「最强」这个说法就<b>崩了</b>——因为 <mark>均方收敛与几乎必然收敛<b>互不蕴含</b>（谁也不比谁强）</mark>：存在 $qm$ 成立但 $a.s.$ 不成立的例子，也存在 $a.s.$ 成立但 $qm$ 不成立的例子（比如方差炸掉）。它们都能推出依概率收敛，但彼此之间<b>不可比</b>。</p>
+      <p class="cjk">所以严谨的说法是：<b>在课件这三种里，均方最强；但「均方是所有收敛里最强的」是错的。</b>记笔记时给「最强」加个括号：「（在这三种之中）」。</p>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>顺带纠正 · 几乎必然收敛到底是什么</div>
+      <p class="cjk">$X_n\xrightarrow{a.s.}X$ 指：随着 $n$ 增大，<b>整条样本路径</b>最终都会收敛到 $X$，例外的那些路径整体概率为 0。它比依概率收敛<b>强</b>（$a.s.\Rightarrow P$）。下面这张图给出正确的强弱关系——注意 $qm$ 和 $a.s.$ 之间<b>没有箭头</b>：</p>
+      <div class="hier">
+        <svg viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg" font-family="'Fraunces', serif" style="width:100%;height:auto">
+          <defs>
+            <marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5A544B"/></marker>
+          </defs>
+          <!-- qm box -->
+          <g>
+            <rect x="40" y="20" width="150" height="46" rx="11" fill="#E5E1F2" stroke="#574AA6" stroke-width="1.6"/>
+            <text x="115" y="40" text-anchor="middle" font-size="15" fill="#574AA6" font-weight="600">均方收敛</text>
+            <text x="115" y="57" text-anchor="middle" font-size="12.5" fill="#574AA6">qm（二阶矩）</text>
+          </g>
+          <!-- a.s. box -->
+          <g>
+            <rect x="40" y="160" width="150" height="46" rx="11" fill="#F4E9CF" stroke="#B7892A" stroke-width="1.6"/>
+            <text x="115" y="180" text-anchor="middle" font-size="15" fill="#8a6a1f" font-weight="600">几乎必然收敛</text>
+            <text x="115" y="197" text-anchor="middle" font-size="12.5" fill="#8a6a1f">a.s.（整条路径）</text>
+          </g>
+          <!-- P box -->
+          <g>
+            <rect x="320" y="90" width="150" height="46" rx="11" fill="#DCE7F0" stroke="#1F5C8C" stroke-width="1.6"/>
+            <text x="395" y="110" text-anchor="middle" font-size="15" fill="#1F5C8C" font-weight="600">依概率收敛</text>
+            <text x="395" y="127" text-anchor="middle" font-size="12.5" fill="#1F5C8C">P</text>
+          </g>
+          <!-- d box -->
+          <g>
+            <rect x="560" y="90" width="60" height="46" rx="11" fill="#DCEDEB" stroke="#1F6B66" stroke-width="1.6"/>
+            <text x="590" y="113" text-anchor="middle" font-size="15" fill="#1F6B66" font-weight="600">依分布</text>
+            <text x="590" y="129" text-anchor="middle" font-size="12.5" fill="#1F6B66">d</text>
+          </g>
+          <!-- arrows -->
+          <path d="M190,52 C250,60 270,90 318,104" stroke="#5A544B" stroke-width="1.6" fill="none" marker-end="url(#ha)"/>
+          <path d="M190,176 C250,168 270,130 318,120" stroke="#5A544B" stroke-width="1.6" fill="none" marker-end="url(#ha)"/>
+          <path d="M470,113 L556,113" stroke="#5A544B" stroke-width="1.6" fill="none" marker-end="url(#ha)"/>
+          <!-- no-link between qm & a.s. -->
+          <line x1="115" y1="70" x2="115" y2="156" stroke="#B0442B" stroke-width="1.5" stroke-dasharray="5 5"/>
+          <text x="128" y="116" font-size="12.5" fill="#B0442B" font-weight="600">✗ 互不蕴含</text>
+        </svg>
+      </div>
+      <p class="cjk muted" style="font-size:14px">（这张图不是课件原图，是我把课件的三种 + 课件漏掉的 a.s. 拼全后的正确关系，供你对照记忆。）</p>
+    </div>
+  </section>
+
+  <!-- 5.3 连续映射 / Slutsky -->
+  <section class="topic-block" id="t-cmt">
+    <h3 class="topic cjk">5.3　收敛的运算 + 连续映射定理</h3>
+    <p class="topic-en">Arithmetic of limits, Continuous Mapping &amp; Slutsky（Thm 3.6）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-conv">承接 ← 收敛定义</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-clt2">支撑 → CLT 换样本方差</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 收敛能不能「四则运算」「套函数」？</div>
+      <p class="cjk">有了收敛，自然想问：如果 $X_n\to X$、$Y_n\to Y$，那 $X_n+Y_n$、$X_nY_n$ 收敛吗？套个连续函数 $g(X_n)$ 还收敛吗？老师梳理的结论（对应「保加性、乘积收敛性、连续映射」）：</p>
+      <p class="cjk"><b>连续映射定理（CMT）</b>：若 $X_n\xrightarrow{}X$（依概率或依分布皆可），且 $g$ <b>连续</b>，则 $g(X_n)\xrightarrow{}g(X)$。一句话：<mark>连续函数「保收敛」</mark>——极限可以穿过连续函数。这就是老师说的「函数值的组合是一种保护性组合」「连续函数的保收敛性」。</p>
+      <p class="cjk"><b>Slutsky 定理</b>：若 $X_n\xrightarrow{d}X$ 而 $Y_n\xrightarrow{P}c$（收敛到<b>常数</b>），则 $X_n+Y_n\xrightarrow{d}X+c$、$X_nY_n\xrightarrow{d}cX$。注意那个「收敛到常数」的前提很关键——它是下一节「方差未知时换成样本方差、统计量仍收敛」的<b>理论靠山</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>两条定理（Thm 3.6）</div>
+      <p>$$\textbf{CMT:}\quad X_n\xrightarrow{\,P/d\,}X,\ g\ \text{连续}\ \Rightarrow\ g(X_n)\xrightarrow{\,P/d\,}g(X)$$</p>
+      <p>$$\textbf{Slutsky:}\quad X_n\xrightarrow{d}X,\ Y_n\xrightarrow{P}c\ \Rightarrow\ X_n+Y_n\xrightarrow{d}X+c,\quad X_nY_n\xrightarrow{d}cX$$</p>
+      <p class="cjk" style="font-size:14px">为什么 Slutsky 里 $Y_n$ 必须收敛到<b>常数</b>而不能是随机变量？因为两个「只依分布收敛」的东西，它们的<b>联合</b>分布行为没被钉死，相加结果不确定；而收敛到常数等于把随机性彻底抽干，才能安全地并进去。这是个常被忽略的细节，值得记。</p>
+    </div>
+  </section>
+
+  <!-- 5.4 大数定律 -->
+  <section class="topic-block" id="t-lln">
+    <h3 class="topic cjk">5.4　大数定律 · 样本均值奔向真值</h3>
+    <p class="topic-en">Law of Large Numbers（Thm 3.7–3.8）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-cheby">由…证明 ← 切比雪夫</a></span>
+      <span class="rel inherit"><span class="dot"></span><a href="#t-exp">逼近的目标 ← 期望</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-clt">下一步 → 它的波动（CLT）</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「样本越多，样本均值越贴近真均值」</div>
+      <p class="cjk">独立同分布抽样 $X_1,\dots,X_n$，样本均值 $\bar X_n=\frac1n\sum X_i$。大数定律说：$n\to\infty$ 时 $\bar X_n$ <b>收敛到</b>总体真均值 $\mu$。这就是「频率逼近概率」「样本能估计总体」的根。课件给两个版本，区别在<b>收敛的种类</b>和<b>需要的前提</b>：</p>
+      <p class="cjk"><b>版本一（Thm 3.7，均方）</b>：若 $X_i$ iid 且<b>方差有限</b>，则 $\bar X_n\xrightarrow{qm}\mu$。证明极短：$\mathbb{V}(\bar X_n)=\sigma^2/n\to0$，而 $\mathbb{E}[\bar X_n]=\mu$，所以 $\mathbb{E}[(\bar X_n-\mu)^2]=\sigma^2/n\to0$。</p>
+      <p class="cjk"><b>版本二（Thm 3.8，依概率）</b>：若 $X_i$ iid 且<b>只要均值有限</b>（方差可以不存在！），仍有 $\bar X_n\xrightarrow{P}\mu$。它要求更弱、适用更广。正如老师说：「依概率版本对分布要求更少，适用性更广。」</p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>盲点 · AI 纪要把「弱/强大数定律」彻底搞反了</div>
+      <p class="cjk">AI 纪要原文写：「<b>弱</b>大数定律：样本均值依<b>均方</b>收敛到总体均值；<b>强</b>大数定律：样本均值依<b>概率</b>收敛到总体均值。」——这<mark>两处都错</mark>，必须纠正：</p>
+      <p class="cjk">① 课件里 Thm 3.7（均方）和 Thm 3.8（依概率）<b>都是弱大数定律（WLLN）</b>。弱大数定律说的是「依概率收敛」这一档；均方那条因为更强会顺带蕴含依概率，但它仍属于「弱」的范畴，不叫强大数定律。</p>
+      <p class="cjk">② <b>强大数定律（SLLN）</b>指的是<b>几乎必然收敛</b> $\bar X_n\xrightarrow{a.s.}\mu$——这是课件<b>没展开</b>的更强结论，而<u>不是「依概率收敛」</u>。AI 纪要把「依概率」安给强大数定律，正好反了。</p>
+      <p class="cjk">③ 思维导图这点反而对：它写「弱大数定律（均方/依概率收敛）」「强大数定律（几乎必然收敛）」——口径正确。<b>以思维导图为准，别信 AI 纪要那两行。</b></p>
+      <p class="cjk muted" style="font-size:14px">一句话记牢：<b>弱 = 依概率（含均方那档）；强 = 几乎必然。</b>收敛越强，定律越「强」。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>两版弱大数定律 + 强大数定律（补全）</div>
+      <p>$$\text{WLLN-1（Thm 3.7）：}\ \text{iid},\ \sigma^2<\infty\ \Rightarrow\ \bar X_n\xrightarrow{qm}\mu\qquad \text{WLLN-2（Thm 3.8）：}\ \text{iid},\ \mathbb{E}|X|<\infty\ \Rightarrow\ \bar X_n\xrightarrow{P}\mu$$</p>
+      <p>$$\text{SLLN（课件外，补全）：}\quad \text{iid},\ \mathbb{E}|X|<\infty\ \Rightarrow\ \bar X_n\xrightarrow{a.s.}\mu$$</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>交互 · 亲手模拟大数定律（含一个会「翻车」的反例）</div>
+      <p class="cjk">每条线是一次独立抽样的<b>累计样本均值</b>随样本量 $n$ 的轨迹。看多条轨迹随着 $n$ 增大如何<b>收拢到真均值（虚线）</b>。点「重新抽样」换一批随机数。</p>
+      <p class="cjk"><b>关键实验</b>：把分布切到 <b style="color:var(--rust)">柯西分布</b>——它<b>没有有限均值</b>（期望积分发散），<u>大数定律的前提塌了</u>。你会看到轨迹<b>永远在乱跳、死活不收敛</b>，时不时被一个极端值狠狠甩飞。这就是「前提不满足时定律失效」的活教材，也是后面肥尾警示的伏笔。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">最大样本量 n <span class="val" id="lln-n-v">1500</span></label><input type="range" id="lln-n" min="200" max="4000" step="100" value="1500"></div>
+        <div class="seg" id="lln-seg">
+          <button data-d="unif" class="on">均匀(μ=0.5)</button>
+          <button data-d="exp">指数(μ=1)</button>
+          <button data-d="bern">伯努利(μ=0.3)</button>
+          <button data-d="cauchy">⚠ 柯西(无均值)</button>
+        </div>
+        <button class="btn accent cjk" id="lln-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-lln" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">前三个分布：$n$ 一大轨迹就乖乖贴上虚线（大数定律生效）。柯西：永远不收敛——<b>定律的前提（均值存在）不是装饰，是命门。</b></p>
+    </div>
+  </section>
+
+  <!-- 5.5 中心极限定理（皇冠） -->
+  <section class="topic-block" id="t-clt">
+    <h3 class="topic cjk">5.5　中心极限定理 · 全章的皇冠</h3>
+    <p class="topic-en">Central Limit Theorem（Thm 3.9）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-lln">承接 ← 大数定律（均值奔向真值）</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-mgf">由…证明 ← MGF / 特征函数</a></span>
+      <span class="rel limit"><span class="dot"></span><a href="#t-clt2">推广 → 换样本方差（t 分布）</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「不管原分布多奇怪，样本均值的波动都趋于正态」</div>
+      <p class="cjk">大数定律告诉我们 $\bar X_n\to\mu$，但<b>没说它是怎么靠近的、波动多大、形状如何</b>。中心极限定理补上这块，而且结论惊人地普适：<mark>无论 $X_i$ 原来服从什么分布（离散、连续、偏态、双峰都行），只要均值和方差有限，标准化后的样本均值就近似<b>标准正态</b></mark>。</p>
+      <p class="cjk">「标准化」做两件事：先减掉均值（把中心挪到 0），再除以它自己的标准差 $\sigma/\sqrt n$（把尺度拉成 1）。注意那个 $\sqrt n$——它说明 $\bar X_n$ 偏离 $\mu$ 的<b>典型幅度按 $1/\sqrt n$ 收缩</b>（这也呼应大数定律：幅度趋于 0）。这就是为什么样本量翻 4 倍，精度才翻 1 倍。</p>
+      <p class="cjk">为什么偏偏是正态？老师给了顺序提醒：<b>先有正态分布，后有中心极限定理</b>。正态因其<b>指数衰减的瘦尾</b>，天生适合描述「大量独立小因素叠加」的结果——而样本均值正是一种叠加。深一层的机制：每个 $X_i$ 的 MGF/特征函数相乘，泰勒展开后高阶项被 $\sqrt n$ 压掉，<b>只剩下二次项</b>，而「指数上一个二次型」正是正态的 MGF。所以 CLT 本质是 MGF 那套打包工具的胜利。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>形式（Thm 3.9）</div>
+      <p>$$X_1,\dots,X_n\ \text{iid},\ \mathbb{E}[X]=\mu,\ \mathbb{V}(X)=\sigma^2<\infty\ \Longrightarrow\ Z_n:=\frac{\bar X_n-\mu}{\sigma/\sqrt n}=\frac{\sqrt n\,(\bar X_n-\mu)}{\sigma}\ \xrightarrow{\,d\,}\ \mathcal N(0,1)$$</p>
+      <p class="cjk" style="font-size:14.5px">注意是<b>依分布</b>收敛（最弱那种就够用了，因为我们只关心「形状像正态」）。等价写法：$\bar X_n\approx\mathcal N\!\big(\mu,\ \sigma^2/n\big)$，$\sum X_i\approx\mathcal N\!\big(n\mu,\ n\sigma^2\big)$。这是几乎所有「置信区间 / 假设检验」公式的出处。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 为什么民调能用几千人估计上亿人</div>
+      <p class="cjk">每个受访者「支持/不支持」是个伯努利变量（极不正态，只有 0/1 两点）。但 $n=1000$ 个人的<b>支持率均值</b>，由 CLT 近似正态，标准差约 $\sqrt{p(1-p)/n}\approx1.6\%$。于是「$\pm3\%$ 误差、95% 置信」这种话才有底气——它完全建立在 CLT 把一堆 0/1 叠加成钟形这件事上。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>交互 · 中心极限定理「显形」（本讲义最值得玩的一个）</div>
+      <p class="cjk">挑一个<b>故意不正态</b>的母分布（指数 / 伯努利 / 双峰），每次抽 $n$ 个求均值并标准化，重复几千次，画出这些标准化均值的<b>直方图</b>，叠上标准正态曲线（黑线）。</p>
+      <p class="cjk"><b>拖动 $n$ 看奇迹发生</b>：$n=1$ 时直方图就是母分布原样（歪的、双峰的）；$n$ 一大，<u>无论母体多奇形怪状，直方图都迅速塌成同一条钟形</u>。这就是 CLT 最震撼的地方——它把所有「形状」洗成了正态。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">每次抽样的样本量 n <span class="val" id="clt-n-v">1</span></label><input type="range" id="clt-n" min="1" max="60" step="1" value="1"></div>
+        <div class="seg" id="clt-seg">
+          <button data-d="exp" class="on">指数（强右偏）</button>
+          <button data-d="bern">伯努利（两点）</button>
+          <button data-d="bimodal">双峰</button>
+          <button data-d="unif">均匀</button>
+        </div>
+        <button class="btn accent cjk" id="clt-run">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-clt" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">建议手动从 $n=1$ 一格一格往上推：你能<b>亲眼看着</b>偏态/双峰被「揉」成正态。这个过程比任何公式都说明问题——也解释了为什么正态在统计里无处不在。</p>
+    </div>
+  </section>
+
+  <!-- 5.6 CLT 第二版 → t -->
+  <section class="topic-block" id="t-clt2">
+    <h3 class="topic cjk">5.6　CLT 第二版：方差未知 → t 分布</h3>
+    <p class="topic-en">CLT with estimated variance（Thm 3.10）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-clt">承接 ← CLT 第一版</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-cmt">靠山 ← Slutsky</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 真实里我们根本不知道 σ，怎么办？</div>
+      <p class="cjk">第一版 CLT 的分母是<b>总体标准差 $\sigma$</b>——可现实中总体方差几乎总是<b>未知</b>的。自然的补救：用<b>样本标准差 $S_n$</b> 顶替它。老师强调这一步：「方差未知时用样本方差代替。」</p>
+      <p class="cjk">凭什么能换？因为由大数定律 $S_n\xrightarrow{P}\sigma$（样本方差收敛到真方差，一个常数），再用 <a class="inlink" href="#t-cmt">Slutsky 定理</a>（分母收敛到常数即可并入），就得到换分母后<b>仍然依分布收敛到 $\mathcal N(0,1)$</b>。所以大样本下用 $S_n$ 也无妨。</p>
+      <p class="cjk"><b>但在小样本下</b>，$S_n$ 自己带着抽样波动，分母「也在抖」，结果比正态<b>尾巴更厚</b>一点——这正是 <b>$t$ 分布</b>。$t$ 分布有个自由度参数（约等于 $n-1$）：自由度小时尾巴肥（对小样本的不确定性更诚实），<mark>自由度趋于无穷时 $t$ 分布收敛回标准正态</mark>。老师让大家「了解 $t$ 分布及更广义的 CLT」，说的就是这条线。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>形式（Thm 3.10）</div>
+      <p>$$\frac{\sqrt n\,(\bar X_n-\mu)}{S_n}\ \xrightarrow{\,d\,}\ \mathcal N(0,1)\qquad\text{（大样本）};\qquad \text{小样本（正态母体）：}\ \frac{\sqrt n\,(\bar X_n-\mu)}{S_n}\sim t_{\,n-1}$$</p>
+      <p>$$t_\nu\xrightarrow[\nu\to\infty]{}\ \mathcal N(0,1)\quad(\text{自由度越大，越像正态})$$</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · t 分布如何随自由度收敛回正态</div>
+      <p class="cjk">拖动自由度 $\nu$：<b style="color:var(--accent)">蓝线</b>是 $t_\nu$ 密度，<b>黑虚线</b>是标准正态。自由度小（小样本）时蓝线<b>中间矮、尾巴厚</b>——对极端值更宽容；自由度一大，蓝线迅速贴回正态。注意看<b>尾部</b>的差异，那正是「用样本方差替代时多付的保险费」。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">自由度 ν（≈ n−1） <span class="val" id="t2-df-v">3</span></label><input type="range" id="t2-df" min="1" max="40" step="1" value="3"></div>
+      </div>
+      <div class="plotwrap"><div id="p-clt2" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 附：Delta 方法 -->
+  <section class="topic-block" id="t-delta">
+    <h3 class="topic cjk">附　Delta 方法 · 给「变换后的估计量」配正态</h3>
+    <p class="topic-en">The Delta method（Thm 3.11，appendix）</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-clt">承接 ← CLT</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-cmt">同源 ← 连续映射</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · CLT 管 $\bar X_n$，那 $g(\bar X_n)$ 呢？</div>
+      <p class="cjk">很多时候我们要的不是均值本身，而是均值的某个<b>函数</b>——比如 $\log(\bar X_n)$、$1/\bar X_n$、几率比。CLT 只给了 $\bar X_n$ 的正态近似，Delta 方法把它<b>沿着函数传过去</b>。手法是「一阶泰勒展开」：在 $\mu$ 附近把 $g$ 拉成一条直线，斜率 $g'(\mu)$。线性变换把正态变正态，方差乘以斜率的平方。</p>
+      <p class="cjk">于是结论是：<mark>$g(\bar X_n)$ 也近似正态，中心在 $g(\mu)$，标准差被斜率 $|g'(\mu)|$ 缩放</mark>。直觉上很顺——函数越陡（$|g'|$ 越大），同样的输入抖动被放得越大。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>形式（Thm 3.11）</div>
+      <p>$$\sqrt n\,(\bar X_n-\mu)\xrightarrow{d}\mathcal N(0,\sigma^2),\ g'(\mu)\ne0\ \Longrightarrow\ \sqrt n\,\big(g(\bar X_n)-g(\mu)\big)\xrightarrow{d}\mathcal N\!\big(0,\ [g'(\mu)]^2\sigma^2\big)$$</p>
+      <p class="cjk" style="font-size:14px">条件 $g'(\mu)\ne0$ 很重要：若一阶导为 0，线性近似失效，要用更高阶（二阶 Delta 方法，极限变成卡方而非正态）。这是个容易踩的边界。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>2D · 正态的钟形如何被函数 $g$ 拉到输出端</div>
+      <p class="cjk">左轴是输入 $\bar X_n$（一个窄正态，中心 $\mu$），经曲线 $g$ 映射到上轴的输出。拖动样本量 $n$：输入钟形按 $1/\sqrt n$ 变窄，输出钟形也跟着变窄；输出的宽度 ≈ 输入宽度 × 局部斜率 $|g'(\mu)|$——这就是 Delta 方法那个 $[g'(\mu)]^2$ 的几何来源。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="dl-n-v">25</span></label><input type="range" id="dl-n" min="5" max="300" step="5" value="25"></div>
+        <div class="seg" id="dl-seg">
+          <button data-g="log" class="on">g = ln(x)</button>
+          <button data-g="sq">g = x²</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-delta" class="plot tall"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- PART 6 : 应用与警示 -->
+  <!-- ========================================================= -->
+  <header class="part-head" id="part6">
+    <div class="pk">VI</div>
+    <h2 class="cjk">应用与警示：理论假设撞上现实数据</h2>
+    <p class="cjk">最后两节回到老师反复敲打的主题：<b>正态分布很美，但别滥用</b>。中心极限定理给了我们用正态的底气，可它的前提（独立、有限方差、足够大 $n$）在金融等现实场景里常常<b>不成立</b>。这一部分讲两件事：尾巴的厚薄如何决定极端风险，以及协方差矩阵在多元正态里的几何含义。</p>
+  </header>
+
+  <!-- 6.1 瘦尾 vs 肥尾 -->
+  <section class="topic-block" id="t-tails">
+    <h3 class="topic cjk">6.1　瘦尾 vs 肥尾 · 巴塞尔协议之坑</h3>
+    <p class="topic-en">Thin vs fat tails — and why Basel may underestimate risk</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-clt">承接 ← 正态的“瘦尾”来历</a></span>
+      <span class="rel warn"><span class="dot"></span><a href="#t-charf">关联 → 肥尾常无 MGF</a></span>
+      <span class="rel limit"><span class="dot"></span><a href="#t-jensen">关联 → 风险厌恶</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 「尾巴」决定极端事件多罕见</div>
+      <p class="cjk">一个分布的<b>尾部</b>，描述「离中心很远的极端值」出现的概率。正态分布尾部<b>按 $e^{-x^2/2}$ 指数级（其实是更猛的高斯级）衰减</b>——这就是「瘦尾」：极端值<b>几乎不可能</b>出现，$5\sigma$ 事件理论上几百万年才一次。</p>
+      <p class="cjk">而<b>肥尾分布</b>（如帕累托、$t$ 分布、柯西）尾部按<b>多项式（幂律）衰减</b>，慢得多。后果是：<mark>「极端事件」在肥尾世界里远比正态世界常见</mark>。老师举的现实例子——信用卡违约、债券违约、公司破产——都呈肥尾：平时风平浪静，偶尔来一次能掀桌子的巨灾。这也和前面 <a class="inlink" href="#t-charf">MGF 可能不存在</a> 一脉相承：肥尾压不住 $e^{tX}$。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>案例 · 巴塞尔协议为何可能低估风险</div>
+      <p class="cjk">老师点名批评：<b>巴塞尔协议</b>（银行资本监管框架）在不少风险模型里<b>默认用正态分布</b>。问题是金融收益<b>实际是肥尾的</b>——用瘦尾的正态去套肥尾的现实，等于<mark>系统性地低估「黑天鹅」损失的概率</mark>，把资本缓冲算得过薄。2008 危机里很多「不可能发生」的事接连发生，部分根源就在这。<b>启示</b>：套用 CLT/正态前，先问一句「我的数据真的瘦尾吗？独立吗？方差有限吗？」——这正是老师让大家「警惕理论假设与现实的差距」的用意。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>2D + 交互 · 同样的「±3σ」，肥尾下概率高几个数量级</div>
+      <p class="cjk">同时画标准正态（<b>瘦尾</b>）与一个 $t$ 分布（<b style="color:var(--rust)">肥尾</b>，自由度越小越肥）。切到<b>对数纵轴</b>是关键一招：正态的尾巴像被一把刀<b>劈下去（抛物线般坠落）</b>，肥尾却接近<b>一条缓降的直线</b>。拖阈值 $k$，下方读出「超过 $k$」的概率之比——肥尾常常是正态的<b>几十到上千倍</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">肥尾程度（t 自由度，越小越肥） <span class="val" id="tail-df-v">3</span></label><input type="range" id="tail-df" min="1.5" max="15" step="0.5" value="3"></div>
+        <div class="ctrl"><label class="cjk">尾部阈值 k <span class="val" id="tail-k-v">3.0</span></label><input type="range" id="tail-k" min="1.5" max="6" step="0.1" value="3"></div>
+        <div class="seg" id="tail-seg">
+          <button data-s="log" class="on">对数纵轴（看尾巴）</button>
+          <button data-s="lin">线性纵轴</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-tails" class="plot"><div class="loading">加载中…</div></div></div>
+      <div class="readout cjk" id="tail-readout" style="margin:8px 2px 0;font-size:14.5px;color:var(--ink-soft)"></div>
+      <p class="cap cjk">把纵轴切成对数，是金融与极值理论里看尾巴的标准动作。正态那条「劈下去」的曲线，正是它低估极端风险的视觉证据。</p>
+    </div>
+  </section>
+
+  <!-- 6.2 多元正态 -->
+  <section class="topic-block" id="t-mvn">
+    <h3 class="topic cjk">6.2　多元正态 · 协方差矩阵就是「形状」</h3>
+    <p class="topic-en">Multivariate normal — the geometry of the covariance matrix（Ch1 P39+）</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span><a href="#t-cov">推广 ← 协方差 / 协方差阵</a></span>
+      <span class="rel dual"><span class="dot"></span><a href="#t-covtrap">唯一例外 → 此处不相关=独立</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">✦</span>直觉 · 把一维钟形「升维」成一座钟形山</div>
+      <p class="cjk">第一节末尾（Ch1 P39+）讲了多元正态。它由两样东西完全确定：<b>均值向量 $\mu$</b>（钟形山的位置）和<b>协方差矩阵 $\Sigma$</b>（山的<b>形状与朝向</b>）。把它从上往下看，等高线是一族<b>椭圆</b>：</p>
+      <p class="cjk">· 对角线元素（各自方差）控制椭圆<b>沿坐标轴的胖瘦</b>；<br>· 非对角元素（协方差）控制椭圆的<b>倾斜方向</b>——正相关向右上斜，负相关向左上斜，零相关则<b>正圆/正椭圆、不歪</b>。所以老师说「多组数据的差异可以通过几何中心和形状来分析」。$\Sigma$ 就是这座山的「形状基因」。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>密度与协方差矩阵（Ch1 P39+）</div>
+      <p>$$f(x)=\frac{1}{(2\pi)^{k/2}|\Sigma|^{1/2}}\exp\!\Big(-\tfrac12 (x-\mu)^{\top}\Sigma^{-1}(x-\mu)\Big),\qquad \Sigma=\begin{pmatrix}\sigma_1^2 & \rho\sigma_1\sigma_2\\ \rho\sigma_1\sigma_2 & \sigma_2^2\end{pmatrix}$$</p>
+      <p class="cjk" style="font-size:14.5px">指数里那个二次型 $(x-\mu)^{\top}\Sigma^{-1}(x-\mu)=\text{常数}$ 的解集，正是一族椭圆——$\Sigma$ 的特征向量给出椭圆的<b>主轴方向</b>，特征值给出<b>主轴长度</b>。这是「协方差矩阵 = 几何形状」最干净的数学表述。</p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>盲点回收 · 正态是「不相关 ⇒ 独立」唯一站得住的常见场景</div>
+      <p class="cjk">还记得 <a class="inlink" href="#t-covtrap">1.4 节</a> 那个反复强调的坑吗——「协方差为 0」一般<b>只代表无线性关系，不代表独立」。<b>但正态分布是那个金贵的例外</b>：<mark>对（联合）多元正态而言，$\rho=0\Leftrightarrow$ 独立</mark>。几何上看也顺：$\rho=0$ 时等高椭圆变成<b>轴对齐</b>的，密度恰好能拆成两个一维正态的乘积，于是独立。老师说的「正态分布特殊性：独立=不相关」就指这里。<b>务必记住前提是「联合正态」</b>——只是边缘各自正态、但联合不是正态时，这个等价照样会失效。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊹</span>3D + 交互 · 转动协方差，看钟形山怎样被「拧歪、压扁」</div>
+      <p class="cjk">拖动相关系数 $\rho$ 和第二维标准差 $\sigma_2$，实时看这座二维正态「山」。$\rho$ 让山脊<b>沿对角线扭转</b>，$\sigma_2$ 把山沿一个方向<b>拉长或压扁</b>。把视图切到<b>等高线</b>，更能直接看清那族椭圆的朝向与轴长——这就是协方差矩阵的「形状」本体。把 $\rho$ 调到 0，椭圆立刻摆正：那一刻「不相关」也正是「独立」。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="mvn-r-v">0.60</span></label><input type="range" id="mvn-r" min="-0.92" max="0.92" step="0.04" value="0.6"></div>
+        <div class="ctrl"><label class="cjk">第二维标准差 σ₂ <span class="val" id="mvn-s-v">1.0</span></label><input type="range" id="mvn-s" min="0.4" max="2.2" step="0.05" value="1"></div>
+        <div class="seg" id="mvn-seg">
+          <button data-v="surf" class="on">3D 钟形山</button>
+          <button data-v="cont">等高线（椭圆）</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-mvn" class="plot d3"><div class="loading">加载中…</div></div></div>
+      <p class="cap cjk">一句话收束全章：<b>协方差矩阵不是一堆数字，它是分布的「身形」。</b>而正态，是唯一一种「身形里看不出歪斜（$\rho=0$）就等于各维互不纠缠（独立）」的分布。</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer cjk">
+    <p style="font-family:Fraunces;font-weight:600;font-size:16px;color:var(--ink);margin-bottom:6px">从矩到极限 · 第二节交互讲义</p>
+    <p>内容依据：City U 课件 Chapter 1（P39+：Gamma / 多项 / 多元正态）与 Chapter 2–3（期望、不等式与收敛），并对照补课录音、思维导图与图文纪要整理、交叉校对。</p>
+    <p>本讲义对材料中的若干表述做了<b>批判性更正</b>（已用 <b style="color:var(--rust)">⚠ 盲点</b> 卡片标出）：① AI 纪要把弱/强大数定律的收敛类型写反——弱大数定律是依概率（含均方那档），强大数定律是几乎必然；② 「均方收敛是最强的」只在课件给的三种收敛之内成立，一旦引入几乎必然收敛，二者互不蕴含；③ 「协方差为 0 = 独立」仅在<b>联合正态</b>下成立，一般分布不成立。遇到与课本/讲义冲突处，请以原始课件与严格定义为准，并欢迎继续质疑这份讲义本身。</p>
+    <p style="margin-top:10px;color:var(--ink-faint)">交互与可视化基于 Plotly，公式排版基于 KaTeX。所有模拟在你的浏览器本地实时运行，可反复拖动、重抽。</p>
+  </footer>
+
+</main>
+</div>
+
+<script>
+/* ===================================================================
+   从矩到极限 · 第二节 交互引擎
+   =================================================================== */
+(function(){
+'use strict';
+
+const C = {
+  ink:'#211E1A', inkSoft:'#5A544B', faint:'#8C857A',
+  accent:'#1F5C8C', teal:'#1F6B66', gold:'#B7892A', violet:'#574AA6',
+  rust:'#B0442B', green:'#3E7C4E', line:'#D2C2A4', paper:'rgba(0,0,0,0)'
+};
+function baseLayout(extra){
+  const L = {
+    paper_bgcolor:C.paper, plot_bgcolor:C.paper,
+    font:{family:'Spectral, Georgia, serif', color:C.ink, size:13},
+    margin:{l:50,r:18,t:18,b:44}, showlegend:false, hovermode:'closest',
+    xaxis:{gridcolor:'rgba(210,194,164,.35)', zerolinecolor:'rgba(90,84,75,.35)', linecolor:'rgba(90,84,75,.4)'},
+    yaxis:{gridcolor:'rgba(210,194,164,.35)', zerolinecolor:'rgba(90,84,75,.35)', linecolor:'rgba(90,84,75,.4)'}
+  };
+  return Object.assign(L, extra||{});
+}
+const CONF = {displayModeBar:false, responsive:true};
+
+/* math helpers */
+function linspace(a,b,n){const o=[];const d=(b-a)/(n-1);for(let i=0;i<n;i++)o.push(a+d*i);return o;}
+function normPdf(x,mu,s){const z=(x-mu)/s;return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));}
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normCdf(x){return 0.5*(1+erf(x/Math.SQRT2));}
+function normTailTwo(k){return 2*(1-normCdf(k));}
+const G_C=[676.5203681218851,-1259.1392167224028,771.32342877765313,
+ -176.61502916214059,12.507343278686905,-0.13857109526572012,
+ 9.9843695780195716e-6,1.5056327351493116e-7];
+function gammaFn(z){
+  if(z<0.5) return Math.PI/(Math.sin(Math.PI*z)*gammaFn(1-z));
+  z-=1;let x=0.99999999999980993;
+  for(let i=0;i<G_C.length;i++) x+=G_C[i]/(z+i+1);
+  const t=z+G_C.length-0.5;
+  return Math.sqrt(2*Math.PI)*Math.pow(t,z+0.5)*Math.exp(-t)*x;
+}
+function tPdf(x,nu){
+  const c=gammaFn((nu+1)/2)/(Math.sqrt(nu*Math.PI)*gammaFn(nu/2));
+  return c*Math.pow(1+x*x/nu, -(nu+1)/2);
+}
+function randn(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function randExp(rate){return -Math.log(Math.random())/rate;}
+function randCauchy(){return Math.tan(Math.PI*(Math.random()-0.5));}
+function tailIntegralPdf(pdf,k,upper,step){let s=0;for(let x=k;x<upper;x+=step){s+=pdf(x+step/2)*step;}return s;}
+
+function renderMath(){
+  if(window.renderMathInElement){
+    window.renderMathInElement(document.body,{
+      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+      throwOnError:false});
+  }
+}
+
+/* ---------- CONCEPT MAP ---------- */
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+const NODE_STYLE={
+  base:{fill:'#F1ECE0',stroke:'#C9BBA0',text:'#8C857A'},
+  moment:{fill:'#EAF1F6',stroke:'#1F5C8C',text:'#1F5C8C'},
+  tool:{fill:'#E7E3F3',stroke:'#574AA6',text:'#574AA6'},
+  limit:{fill:'#F5EBD0',stroke:'#B7892A',text:'#8a6a1f'},
+  warn:{fill:'#F4E1DB',stroke:'#B0442B',text:'#B0442B'}
+};
+const EDGE_COLOR={derive:'#3E7C4E',general:'#1F5C8C',limit:'#B7892A',tool:'#574AA6',warn:'#B0442B'};
+const MAP_NODES=[
+  {id:'g1',x:30,y:90,w:128,t:'分布 CDF/PDF',ty:'base'},
+  {id:'g2',x:30,y:215,w:128,t:'分布家族',ty:'base'},
+  {id:'g3',x:30,y:340,w:128,t:'独立性',ty:'base'},
+  {id:'g4',x:30,y:520,w:128,t:'条件概率',ty:'base'},
+  {id:'exp',x:300,y:70,w:120,t:'期望（重心）',ty:'moment',href:'#t-exp'},
+  {id:'var',x:300,y:165,w:130,t:'方差/标准差',ty:'moment',href:'#t-var'},
+  {id:'cov',x:300,y:260,w:140,t:'协方差/相关',ty:'moment',href:'#t-cov'},
+  {id:'covt',x:300,y:355,w:150,t:'⚠ cov=0≠独立',ty:'warn',href:'#t-covtrap'},
+  {id:'mom',x:300,y:450,w:120,t:'高阶矩',ty:'moment',href:'#t-moment'},
+  {id:'cond',x:300,y:545,w:150,t:'条件期望/全方差',ty:'moment',href:'#t-condexp'},
+  {id:'mgf',x:560,y:120,w:120,t:'矩生成函数',ty:'tool',href:'#t-mgf'},
+  {id:'charf',x:560,y:210,w:120,t:'特征函数',ty:'tool',href:'#t-charf'},
+  {id:'ineq',x:560,y:340,w:130,t:'马氏/切比雪夫',ty:'tool',href:'#t-markov'},
+  {id:'jen',x:560,y:455,w:130,t:'柯西/詹森',ty:'tool',href:'#t-cs'},
+  {id:'conv',x:830,y:95,w:130,t:'三种收敛',ty:'limit',href:'#t-conv'},
+  {id:'lln',x:830,y:225,w:130,t:'大数定律',ty:'limit',href:'#t-lln'},
+  {id:'clt',x:830,y:355,w:130,t:'中心极限定理',ty:'limit',href:'#t-clt'},
+  {id:'tails',x:830,y:480,w:130,t:'⚠ 肥尾/瘦尾',ty:'warn',href:'#t-tails'},
+  {id:'mvn',x:830,y:585,w:130,t:'多元正态',ty:'moment',href:'#t-mvn'}
+];
+const MAP_EDGES=[
+  ['g1','exp','derive'],['exp','var','derive'],['var','cov','derive'],
+  ['cov','covt','warn'],['var','mom','derive'],['g4','cond','general'],['var','cond','general'],
+  ['exp','mgf','tool'],['var','mgf','tool'],['mom','mgf','tool'],['mgf','charf','general'],
+  ['var','ineq','tool'],['exp','jen','tool'],
+  ['ineq','lln','tool'],['conv','lln','general'],['lln','clt','limit'],['mgf','clt','tool'],
+  ['clt','tails','limit'],['cov','mvn','general']
+];
+const NH=40;
+function nodeById(id){return MAP_NODES.find(n=>n.id===id);}
+function buildMap(){
+  const nodesG=document.getElementById('nodes');
+  const edgesG=document.getElementById('edges');
+  if(!nodesG||!edgesG)return;
+  MAP_EDGES.forEach(function(e){
+    const A=nodeById(e[0]),B=nodeById(e[1]); if(!A||!B)return;
+    const col=EDGE_COLOR[e[2]]||'#999';
+    let x1,y1,x2,y2,c1x,c1y,c2x,c2y;
+    const sameCol=Math.abs(A.x-B.x)<60;
+    if(sameCol){
+      x1=A.x+A.w/2; y1=A.y+NH; x2=B.x+B.w/2; y2=B.y;
+      c1x=x1; c1y=(y1+y2)/2; c2x=x2; c2y=(y1+y2)/2;
+    }else{
+      x1=A.x+A.w; y1=A.y+NH/2; x2=B.x; y2=B.y+NH/2;
+      const mx=(x1+x2)/2; c1x=mx; c1y=y1; c2x=mx; c2y=y2;
+    }
+    el('path',{d:'M'+x1+','+y1+' C'+c1x+','+c1y+' '+c2x+','+c2y+' '+x2+','+y2,
+      stroke:col,'marker-end':'url(#ar)'}, edgesG);
+  });
+  MAP_NODES.forEach(function(n){
+    const st=NODE_STYLE[n.ty]||NODE_STYLE.base;
+    const g=el('g',{class:n.href?'node-card':''}, nodesG);
+    if(n.href){g.style.cursor='pointer';
+      g.addEventListener('click',function(){const tgt=document.querySelector(n.href);
+        if(tgt)tgt.scrollIntoView({behavior:'smooth',block:'start'});});}
+    el('rect',{class:'node-box',x:n.x,y:n.y,width:n.w,height:NH,rx:11,
+      fill:st.fill,stroke:st.stroke,'stroke-width':1.6},g);
+    el('text',{x:n.x+n.w/2,y:n.y+NH/2+5,'text-anchor':'middle','font-size':14.5,
+      fill:st.text,'font-weight':600},g).textContent=n.t;
+  });
+}
+
+/* ===================== PART I ===================== */
+function plotExp(){
+  const wEl=document.getElementById('exp-w'); if(!wEl)return;
+  const draw=function(){
+    const wExt=parseFloat(wEl.value);
+    document.getElementById('exp-w-v').textContent=wExt.toFixed(2);
+    const xs=[0,1,2,3,10];
+    const base=[0.10,0.26,0.30,0.20];
+    const baseSum=base.reduce((a,b)=>a+b,0);
+    const scale=(1-wExt)/baseSum;
+    const w=base.map(b=>b*scale).concat([wExt]);
+    const mean=xs.reduce((s,x,i)=>s+x*w[i],0);
+    const bars={type:'bar',x:xs,y:w,width:0.45,
+      marker:{color:xs.map(x=>x===10?C.rust:C.accent)},
+      hovertemplate:'x=%{x}<br>权重=%{y:.3f}<extra></extra>'};
+    const layout=baseLayout({
+      xaxis:{title:'取值 x',range:[-1,11]},
+      yaxis:{title:'概率（权重）',range:[0,0.45]},
+      shapes:[{type:'line',x0:mean,x1:mean,y0:0,y1:0.45,line:{color:C.rust,width:3}}],
+      annotations:[{x:mean,y:0.42,text:'重心 E[X]='+mean.toFixed(2),showarrow:false,
+        font:{color:C.rust,family:'Fraunces',size:14},bgcolor:'rgba(251,246,236,.85)'}]
+    });
+    Plotly.react('p-exp',[bars],layout,CONF);
+  };
+  wEl.addEventListener('input',draw); draw();
+}
+function plotVar(){
+  const sEl=document.getElementById('var-s'); if(!sEl)return;
+  const xs=linspace(-7,7,241);
+  const draw=function(){
+    const s=parseFloat(sEl.value);
+    document.getElementById('var-s-v').textContent=s.toFixed(2);
+    const fixed=xs.map(x=>normPdf(x,0,1));
+    const vary=xs.map(x=>normPdf(x,0,s));
+    const band=xs.filter(x=>x>=-s&&x<=s);
+    const bandY=band.map(x=>normPdf(x,0,s));
+    const t1={x:xs,y:fixed,mode:'lines',line:{color:C.faint,width:1.6,dash:'dot'}};
+    const t2={x:xs,y:vary,mode:'lines',line:{color:C.accent,width:3}};
+    const tb={x:band,y:bandY,mode:'lines',fill:'tozeroy',line:{color:'rgba(31,92,140,0)'},
+      fillcolor:'rgba(31,92,140,.14)',hoverinfo:'skip'};
+    const layout=baseLayout({
+      xaxis:{title:'x',range:[-7,7]},yaxis:{title:'密度',range:[0,0.55]},
+      shapes:[{type:'line',x0:0,x1:0,y0:0,y1:0.55,line:{color:C.rust,width:2}}],
+      annotations:[{x:0,y:0.53,text:'重心固定在 0',showarrow:false,
+        font:{color:C.rust,size:12,family:'Fraunces'}}]
+    });
+    Plotly.react('p-var',[tb,t1,t2],layout,CONF);
+  };
+  sEl.addEventListener('input',draw); draw();
+}
+function plotCov(){
+  const rEl=document.getElementById('cov-r'); if(!rEl)return;
+  const N=320; const baseP=[]; for(let i=0;i<N;i++)baseP.push([randn(),randn()]);
+  const draw=function(){
+    const r=parseFloat(rEl.value);
+    document.getElementById('cov-r-v').textContent=r.toFixed(2);
+    const x=[],y=[]; const k=Math.sqrt(Math.max(0,1-r*r));
+    baseP.forEach(function(p){x.push(p[0]);y.push(r*p[0]+k*p[1]);});
+    const t={x:x,y:y,mode:'markers',marker:{size:6,color:C.accent,opacity:0.5},
+      hovertemplate:'(%{x:.2f}, %{y:.2f})<extra></extra>'};
+    const layout=baseLayout({
+      xaxis:{title:'X',range:[-3.6,3.6],zeroline:true},
+      yaxis:{title:'Y',range:[-3.6,3.6],zeroline:true,scaleanchor:'x',scaleratio:1},
+      annotations:[{x:-3.2,y:3.2,text:'ρ = '+r.toFixed(2),showarrow:false,
+        font:{color:C.accent,family:'Fraunces',size:16},xanchor:'left'}]
+    });
+    Plotly.react('p-cov',[t],layout,CONF);
+  };
+  rEl.addEventListener('input',draw); draw();
+}
+function bvnGrid(s1,s2,rho,range,n){
+  const det=s1*s1*s2*s2*(1-rho*rho);
+  const xs=linspace(-range,range,n), ys=linspace(-range,range,n);
+  const z=[];
+  for(let j=0;j<n;j++){const row=[];const y=ys[j];
+    for(let i=0;i<n;i++){const x=xs[i];
+      const q=(x*x/(s1*s1) - 2*rho*x*y/(s1*s2) + y*y/(s2*s2))/(1-rho*rho);
+      row.push(Math.exp(-0.5*q)/(2*Math.PI*Math.sqrt(det)));}
+    z.push(row);}
+  return {xs:xs,ys:ys,z:z};
+}
+/* SVG pseudo-3D surface (no WebGL): painter's-algorithm filled quads */
+function svgSurface(id, s1, s2, rho, caption){
+  const div=document.getElementById(id); if(!div)return;
+  try{ if(typeof Plotly!=='undefined') Plotly.purge(id); }catch(e){}
+  const n=26, range=3.6;
+  const det=s1*s1*s2*s2*(1-rho*rho);
+  const norm=1/(2*Math.PI*Math.sqrt(det));
+  const xs=linspace(-range,range,n), ys=linspace(-range,range,n);
+  const Z=[]; let zmax=1e-9;
+  for(let i=0;i<n;i++){const colz=[];const x=xs[i];
+    for(let j=0;j<n;j++){const y=ys[j];
+      const q=(x*x/(s1*s1)-2*rho*x*y/(s1*s2)+y*y/(s2*s2))/(1-rho*rho);
+      const z=norm*Math.exp(-0.5*q); colz.push(z); if(z>zmax)zmax=z;}
+    Z.push(colz);}
+  const W=680,H=440, cx=W*0.5, cy=H*0.58;
+  const ax=W*0.40/(n-1), ay=H*0.30/(n-1), zh=H*0.50/zmax, half=(n-1)/2;
+  function proj(i,j,z){const u=i-half, v=j-half;
+    return [cx+(u-v)*ax, cy+(u+v)*ay - z*zh];}
+  function fmt(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}
+  const b0=proj(0,0,0),b1=proj(n-1,0,0),b2=proj(n-1,n-1,0),b3=proj(0,n-1,0);
+  const quads=[];
+  for(let i=0;i<n-1;i++)for(let j=0;j<n-1;j++){
+    const z00=Z[i][j],z10=Z[i+1][j],z11=Z[i+1][j+1],z01=Z[i][j+1];
+    const avg=(z00+z10+z11+z01)/4;
+    quads.push({o:i+j, pts:[proj(i,j,z00),proj(i+1,j,z10),proj(i+1,j+1,z11),proj(i,j+1,z01)], h:avg/zmax});
+  }
+  quads.sort(function(a,b){return a.o-b.o;});
+  function col(t){const c0=[222,235,245], c1=[20,69,107];
+    return 'rgb('+Math.round(c0[0]+(c1[0]-c0[0])*t)+','+Math.round(c0[1]+(c1[1]-c0[1])*t)+','+Math.round(c0[2]+(c1[2]-c0[2])*t)+')';}
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">';
+  s+='<path d="M'+fmt(b0)+' L'+fmt(b1)+' L'+fmt(b2)+' L'+fmt(b3)+' Z" fill="none" stroke="#D2C2A4" stroke-width="1" stroke-dasharray="4 4" opacity="0.7"/>';
+  quads.forEach(function(q){const P=q.pts;
+    s+='<path d="M'+fmt(P[0])+' L'+fmt(P[1])+' L'+fmt(P[2])+' L'+fmt(P[3])+' Z" fill="'+col(Math.pow(q.h,0.85))+'" stroke="rgba(31,92,140,.30)" stroke-width="0.5"/>';});
+  if(caption)s+='<text x="18" y="'+(H-15)+'" font-family="Fraunces, serif" font-size="13.5" fill="#5A544B">'+caption+'</text>';
+  s+='</svg>';
+  div.innerHTML=s;
+}
+function plotCov3(){
+  const rEl=document.getElementById('cov3-r'); if(!rEl)return;
+  const draw=function(){
+    const r=parseFloat(rEl.value);
+    document.getElementById('cov3-r-v').textContent=r.toFixed(2);
+    svgSurface('p-cov3',1,1,r,'ρ = '+r.toFixed(2)+'　（高度已自动缩放，重点看“山脊”朝哪个对角线扭）');
+  };
+  rEl.addEventListener('input',draw); draw();
+}
+function plotProj(){
+  const div=document.getElementById('p-proj'); if(!div)return;
+  const A=C.accent, T=C.teal, R=C.rust, F=C.faint, I=C.inkSoft;
+  let s='<svg viewBox="0 0 680 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">';
+  // plane (subspace)
+  s+='<path d="M150,322 L512,322 L560,268 L198,268 Z" fill="rgba(220,231,240,.55)" stroke="#9CC0DD" stroke-width="1.5"/>';
+  s+='<text x="356" y="258" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="12.5" fill="'+F+'">「所有 X 的函数」构成的子空间（平面）</text>';
+  // O->Y (the random variable Y) blue
+  s+='<line x1="212" y1="312" x2="372" y2="118" stroke="'+A+'" stroke-width="3"/>';
+  // O->p (projection, in plane) teal
+  s+='<line x1="212" y1="312" x2="372" y2="300" stroke="'+T+'" stroke-width="3"/>';
+  // residual p->Y dashed red
+  s+='<line x1="372" y1="300" x2="372" y2="118" stroke="'+R+'" stroke-width="2.5" stroke-dasharray="7 5"/>';
+  // right-angle bracket at p
+  s+='<path d="M357,300 L357,285 L372,285" fill="none" stroke="'+R+'" stroke-width="1.6"/>';
+  // dots
+  s+='<circle cx="212" cy="312" r="4.5" fill="'+I+'"/>';
+  s+='<circle cx="372" cy="300" r="6" fill="'+T+'"/>';
+  s+='<circle cx="372" cy="118" r="6" fill="'+A+'"/>';
+  // labels
+  s+='<text x="384" y="112" font-family="Fraunces, serif" font-size="17" font-weight="600" fill="'+A+'">Y</text>';
+  s+='<text x="384" y="130" font-family="PingFang SC, sans-serif" font-size="12.5" fill="'+A+'">随机变量</text>';
+  s+='<text x="384" y="306" font-family="Fraunces, serif" font-size="15" font-weight="600" fill="'+T+'">E[Y|X]</text>';
+  s+='<text x="384" y="324" font-family="PingFang SC, sans-serif" font-size="12.5" fill="'+T+'">投影 = 平面里离 Y 最近的点</text>';
+  s+='<text x="262" y="200" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="13" font-weight="600" fill="'+R+'">残差 = Y − E[Y|X]</text>';
+  s+='<text x="262" y="218" text-anchor="end" font-family="PingFang SC, sans-serif" font-size="12.5" fill="'+R+'">⟂ 整个平面</text>';
+  s+='<text x="196" y="330" font-family="Fraunces, serif" font-size="14" fill="'+I+'">O</text>';
+  // caption
+  s+='<text x="20" y="416" font-family="PingFang SC, sans-serif" font-size="13" fill="'+I+'">条件期望 = 把 Y 垂直投影到「X 的函数」子空间：投影点最近，残差与整个平面正交——这正是它最优的原因。</text>';
+  s+='</svg>';
+  div.innerHTML=s;
+}
+function plotMVN(){
+  const rEl=document.getElementById('mvn-r'), sEl=document.getElementById('mvn-s'),
+        seg=document.getElementById('mvn-seg');
+  if(!rEl)return;
+  let view='surf';
+  const draw=function(){
+    const r=parseFloat(rEl.value), s2=parseFloat(sEl.value);
+    document.getElementById('mvn-r-v').textContent=r.toFixed(2);
+    document.getElementById('mvn-s-v').textContent=s2.toFixed(2);
+    if(view==='surf'){
+      svgSurface('p-mvn',1,s2,r,'ρ='+r.toFixed(2)+'，σ₂='+s2.toFixed(2)+'　（山脊扭转=相关；一侧拉长/压扁=σ₂）');
+    }else{
+      const d=document.getElementById('p-mvn');
+      if(d.querySelector('svg')){ try{Plotly.purge(d);}catch(e){} d.innerHTML=''; }
+      const g=bvnGrid(1,s2,r,4,46);
+      const t={type:'contour',x:g.xs,y:g.ys,z:g.z,showscale:false,
+        colorscale:[[0,'#FBF6EC'],[0.5,'#9CC0DD'],[1,'#1F5C8C']],
+        contours:{coloring:'lines',showlabels:false},line:{width:2}};
+      const layout=baseLayout({
+        xaxis:{title:'X₁',range:[-4,4],zeroline:true},
+        yaxis:{title:'X₂',range:[-4,4],zeroline:true,scaleanchor:'x',scaleratio:1},
+        annotations:[{x:-3.7,y:3.7,xanchor:'left',
+          text:(Math.abs(r)<0.02?'ρ≈0 → 椭圆摆正（轴对齐）→ 此时独立':'ρ='+r.toFixed(2)+' → 椭圆倾斜'),
+          showarrow:false,font:{color:C.accent,family:'Fraunces',size:13}}]
+      });
+      Plotly.react('p-mvn',[t],layout,CONF);
+    }
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); view=b.dataset.v; draw();});});
+  rEl.addEventListener('input',draw); sEl.addEventListener('input',draw); draw();
+}
+
+function plotTrap(){
+  const seg=document.getElementById('trap-seg'); if(!seg)return;
+  let shape='parab';
+  const gen=function(sh){
+    const N=400,x=[],y=[];
+    for(let i=0;i<N;i++){
+      let X,Y;
+      if(sh==='parab'){X=(Math.random()*2-1)*1.5;Y=X*X-0.75+randn()*0.04;}
+      else if(sh==='circle'){const th=Math.random()*2*Math.PI;X=Math.cos(th)+randn()*0.03;Y=Math.sin(th)+randn()*0.03;}
+      else if(sh==='abs'){X=(Math.random()*2-1)*1.5;Y=Math.abs(X)-0.5+randn()*0.04;}
+      else{X=Math.random();Y=Math.cos(2*Math.PI*X)+randn()*0.03;}
+      x.push(X);y.push(Y);
+    }
+    const mx=x.reduce((a,b)=>a+b)/N, my=y.reduce((a,b)=>a+b)/N;
+    let cov=0; for(let i=0;i<N;i++)cov+=(x[i]-mx)*(y[i]-my); cov/=N;
+    return {x:x,y:y,cov:cov};
+  };
+  const draw=function(){
+    const d=gen(shape);
+    const t={x:d.x,y:d.y,mode:'markers',marker:{size:5,color:C.rust,opacity:0.5},hoverinfo:'skip'};
+    const layout=baseLayout({
+      xaxis:{title:'X',zeroline:true},yaxis:{title:'Y',zeroline:true},
+      annotations:[{x:0.02,y:0.98,xref:'paper',yref:'paper',xanchor:'left',yanchor:'top',
+        text:'经验 cov(X,Y) ≈ '+d.cov.toFixed(3)+' （≈0！）<br>但 Y 完全由 X 决定 → 强烈依赖',
+        showarrow:false,align:'left',font:{color:C.rust,family:'Fraunces',size:13},
+        bgcolor:'rgba(251,246,236,.9)',bordercolor:C.rust,borderwidth:1,borderpad:6}]
+    });
+    Plotly.react('p-trap',[t],layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); shape=b.dataset.shape; draw();});});
+  draw();
+}
+function plotMoment(){
+  const sk=document.getElementById('mo-skew'), ku=document.getElementById('mo-kurt');
+  if(!sk)return;
+  const xs=linspace(-4.5,4.5,221);
+  const draw=function(){
+    const s=parseFloat(sk.value), k=parseFloat(ku.value);
+    document.getElementById('mo-skew-v').textContent=s.toFixed(1);
+    document.getElementById('mo-kurt-v').textContent=k.toFixed(1);
+    const base=xs.map(x=>normPdf(x,0,1));
+    const y=xs.map(function(x){
+      const H3=x*x*x-3*x, H4=x*x*x*x-6*x*x+3;
+      const v=normPdf(x,0,1)*(1 + s*H3/6 + k*H4/24);
+      return Math.max(0,v);
+    });
+    const t1={x:xs,y:base,mode:'lines',line:{color:C.faint,width:1.4,dash:'dot'}};
+    const t2={x:xs,y:y,mode:'lines',line:{color:C.teal,width:3},fill:'tozeroy',
+      fillcolor:'rgba(31,107,102,.10)'};
+    const layout=baseLayout({
+      xaxis:{title:'x',range:[-4.5,4.5]},yaxis:{title:'密度',range:[0,0.55]},
+      annotations:[
+        {x:-4.2,y:0.52,text:'偏度 → 左右倾斜',showarrow:false,xanchor:'left',font:{size:12,color:C.teal,family:'Fraunces'}},
+        {x:-4.2,y:0.48,text:'峰度 → 中峰/尾巴胖瘦',showarrow:false,xanchor:'left',font:{size:12,color:C.teal,family:'Fraunces'}}
+      ]
+    });
+    Plotly.react('p-moment',[t1,t2],layout,CONF);
+  };
+  sk.addEventListener('input',draw); ku.addEventListener('input',draw); draw();
+}
+function plotAddvar(){
+  const rEl=document.getElementById('addvar-r'); if(!rEl)return;
+  const draw=function(){
+    const r=parseFloat(rEl.value);
+    document.getElementById('addvar-r-v').textContent=r.toFixed(2);
+    const cov2=2*r, tot=2+2*r;
+    const labels=['V(X)','V(Y)','2·cov(X,Y)','V(X+Y)'];
+    const vals=[1,1,cov2,tot];
+    const cols=[C.accent,C.accent,(cov2>=0?C.gold:C.rust),C.teal];
+    const t={type:'bar',x:labels,y:vals,marker:{color:cols},
+      text:vals.map(v=>v.toFixed(2)),textposition:'outside',
+      hovertemplate:'%{x} = %{y:.3f}<extra></extra>'};
+    const layout=baseLayout({
+      yaxis:{title:'数值',range:[-2.4,4.6],zeroline:true},
+      annotations:[{x:1.5,y:4.3,text:(Math.abs(r)<1e-9?'独立(r=0)：方差直接相加 = 2':
+        'V(X+Y)=V(X)+V(Y)+2cov = '+tot.toFixed(2)),showarrow:false,
+        font:{color:C.inkSoft,family:'Fraunces',size:13}}]
+    });
+    Plotly.react('p-addvar',[t],layout,CONF);
+  };
+  rEl.addEventListener('input',draw); draw();
+}
+
+/* ===================== PART II ===================== */
+function plotCE(){
+  const cEl=document.getElementById('ce-c'), nEl=document.getElementById('ce-n');
+  if(!cEl)return;
+  const N=300; const baseP=[]; for(let i=0;i<N;i++)baseP.push([Math.random()*6-3, randn()]);
+  const draw=function(){
+    const c=parseFloat(cEl.value), noise=parseFloat(nEl.value);
+    document.getElementById('ce-c-v').textContent=c.toFixed(2);
+    document.getElementById('ce-n-v').textContent=noise.toFixed(2);
+    const x=[],y=[];
+    baseP.forEach(function(p){const X=p[0];const m=0.9*X + c*(X*X-3); x.push(X); y.push(m+noise*p[1]*2);});
+    const xs=linspace(-3,3,121);
+    const cm=xs.map(X=>0.9*X + c*(X*X-3));
+    const sc={x:x,y:y,mode:'markers',marker:{size:5,color:C.faint,opacity:0.5},hoverinfo:'skip'};
+    const line={x:xs,y:cm,mode:'lines',line:{color:C.accent,width:3.5},
+      hovertemplate:'E[Y|X=%{x:.2f}] = %{y:.2f}<extra></extra>'};
+    const layout=baseLayout({
+      xaxis:{title:'X',range:[-3.2,3.2]},yaxis:{title:'Y',range:[-8,8]},
+      annotations:[{x:-3,y:7.4,text:'蓝线 = 条件期望 E[Y|X]',showarrow:false,xanchor:'left',
+        font:{color:C.accent,family:'Fraunces',size:13}}]
+    });
+    Plotly.react('p-ce',[sc,line],layout,CONF);
+  };
+  cEl.addEventListener('input',draw); nEl.addEventListener('input',draw); draw();
+}
+function plotTV(){
+  const bEl=document.getElementById('tv-b'), wEl=document.getElementById('tv-w');
+  if(!bEl)return;
+  const G=3, nPer=160;
+  const baseGroups=[]; for(let g=0;g<G;g++){const arr=[];for(let i=0;i<nPer;i++)arr.push(randn());baseGroups.push(arr);}
+  const draw=function(){
+    const b=parseFloat(bEl.value), w=parseFloat(wEl.value);
+    document.getElementById('tv-b-v').textContent=b.toFixed(1);
+    document.getElementById('tv-w-v').textContent=w.toFixed(2);
+    const centers=[-b,0,b];
+    const cols=[C.accent,C.gold,C.teal];
+    const traces=[]; const allMeans=[]; let allVals=[]; let withinSum=0;
+    baseGroups.forEach(function(arr,g){
+      const vals=arr.map(z=>centers[g]+w*z);
+      const m=vals.reduce((a,x)=>a+x,0)/vals.length; allMeans.push(m);
+      let v=0; vals.forEach(x=>v+=(x-m)*(x-m)); v/=vals.length; withinSum+=v;
+      allVals=allVals.concat(vals);
+      traces.push({x:vals,y:arr.map(()=>g+(Math.random()-0.5)*0.5),mode:'markers',
+        marker:{size:5,color:cols[g],opacity:0.45},hoverinfo:'skip'});
+    });
+    const within=withinSum/G;
+    const grand=allVals.reduce((a,x)=>a+x,0)/allVals.length;
+    let between=0; allMeans.forEach(m=>between+=(m-grand)*(m-grand)); between/=G;
+    let total=0; allVals.forEach(x=>total+=(x-grand)*(x-grand)); total/=allVals.length;
+    const shapes=allMeans.map(function(m,g){return {type:'line',x0:m,x1:m,y0:g-0.4,y1:g+0.4,
+      line:{color:cols[g],width:3}};});
+    shapes.push({type:'line',x0:grand,x1:grand,y0:-0.6,y1:2.6,line:{color:C.rust,width:2,dash:'dot'}});
+    const layout=baseLayout({
+      xaxis:{title:'取值',range:[-b-4.8, b+4.8]},
+      yaxis:{title:'组',tickvals:[0,1,2],ticktext:['组1','组2','组3'],range:[-0.8,2.8]},
+      shapes:shapes,
+      annotations:[{x:0.02,y:0.98,xref:'paper',yref:'paper',xanchor:'left',yanchor:'top',
+        text:'组内方差 ≈ '+within.toFixed(2)+'　+　组间方差 ≈ '+between.toFixed(2)+'　≈　总方差 '+total.toFixed(2),
+        showarrow:false,font:{color:C.inkSoft,family:'Fraunces',size:13},
+        bgcolor:'rgba(251,246,236,.9)',bordercolor:C.line,borderwidth:1,borderpad:5}]
+    });
+    Plotly.react('p-tv',traces,layout,CONF);
+  };
+  bEl.addEventListener('input',draw); wEl.addEventListener('input',draw); draw();
+}
+
+/* ===================== PART III ===================== */
+function plotMGF(){
+  const tEl=document.getElementById('mgf-t'); if(!tEl)return;
+  const ts=linspace(-1.2,0.8,121);
+  const draw=function(){
+    const theta=parseFloat(tEl.value);
+    document.getElementById('mgf-t-v').textContent=theta.toFixed(1);
+    const psi=ts.map(t=>Math.exp(theta*(Math.exp(t)-1)));
+    const slope=theta;
+    const tangent=ts.map(t=>1+slope*t);
+    const curve={x:ts,y:psi,mode:'lines',line:{color:C.violet,width:3},
+      hovertemplate:'ψ(%{x:.2f})=%{y:.2f}<extra></extra>'};
+    const tan={x:ts,y:tangent,mode:'lines',line:{color:C.rust,width:2,dash:'dash'}};
+    const pt={x:[0],y:[1],mode:'markers',marker:{size:8,color:C.rust}};
+    const topv=Math.max(4, Math.exp(theta*(Math.exp(0.8)-1))*0.6);
+    const layout=baseLayout({
+      xaxis:{title:'t',range:[-1.2,0.8],zeroline:true},
+      yaxis:{title:'ψ(t)=E[e^{tX}]',range:[0,topv]},
+      annotations:[{x:0,y:1,ax:40,ay:-40,text:'在 0 点斜率 = E[X] = θ = '+theta.toFixed(1),
+        font:{color:C.rust,family:'Fraunces',size:13},arrowcolor:C.rust,showarrow:true}]
+    });
+    Plotly.react('p-mgf',[curve,tan,pt],layout,CONF);
+  };
+  tEl.addEventListener('input',draw); draw();
+}
+function plotSum(){
+  const nEl=document.getElementById('sum-n'), seg=document.getElementById('sum-seg');
+  if(!nEl)return;
+  let dist='exp';
+  const sampleOne=function(){
+    if(dist==='exp')return randExp(1);
+    if(dist==='unif')return Math.random();
+    return Math.random()<0.5?0:1;
+  };
+  const draw=function(){
+    const n=parseInt(nEl.value);
+    document.getElementById('sum-n-v').textContent=n;
+    const R=3000, sums=[];
+    for(let r=0;r<R;r++){let s=0;for(let i=0;i<n;i++)s+=sampleOne();sums.push(s);}
+    let lo=Math.min.apply(null,sums), hi=Math.max.apply(null,sums);
+    const B=36; let w=(hi-lo)/B; if(w<=0)w=1;
+    const mids=[],cnt=new Array(B).fill(0);
+    sums.forEach(function(v){let b=Math.floor((v-lo)/w);if(b<0)b=0;if(b>=B)b=B-1;cnt[b]++;});
+    const dens=cnt.map(c=>c/(R*w));
+    for(let i=0;i<B;i++)mids.push(lo+w*(i+0.5));
+    const bars={type:'bar',x:mids,y:dens,width:w*0.92,marker:{color:'rgba(31,92,140,.55)'},
+      hovertemplate:'≈%{x:.2f}<extra></extra>'};
+    const layout=baseLayout({
+      xaxis:{title:'n 个独立变量之和'},yaxis:{title:'密度'},bargap:0.02,
+      annotations:[{x:0.98,y:0.96,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+        text:'n = '+n+(n>=12?'　← 已明显钟形':''),showarrow:false,
+        font:{color:C.accent,family:'Fraunces',size:14}}]
+    });
+    Plotly.react('p-sum',[bars],layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); dist=b.dataset.d; draw();});});
+  nEl.addEventListener('input',draw); draw();
+}
+function plotCharf(){
+  const div=document.getElementById('p-charf'); if(!div)return;
+  const xs=linspace(-3,3,121);
+  const real=xs.map(x=>Math.exp(x));
+  const cosv=xs.map(x=>Math.cos(2*x));
+  const sinv=xs.map(x=>Math.sin(2*x));
+  const tReal={x:xs,y:real,mode:'lines',line:{color:C.rust,width:3},xaxis:'x',yaxis:'y'};
+  const tcos={x:xs,y:cosv,mode:'lines',line:{color:C.accent,width:2.5},xaxis:'x2',yaxis:'y2'};
+  const tsin={x:xs,y:sinv,mode:'lines',line:{color:C.teal,width:2.5,dash:'dot'},xaxis:'x2',yaxis:'y2'};
+  const layout={paper_bgcolor:C.paper,plot_bgcolor:C.paper,showlegend:false,
+    font:{family:'Spectral, serif',color:C.ink,size:12},
+    margin:{l:46,r:14,t:32,b:38},
+    grid:{rows:1,columns:2,pattern:'independent'},
+    xaxis:{title:'x',domain:[0,0.46]},yaxis:{title:'e^{tx} → 爆炸',range:[0,20]},
+    xaxis2:{title:'x',domain:[0.56,1]},yaxis2:{title:'cos / sin → 有界',range:[-1.3,1.3]},
+    annotations:[
+      {x:0.2,y:1.07,xref:'paper',yref:'paper',text:'实指数：冲出天际（肥尾→MGF 发散）',showarrow:false,font:{color:C.rust,size:11.5,family:'Fraunces'}},
+      {x:0.82,y:1.07,xref:'paper',yref:'paper',text:'复指数：永在[-1,1]振荡（总收敛）',showarrow:false,font:{color:C.accent,size:11.5,family:'Fraunces'}}
+    ]};
+  Plotly.react('p-charf',[tReal,tcos,tsin],layout,CONF);
+}
+
+/* ===================== PART IV ===================== */
+function plotMarkov(){
+  const tEl=document.getElementById('mk-t'); if(!tEl)return;
+  const ts=linspace(0.5,8,151);
+  const actual=ts.map(t=>Math.exp(-t));
+  const bound=ts.map(t=>Math.min(1.05,1/t));
+  const draw=function(){
+    const t0=parseFloat(tEl.value);
+    document.getElementById('mk-t-v').textContent=t0.toFixed(1);
+    const aV=Math.exp(-t0), bV=1/t0;
+    const tA={x:ts,y:actual,mode:'lines',line:{color:C.accent,width:3}};
+    const tB={x:ts,y:bound,mode:'lines',line:{color:C.rust,width:2.5,dash:'dash'}};
+    const layout=baseLayout({
+      xaxis:{title:'阈值 t（X~指数, E[X]=1）',range:[0.5,8]},
+      yaxis:{title:'概率',range:[0,1.05]},
+      shapes:[{type:'line',x0:t0,x1:t0,y0:0,y1:1.05,line:{color:C.faint,width:1.5,dash:'dot'}}],
+      annotations:[{x:5.4,y:0.92,xanchor:'left',
+        text:'t='+t0.toFixed(1)+'：真实='+aV.toFixed(3)+' ≤ 上界='+bV.toFixed(3),
+        showarrow:false,font:{color:C.inkSoft,family:'Fraunces',size:13},
+        bgcolor:'rgba(251,246,236,.9)',bordercolor:C.line,borderwidth:1,borderpad:5}]
+    });
+    Plotly.react('p-markov',[tA,tB],layout,CONF);
+  };
+  tEl.addEventListener('input',draw); draw();
+}
+function plotCheby(){
+  const kEl=document.getElementById('cb-k'); if(!kEl)return;
+  const xs=linspace(-4.5,4.5,241);
+  const pdf=xs.map(x=>normPdf(x,0,1));
+  const draw=function(){
+    const k=parseFloat(kEl.value);
+    document.getElementById('cb-k-v').textContent=k.toFixed(2);
+    const actual=normTailTwo(k), bound=Math.min(1,1/(k*k));
+    const left=xs.filter(x=>x<=-k), leftY=left.map(x=>normPdf(x,0,1));
+    const right=xs.filter(x=>x>=k), rightY=right.map(x=>normPdf(x,0,1));
+    const tC={x:xs,y:pdf,mode:'lines',line:{color:C.inkSoft,width:2}};
+    const sL={x:left,y:leftY,mode:'lines',fill:'tozeroy',line:{color:'rgba(31,92,140,0)'},fillcolor:'rgba(31,92,140,.30)',hoverinfo:'skip'};
+    const sR={x:right,y:rightY,mode:'lines',fill:'tozeroy',line:{color:'rgba(31,92,140,0)'},fillcolor:'rgba(31,92,140,.30)',hoverinfo:'skip'};
+    const layout=baseLayout({
+      xaxis:{title:'标准化 x（单位：σ）',range:[-4.5,4.5]},yaxis:{title:'密度',range:[0,0.45]},
+      shapes:[{type:'line',x0:-k,x1:-k,y0:0,y1:0.45,line:{color:C.accent,width:1.5,dash:'dot'}},
+              {type:'line',x0:k,x1:k,y0:0,y1:0.45,line:{color:C.accent,width:1.5,dash:'dot'}}],
+      annotations:[{x:0,y:0.42,
+        text:'|X−μ|≥'+k.toFixed(2)+'σ：真实(正态)='+actual.toFixed(4)+' ≤ 切比雪夫 1/k²='+bound.toFixed(3),
+        showarrow:false,font:{color:C.rust,family:'Fraunces',size:12.5},
+        bgcolor:'rgba(251,246,236,.92)',bordercolor:C.rust,borderwidth:1,borderpad:5}]
+    });
+    Plotly.react('p-cheby',[tC,sL,sR],layout,CONF);
+  };
+  kEl.addEventListener('input',draw); draw();
+}
+function plotCS(){
+  const aEl=document.getElementById('cs-a'); if(!aEl)return;
+  const u=[2.6,0.0]; const ulen=Math.hypot(u[0],u[1]); const vlen=2.1;
+  const draw=function(){
+    const deg=parseFloat(aEl.value);
+    document.getElementById('cs-a-v').textContent=deg.toFixed(0);
+    const th=deg*Math.PI/180;
+    const v=[vlen*Math.cos(th), vlen*Math.sin(th)];
+    const dot=u[0]*v[0]+u[1]*v[1];
+    const bound=ulen*vlen;
+    const tU={x:[0,u[0]],y:[0,u[1]],mode:'lines+markers',line:{color:C.faint,width:4},
+      marker:{size:[1,9],color:C.faint}};
+    const tV={x:[0,v[0]],y:[0,v[1]],mode:'lines+markers',line:{color:C.accent,width:4},
+      marker:{size:[1,9],color:C.accent}};
+    const layout=baseLayout({
+      xaxis:{title:'',range:[-2.6,3.0],zeroline:true},
+      yaxis:{title:'',range:[-2.6,2.6],zeroline:true,scaleanchor:'x',scaleratio:1},
+      annotations:[
+        {x:u[0],y:u[1]+0.18,text:'u（固定）',showarrow:false,font:{color:C.faint,family:'Fraunces',size:13}},
+        {x:v[0],y:v[1]+0.18*(v[1]>=0?1:-1),text:'v',showarrow:false,font:{color:C.accent,family:'Fraunces',size:14}},
+        {x:-2.5,y:2.4,xanchor:'left',
+         text:'|⟨u,v⟩|='+Math.abs(dot).toFixed(2)+'　≤　‖u‖‖v‖='+bound.toFixed(2),
+         showarrow:false,font:{color:C.rust,family:'Fraunces',size:13},
+         bgcolor:'rgba(251,246,236,.9)',bordercolor:C.line,borderwidth:1,borderpad:5},
+        {x:-2.5,y:2.0,xanchor:'left',text:'cosθ='+Math.cos(th).toFixed(2)+'（取等 ⇔ 共线 ⇔ |ρ|=1）',
+         showarrow:false,font:{color:C.inkSoft,size:12}}
+      ]
+    });
+    Plotly.react('p-cs',[tU,tV],layout,CONF);
+  };
+  aEl.addEventListener('input',draw); draw();
+}
+function plotJensen(){
+  const dEl=document.getElementById('jen-d'), seg=document.getElementById('jen-seg');
+  if(!dEl)return;
+  let gtype='sq'; const mu=0.6;
+  const g=function(x){return gtype==='sq'? x*x : Math.exp(x);};
+  const draw=function(){
+    const d=parseFloat(dEl.value);
+    document.getElementById('jen-d-v').textContent=d.toFixed(2);
+    const lo=mu-2.4, hi=mu+2.4; const xs=linspace(lo,hi,161);
+    const ys=xs.map(g);
+    const x1=mu-d, x2=mu+d;
+    const gmu=g(mu), egx=(g(x1)+g(x2))/2;
+    const curve={x:xs,y:ys,mode:'lines',line:{color:C.inkSoft,width:2.5}};
+    const chord={x:[x1,x2],y:[g(x1),g(x2)],mode:'lines+markers',line:{color:C.line,width:2,dash:'dot'},
+      marker:{size:7,color:C.line},hoverinfo:'skip'};
+    const ptA={x:[mu],y:[gmu],mode:'markers+text',marker:{size:10,color:C.teal},
+      text:['g(E[X])'],textposition:'bottom center',textfont:{color:C.teal,size:12}};
+    const ptM={x:[mu],y:[egx],mode:'markers+text',marker:{size:10,color:C.accent},
+      text:['E[g(X)]'],textposition:'top center',textfont:{color:C.accent,size:12}};
+    const gap={x:[mu,mu],y:[gmu,egx],mode:'lines',line:{color:C.rust,width:3},hoverinfo:'skip'};
+    const ymax=gtype==='sq'? Math.max(g(lo),g(hi))*1.05 : g(hi)*1.05;
+    const layout=baseLayout({
+      xaxis:{title:'x',range:[lo,hi]},yaxis:{title:'g(x)',range:[Math.min(0,gmu-0.5),ymax]},
+      annotations:[{x:mu+0.05,y:(gmu+egx)/2,xanchor:'left',
+        text:'Jensen 间隙 = '+(egx-gmu).toFixed(2),showarrow:false,
+        font:{color:C.rust,family:'Fraunces',size:13}}]
+    });
+    Plotly.react('p-jensen',[curve,chord,gap,ptA,ptM],layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); gtype=b.dataset.g; draw();});});
+  dEl.addEventListener('input',draw); draw();
+}
+
+/* ===================== PART V ===================== */
+function plotConv(){
+  const nEl=document.getElementById('cv-n'); if(!nEl)return;
+  const draw=function(){
+    const n=parseInt(nEl.value);
+    document.getElementById('cv-n-v').textContent=n;
+    const sd=1/Math.sqrt(n);
+    const xs=linspace(-3,3,241);
+    const y=xs.map(x=>normPdf(x,0,sd));
+    const t={x:xs,y:y,mode:'lines',line:{color:C.accent,width:3},fill:'tozeroy',
+      fillcolor:'rgba(31,92,140,.12)',hovertemplate:'x=%{x:.2f}<extra></extra>'};
+    const top=Math.min(normPdf(0,0,sd)*1.1, 6);
+    const layout=baseLayout({
+      xaxis:{title:'样本均值 X̄ₙ',range:[-3,3]},yaxis:{title:'密度',range:[0,top]},
+      shapes:[{type:'line',x0:0,x1:0,y0:0,y1:top,line:{color:C.rust,width:2,dash:'dot'}}],
+      annotations:[{x:1.6,y:top*0.9,xanchor:'left',
+        text:'n='+n+'　标准差=σ/√n='+sd.toFixed(3),showarrow:false,
+        font:{color:C.accent,family:'Fraunces',size:13}},
+        {x:0,y:top*0.99,text:'真值 μ=0',showarrow:false,font:{color:C.rust,size:11,family:'Fraunces'}}]
+    });
+    Plotly.react('p-conv',[t],layout,CONF);
+  };
+  nEl.addEventListener('input',draw); draw();
+}
+function plotLLN(){
+  const nEl=document.getElementById('lln-n'), seg=document.getElementById('lln-seg'),
+        runB=document.getElementById('lln-run');
+  if(!nEl)return;
+  let dist='unif';
+  const meta={unif:{mu:0.5,f:()=>Math.random()},
+              exp:{mu:1,f:()=>randExp(1)},
+              bern:{mu:0.3,f:()=>Math.random()<0.3?1:0},
+              cauchy:{mu:0,f:()=>randCauchy(),nomean:true}};
+  const draw=function(){
+    const N=parseInt(nEl.value);
+    document.getElementById('lln-n-v').textContent=N;
+    const m=meta[dist]; const PATHS=6;
+    const idx=[]; const pts=520;
+    for(let i=0;i<pts;i++){const v=Math.round(Math.pow(N,i/(pts-1)));
+      if(idx.length===0||v>idx[idx.length-1])idx.push(Math.max(1,v));}
+    const traces=[];
+    const cols=['#1F5C8C','#1F6B66','#B7892A','#574AA6','#3E7C4E','#9a5b3a'];
+    for(let p=0;p<PATHS;p++){
+      let sum=0,k=0; const yx=[],yy=[]; let ip=0;
+      for(let n=1;n<=N;n++){sum+=m.f();k++;
+        if(ip<idx.length && n===idx[ip]){yx.push(n);yy.push(sum/k);ip++;}}
+      traces.push({x:yx,y:yy,mode:'lines',line:{color:cols[p],width:1.4},opacity:0.85,hoverinfo:'skip'});
+    }
+    const yrange = m.nomean? [-8,8] : [m.mu-1.2, m.mu+1.2];
+    const layout=baseLayout({
+      xaxis:{title:'样本量 n（对数轴）',type:'log',range:[0,Math.log10(N)]},
+      yaxis:{title:'累计样本均值',range:yrange},
+      shapes:[{type:'line',x0:1,x1:N,y0:m.mu,y1:m.mu,
+        line:{color:C.rust,width:2,dash:m.nomean?'dot':'dash'}}],
+      annotations:[{x:0.02,y:0.97,xref:'paper',yref:'paper',xanchor:'left',yanchor:'top',
+        text: m.nomean? '⚠ 柯西无有限均值 → 永不收敛（虚线仅为对称中心 0）'
+                       : '真均值 μ='+m.mu+'（虚线）— 看轨迹如何收拢',
+        showarrow:false,font:{color:m.nomean?C.rust:C.inkSoft,family:'Fraunces',size:13},
+        bgcolor:'rgba(251,246,236,.92)',bordercolor:m.nomean?C.rust:C.line,borderwidth:1,borderpad:5}]
+    });
+    Plotly.react('p-lln',traces,layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); dist=b.dataset.d; draw();});});
+  nEl.addEventListener('input',draw);
+  if(runB)runB.addEventListener('click',draw);
+  draw();
+}
+function plotCLT(){
+  const nEl=document.getElementById('clt-n'), seg=document.getElementById('clt-seg'),
+        runB=document.getElementById('clt-run');
+  if(!nEl)return;
+  let dist='exp';
+  const meta={
+    exp:{mu:1,sd:1,f:()=>randExp(1)},
+    bern:{mu:0.5,sd:0.5,f:()=>Math.random()<0.5?1:0},
+    bimodal:{mu:0,sd:Math.sqrt(4.25),f:()=>(Math.random()<0.5?-2:2)+0.5*randn()},
+    unif:{mu:0.5,sd:1/Math.sqrt(12),f:()=>Math.random()}
+  };
+  const draw=function(){
+    const n=parseInt(nEl.value);
+    document.getElementById('clt-n-v').textContent=n;
+    const m=meta[dist]; const R=2600; const Z=[];
+    for(let r=0;r<R;r++){let s=0;for(let i=0;i<n;i++)s+=m.f();const mean=s/n;
+      Z.push((mean-m.mu)/(m.sd/Math.sqrt(n)));}
+    const B=41, lo=-4, hi=4, w=(hi-lo)/B, cnt=new Array(B).fill(0);
+    Z.forEach(function(z){let b=Math.floor((z-lo)/w);if(b>=0&&b<B)cnt[b]++;});
+    const mids=[],dens=[];
+    for(let i=0;i<B;i++){mids.push(lo+w*(i+0.5));dens.push(cnt[i]/(R*w));}
+    const xs=linspace(-4,4,161), nd=xs.map(x=>normPdf(x,0,1));
+    const bars={type:'bar',x:mids,y:dens,width:w*0.95,marker:{color:'rgba(31,92,140,.55)'},
+      hovertemplate:'z≈%{x:.2f}<extra></extra>'};
+    const line={x:xs,y:nd,mode:'lines',line:{color:C.ink,width:3},hoverinfo:'skip'};
+    const layout=baseLayout({
+      xaxis:{title:'标准化后的样本均值 Z',range:[-4,4]},
+      yaxis:{title:'密度',range:[0,0.55]},bargap:0.03,
+      annotations:[{x:-3.8,y:0.52,xanchor:'left',
+        text:'n='+n+(n===1?'　← 此时就是母分布原样':(n>=20?'　← 已贴合正态':'')),
+        showarrow:false,font:{color:C.accent,family:'Fraunces',size:14}},
+        {x:3.8,y:0.52,xanchor:'right',text:'黑线 = N(0,1)',showarrow:false,
+        font:{color:C.ink,family:'Fraunces',size:12}}]
+    });
+    Plotly.react('p-clt',[bars,line],layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); dist=b.dataset.d; draw();});});
+  nEl.addEventListener('input',draw);
+  if(runB)runB.addEventListener('click',draw);
+  draw();
+}
+function plotCLT2(){
+  const dfEl=document.getElementById('t2-df'); if(!dfEl)return;
+  const xs=linspace(-5,5,241);
+  const nd=xs.map(x=>normPdf(x,0,1));
+  const draw=function(){
+    const nu=parseInt(dfEl.value);
+    document.getElementById('t2-df-v').textContent=nu;
+    const td=xs.map(x=>tPdf(x,nu));
+    const tT={x:xs,y:td,mode:'lines',line:{color:C.accent,width:3}};
+    const tN={x:xs,y:nd,mode:'lines',line:{color:C.ink,width:2,dash:'dash'}};
+    const layout=baseLayout({
+      xaxis:{title:'x',range:[-5,5]},yaxis:{title:'密度',range:[0,0.45]},
+      annotations:[{x:-4.7,y:0.42,xanchor:'left',
+        text:'自由度 ν='+nu+(nu<=4?'　← 尾巴明显更厚':(nu>=25?'　← 几乎与正态重合':'')),
+        showarrow:false,font:{color:C.accent,family:'Fraunces',size:13}}]
+    });
+    Plotly.react('p-clt2',[tN,tT],layout,CONF);
+  };
+  dfEl.addEventListener('input',draw); draw();
+}
+function plotDelta(){
+  const nEl=document.getElementById('dl-n'), seg=document.getElementById('dl-seg');
+  if(!nEl)return;
+  let gtype='log';
+  const cfg={
+    log:{mu:2,sd:1,g:x=>Math.log(x),gp:x=>1/x,dom:[0.25,4.6]},
+    sq:{mu:1.5,sd:1,g:x=>x*x,gp:x=>2*x,dom:[-0.4,3.6]}
+  };
+  const draw=function(){
+    const n=parseInt(nEl.value);
+    document.getElementById('dl-n-v').textContent=n;
+    const c=cfg[gtype]; const sdIn=c.sd/Math.sqrt(n);
+    const sdOut=Math.abs(c.gp(c.mu))*sdIn;
+    const dom=c.dom; const xs=linspace(dom[0],dom[1],161);
+    const ys=xs.map(c.g);
+    let ymin=Math.min.apply(null,ys), ymax=Math.max.apply(null,ys);
+    const yPad=(ymax-ymin)*0.18; ymin-=yPad; ymax+=yPad;
+    const xPad=(dom[1]-dom[0])*0.04;
+    // input density along bottom (baseline at ymin)
+    const inX=linspace(c.mu-4*sdIn, c.mu+4*sdIn, 80);
+    const inPk=normPdf(c.mu,c.mu,sdIn);
+    const inScale=(ymax-ymin)*0.22/inPk;
+    const inY=inX.map(x=>ymin+normPdf(x,c.mu,sdIn)*inScale);
+    // output density along left (baseline at dom[0])
+    const outY=linspace(c.g(c.mu)-4*sdOut, c.g(c.mu)+4*sdOut, 80);
+    const outPk=normPdf(c.g(c.mu),c.g(c.mu),sdOut);
+    const outScale=(dom[1]-dom[0])*0.22/outPk;
+    const outX=outY.map(y=>dom[0]+normPdf(y,c.g(c.mu),sdOut)*outScale);
+    const curve={x:xs,y:ys,mode:'lines',line:{color:C.inkSoft,width:2.5}};
+    const inT={x:inX,y:inY,mode:'lines',line:{color:C.gold,width:2},fill:'tozeroy',
+      fillcolor:'rgba(183,137,42,.18)',hoverinfo:'skip'};
+    const outT={x:outX,y:outY,mode:'lines',line:{color:C.accent,width:2},
+      fill:'tozerox',fillcolor:'rgba(31,92,140,.18)',hoverinfo:'skip'};
+    const guideV={x:[c.mu,c.mu],y:[ymin,c.g(c.mu)],mode:'lines',line:{color:C.faint,width:1.5,dash:'dot'},hoverinfo:'skip'};
+    const guideH={x:[dom[0],c.mu],y:[c.g(c.mu),c.g(c.mu)],mode:'lines',line:{color:C.faint,width:1.5,dash:'dot'},hoverinfo:'skip'};
+    const layout=baseLayout({
+      xaxis:{title:'输入 X̄ₙ（金色：输入分布）',range:[dom[0]-xPad,dom[1]+xPad]},
+      yaxis:{title:'输出 g(X̄ₙ)（蓝色：输出分布）',range:[ymin,ymax]},
+      annotations:[{x:c.mu,y:c.g(c.mu),ax:30,ay:-26,text:'(μ, g(μ))',showarrow:true,
+        arrowcolor:C.inkSoft,font:{color:C.inkSoft,size:12,family:'Fraunces'}},
+        {x:dom[1],y:ymin+(ymax-ymin)*0.08,xanchor:'right',
+        text:'输出宽度 ≈ |g\u2032(μ)|·输入宽度',showarrow:false,
+        font:{color:C.inkSoft,size:12,family:'Fraunces'}}]
+    });
+    Plotly.react('p-delta',[curve,inT,outT,guideV,guideH],layout,CONF);
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); gtype=b.dataset.g; draw();});});
+  nEl.addEventListener('input',draw); draw();
+}
+
+/* ===================== PART VI ===================== */
+function plotTails(){
+  const dfEl=document.getElementById('tail-df'), kEl=document.getElementById('tail-k'),
+        seg=document.getElementById('tail-seg'), out=document.getElementById('tail-readout');
+  if(!dfEl)return;
+  let scaleMode='log';
+  const xs=linspace(-6,6,361);
+  const draw=function(){
+    const nu=parseFloat(dfEl.value), k=parseFloat(kEl.value);
+    document.getElementById('tail-df-v').textContent=nu;
+    document.getElementById('tail-k-v').textContent=k.toFixed(1);
+    const nd=xs.map(x=>normPdf(x,0,1));
+    const td=xs.map(x=>tPdf(x,nu));
+    const tN={x:xs,y:nd,mode:'lines',line:{color:C.inkSoft,width:2.5}};
+    const tT={x:xs,y:td,mode:'lines',line:{color:C.rust,width:3}};
+    const isLog=(scaleMode==='log');
+    const layout=baseLayout({
+      xaxis:{title:'x（标准化，单位 σ）',range:[-6,6]},
+      yaxis:{title:'密度'+(isLog?'（对数轴）':''),type:isLog?'log':'linear',
+        range:isLog?[-7,-0.2]:[0,0.45]},
+      shapes:[{type:'line',x0:k,x1:k,y0:0,y1:1,yref:'paper',line:{color:C.accent,width:1.5,dash:'dot'}},
+              {type:'line',x0:-k,x1:-k,y0:0,y1:1,yref:'paper',line:{color:C.accent,width:1.5,dash:'dot'}}],
+      annotations:[{x:-5.7,y:1,yref:'paper',yanchor:'top',xanchor:'left',
+        text:'灰=正态(瘦尾)　红=t,ν='+nu+'(肥尾)',showarrow:false,
+        font:{color:C.rust,family:'Fraunces',size:12.5}}]
+    });
+    Plotly.react('p-tails',[tN,tT],layout,CONF);
+    // tail probabilities (one-sided P(X>k))
+    const pN=1-normCdf(k);
+    const pT=tailIntegralPdf(function(x){return tPdf(x,nu);}, k, 200, 0.01);
+    const ratio= pT/Math.max(pN,1e-12);
+    if(out)out.innerHTML='超过 +'+k.toFixed(1)+'σ 的概率：正态 ≈ <b style="color:'+C.inkSoft+'">'+
+      pN.toExponential(2)+'</b>　|　肥尾 t(ν='+nu+') ≈ <b style="color:'+C.rust+'">'+
+      pT.toExponential(2)+'</b>　→　肥尾约是正态的 <b style="color:'+C.rust+'">'+
+      (ratio>=10?Math.round(ratio):ratio.toFixed(1))+' 倍</b>';
+  };
+  seg.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); scaleMode=b.dataset.s; draw();});});
+  dfEl.addEventListener('input',draw); kEl.addEventListener('input',draw); draw();
+}
+
+/* ===================== slider fill + nav ===================== */
+function wireSliderFill(){
+  const setFill=function(r){
+    const min=parseFloat(r.min), max=parseFloat(r.max), val=parseFloat(r.value);
+    const p=((val-min)/(max-min))*100;
+    r.style.setProperty('--p', p+'%');
+  };
+  document.querySelectorAll('input[type=range]').forEach(function(r){
+    setFill(r); r.addEventListener('input',function(){setFill(r);});
+  });
+}
+function wireNav(){
+  const menuBtn=document.getElementById('menuBtn'), scrim=document.getElementById('scrim');
+  if(menuBtn)menuBtn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',function(){document.body.classList.remove('nav-open');});
+  const links=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  links.forEach(function(a){a.addEventListener('click',function(){
+    document.body.classList.remove('nav-open');});});
+  // scroll spy
+  const map={};
+  links.forEach(function(a){const id=a.getAttribute('href');if(id&&id.length>1){
+    const sec=document.querySelector(id); if(sec)map[id]=sec;}});
+  const ids=Object.keys(map);
+  const onScroll=function(){
+    let cur=null, best=-1e9;
+    const top=window.scrollY+120;
+    ids.forEach(function(id){const off=map[id].offsetTop;
+      if(off<=top && off>best){best=off;cur=id;}});
+    links.forEach(function(a){a.classList.toggle('active', a.getAttribute('href')===cur);});
+  };
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+}
+
+/* ===================== INIT ===================== */
+function initPlots(){
+  const fns=[plotExp,plotVar,plotCov,plotCov3,plotTrap,plotMoment,plotAddvar,
+    plotProj,plotCE,plotTV,plotMGF,plotSum,plotCharf,
+    plotMarkov,plotCheby,plotCS,plotJensen,
+    plotConv,plotLLN,plotCLT,plotCLT2,plotDelta,
+    plotTails,plotMVN];
+  fns.forEach(function(f){try{f();}catch(e){if(window.console)console.error('plot error:',e);}});
+}
+function boot(){
+  try{renderMath();}catch(e){}
+  try{buildMap();}catch(e){if(window.console)console.error('map error:',e);}
+  try{wireSliderFill();}catch(e){}
+  try{wireNav();}catch(e){}
+  if(typeof Plotly!=='undefined'){ initPlots(); }
+  else{
+    let tries=0; const iv=setInterval(function(){tries++;
+      if(typeof Plotly!=='undefined'){clearInterval(iv);initPlots();}
+      else if(tries>40){clearInterval(iv);}
+    },150);
+  }
+}
+if(document.readyState==='complete'||document.readyState==='interactive'){
+  setTimeout(boot,60);
+}else{
+  window.addEventListener('load',boot);
+}
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,2027 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第三节 · Ch2–3 p33+ & Ch4 p1–23）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly (2D + 3D, interactive) -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F4ECDC;
+  --card:#FFFDF8;
+  --ink:#211E1A;
+  --ink-soft:#5A544B;
+  --ink-faint:#8C857A;
+  --line:#E4D8C2;
+  --line-strong:#D2C2A4;
+  --accent:#8A3A66;        /* 第三节主色：梅紫 / 拜占庭紫（从概率走向统计·推断与裁决） */
+  --accent-soft:#F1DEEA;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 检验 / 推导 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(40,30,15,.05), 0 8px 30px rgba(40,30,15,.06);
+  --shadow-lg:0 10px 50px rgba(40,30,15,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #F3E2EC 0%, rgba(243,226,236,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F3EAD7 0%, rgba(243,234,215,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,60px) 140px; max-width:980px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:300px; flex:0 0 300px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:308px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(20,15,8,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(33px,6vw,56px); line-height:1.02; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:66ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F7F1F4)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* plot containers */
+.plot{width:100%; height:360px}
+.plot.tall{height:430px}
+.plot.d3{height:460px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #DCC0D2; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(210,194,164,.16) 27px, rgba(210,194,164,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:880px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.04)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin:18px 0 8px}
+@media(max-width:860px){.guide{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:13px 14px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:20px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:8px 0 3px; font-size:15px}
+.gchip p{font-size:12.5px; color:var(--ink-soft); margin:0; line-height:1.5}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+.footer{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:13.5px}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第三节<small>用数据说话 — Ch2–3 p33+ & Ch4 p1–23</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图</a>
+    <a href="#spine"><span class="num">0</span>本节主线（承上启下）</a>
+
+    <h4>Ⅰ · 承上启下：Delta 方法</h4>
+    <a class="sub" href="#t-clt-recap"><span class="num">1.1</span>CLT 回顾与 Slutsky</a>
+    <a class="sub" href="#t-delta"><span class="num">1.2</span>Delta 方法（主结果）</a>
+    <a class="sub" href="#t-delta-proof"><span class="num">1.3</span>证明：Taylor + 余项对冲</a>
+    <a class="sub trap-link" href="#t-delta2"><span class="num">1.4</span>一阶导为零 → 二阶 Delta ⚠</a>
+
+    <h4>Ⅱ · 统计推断的地基</h4>
+    <a class="sub" href="#t-infer"><span class="num">2.1</span>推断是什么 · 统计模型 ℳ</a>
+    <a class="sub" href="#t-estimator"><span class="num">2.2</span>点估计 · 偏差 · 方差 · MSE</a>
+    <a class="sub" href="#t-bias-var"><span class="num">2.3</span>偏差–方差权衡</a>
+
+    <h4>Ⅲ · 经验 CDF 与置信带</h4>
+    <a class="sub" href="#t-edf"><span class="num">3.1</span>经验分布函数 F̂ₙ</a>
+    <a class="sub" href="#t-band"><span class="num">3.2</span>DKW 置信带</a>
+    <a class="sub" href="#t-mvcdf"><span class="num">3.3</span>多元经验 CDF</a>
+
+    <h4>Ⅳ · 统计泛函与插件</h4>
+    <a class="sub" href="#t-functional"><span class="num">4.1</span>统计泛函 T(F)</a>
+    <a class="sub" href="#t-plugin"><span class="num">4.2</span>插件估计 T(F̂ₙ)</a>
+
+    <h4>Ⅴ · Bootstrap 自助法</h4>
+    <a class="sub" href="#t-boot-why"><span class="num">5.1</span>动机 · 两层近似</a>
+    <a class="sub" href="#t-boot-validity"><span class="num">5.2</span>为何有效 · 何时失效 ⚠</a>
+    <a class="sub" href="#t-boot-ci"><span class="num">5.3</span>百分位 vs 枢轴区间</a>
+
+    <h4>Ⅵ · 随机变量生成</h4>
+    <a class="sub" href="#t-inverse"><span class="num">6.1</span>逆变换法</a>
+    <a class="sub" href="#t-reject"><span class="num">6.2</span>拒绝采样</a>
+    <a class="sub trap-link" href="#t-boxmuller"><span class="num">6.3</span>Box–Muller · 不相关≠独立 ⚠</a>
+
+    <h4>Ⅶ · 分布检验与两类错误</h4>
+    <a class="sub" href="#t-test-frame"><span class="num">7.1</span>推断 vs 检验 · 框架</a>
+    <a class="sub" href="#t-errors"><span class="num">7.2</span>两类错误与权衡</a>
+    <a class="sub" href="#t-locscale"><span class="num">7.3</span>位置-尺度族（自检）</a>
+
+    <h4>收束</h4>
+    <a href="#closing"><span class="num">∎</span>本节总览 · 通向第四节</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+  <p class="h-eyebrow">数理统计 · 直觉式交互讲义 · 第三节</p>
+  <h1 class="title cjk">用数据说话：<br>从「样本能逼近总体」到把总体真正<mark>估出来、再裁决</mark></h1>
+  <p class="lead muted" style="max-width:70ch">
+    第二节我们用大数定律和中心极限定理<b>证明了</b>「拿样本猜总体」为什么靠谱。第三节就把这条桥真正<b>走通</b>：先用
+    <a class="inlink" href="#t-delta">Delta 方法</a>把渐进正态从均值迁移到任意可微函数上；再彻底放下分布假设，用
+    <a class="inlink" href="#t-edf">经验 CDF</a>、<a class="inlink" href="#t-plugin">插件估计</a>、<a class="inlink" href="#t-boot-why">Bootstrap</a>
+    「只靠数据」把任意统计特征估出来并给出区间；最后用<a class="inlink" href="#t-test-frame">分布检验</a>对结论做出有概率保证的<b>裁决</b>。
+    每个知识点都配齐：<span class="kw">文字直觉 · 公式 · 案例 · 2D 图 · 3D 图 · 可拖动交互 · 盲点批判</span>。
+  </p>
+
+  <!-- ============ 阅读指南 ============ -->
+  <div class="guide">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>先建立"它到底在干嘛"的画面，再看符号。</p></div>
+    <div class="gchip case"><div class="ic">✎</div><h5>案例</h5><p>金融 / 医药 / 课堂原话，把抽象落到具体。</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5>2D 图</h5><p>看形状、看收敛、看面积。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>需要空间感时出现：曲面、随 n 演化、联合分布。可拖动旋转。</p></div>
+    <div class="gchip live"><div class="ic">⊹</div><h5>交互</h5><p>拖滑块、点按钮——亲手把参数推到极端去试。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>课堂说法里值得怀疑、容易踩坑的地方，直白指出。</p></div>
+  </div>
+
+  <!-- ============ 全景地图 ============ -->
+  <h2 id="map" class="topic" style="font-size:clamp(20px,3vw,26px); margin-top:46px">0 · 知识全景地图
+    <span style="font-family:Spectral;font-style:italic;font-weight:400;color:var(--ink-faint);font-size:16px"> — 点任意节点跳到对应讲解</span></h2>
+  <p class="muted" style="margin-bottom:14px">左边那根灰柱是<b>第二节的成果</b>（收敛 / CLT / Slutsky）；本节七个部分由它生长出来。<b>红框</b>是必须警惕的盲点。</p>
+  <div class="mapwrap">
+    <svg id="conceptmap" viewBox="0 0 1320 820" xmlns="http://www.w3.org/2000/svg" font-family="'Fraunces', serif">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#9b8f78"></path>
+        </marker>
+      </defs>
+      <g id="edges" stroke-width="1.8" fill="none" opacity=".72"></g>
+      <g id="nodes"></g>
+    </svg>
+    <div class="legend">
+      <span><i style="border-color:#3E7C4E"></i>推导 / 继承</span>
+      <span><i style="border-color:#8A3A66"></i>一般↔特例 / 应用</span>
+      <span><i style="border-color:#574AA6"></i>提供工具</span>
+      <span><i style="border-color:#B7892A"></i>造数→喂给上游</span>
+      <span><i style="border-color:#B0442B"></i>盲点 / 警示</span>
+    </div>
+  </div>
+
+  <!-- ============ 本节主线 ============ -->
+  <section class="topic-block" id="spine">
+    <h3 class="topic cjk">0 · 本节主线：一句话把七个部分串起来</h3>
+    <p class="topic-en">The spine of Session 3 — from "sampling works" to "estimate it, then judge it".</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一根主线</div>
+      <p>第二节的句号是 <b>Delta 方法</b>——它本属第 2–3 章，是"收敛工具"的最后一块。本节先把它讲透（作为<b>承上</b>），
+      然后正式进入<b>统计</b>（第 4 章）。统计与前几章"概率"最大的不同：<b>概率是"已知分布、推演数据"，统计是"已知数据、反推分布"</b>。</p>
+      <p style="margin-bottom:0">于是本节的逻辑链是：<br>
+      ① <a class="inlink" href="#t-delta">Delta</a>：把"均值渐进正态"升级成"任意可微函数渐进正态" →
+      ② <a class="inlink" href="#t-infer">地基</a>：说清我们在估什么、用什么标准（偏差/方差/MSE/一致性）→
+      ③ <a class="inlink" href="#t-edf">经验 CDF</a>：不做任何分布假设，把整条分布"堆"出来 →
+      ④ <a class="inlink" href="#t-plugin">插件</a>：把"用 F̂ₙ 替换 F"变成估计任意特征的通用配方 →
+      ⑤ <a class="inlink" href="#t-boot-why">Bootstrap</a>：当理论算不出方差/分布时，用重采样硬算出来 →
+      ⑥ <a class="inlink" href="#t-inverse">造数</a>：逆变换 / 拒绝采样 / Box–Muller——给 Bootstrap 和蒙特卡洛提供"原料" →
+      ⑦ <a class="inlink" href="#t-test-frame">检验</a>：对结论做出带概率保证的裁决，并直面两类错误。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>课堂原话（保留老师的口吻）</p>
+      <p style="margin-bottom:0">"前几章都是跟概率有关的，从第四章开始是跟统计有关的。统计解决两件事：一是研究总体或样本的数字特征，
+      二是<b>用样本去推导总体</b>的特征——因为总体对我们来说往往是未知的，是我们想求解的目标。
+      统计推断的核心，就一句话：<i>infer the distribution that generated the data</i>。"</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART I -->
+  <header class="part-head" id="part1">
+    <div class="pk">Ⅰ</div>
+    <h2 class="cjk">承上启下：Delta 方法</h2>
+    <p>第二节的最后一块。它把"均值的渐进正态"升级成"任意可微函数的渐进正态"——这是后面所有"先求渐进分布、再造置信区间/做检验"的发动机。读完你会明白它为什么叫 "Delta"（对冲）。</p>
+  </header>
+
+  <!-- 1.1 CLT 回顾 -->
+  <section class="topic-block" id="t-clt-recap">
+    <h3 class="topic cjk">1.1 先热身：CLT 两个版本 & 为什么 σ 换成 Sₙ 不影响</h3>
+    <p class="topic-en">Central limit theorem (v1 &amp; v2) and the Slutsky bridge.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承自第二节：<a href="#spine">收敛 / CLT</a></span>
+      <span class="rel tool"><span class="dot"></span>为 <a href="#t-delta">Delta</a> 铺路</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>CLT 说：iid 样本的均值 \(\bar X_n\)，无论原始分布长什么样，标准化后都会被"吸"成标准正态。版本一用真方差 \(\sigma\) 标准化；
+      版本二用<b>样本标准差 \(S_n\)</b>（实战里 \(\sigma\) 根本不知道）。神奇的是：两者极限<b>一模一样</b>。</p>
+      <p style="margin-bottom:0">为什么能随便换？因为 \(S_n \xrightarrow{P}\sigma\)（一致性），再由 <b>Slutsky 定理</b>："收敛到常数的东西"可以直接顶替进去，不改变极限分布。这正是下一节 Delta 证明里反复用到的拼装手法。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>版本一：\(\displaystyle \frac{\sqrt n(\bar X_n-\mu)}{\sigma}\xrightarrow{D} N(0,1)\)。
+      版本二：\(\displaystyle \frac{\sqrt n(\bar X_n-\mu)}{S_n}\xrightarrow{D} N(0,1)\)，其中 \(S_n=\sqrt{\tfrac{1}{n-1}\sum_{i=1}^n(X_i-\bar X_n)^2}\)。</p>
+      <p class="cap" style="margin-bottom:0">课件旁注：\(S_n^2\) 分母用 \(n-1\) 还是 \(n\) <b>都无所谓</b>——大样本下两者之比 \(\to 1\)。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 用 σ 还是 Sₙ？两条抽样分布几乎重合</div>
+      <p class="cap">底层总体故意取<b>指数分布</b>（强右偏）。每次抽 n 个、算标准化均值，重复很多次得到直方图。<b>蓝</b>=用真 σ 标准化，<b>紫</b>=用样本 Sₙ 标准化，黑线=标准正态。拖大 n 看两条如何一起贴上黑线——这就是 Slutsky。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">每次抽样的样本量 n <span class="val" id="clt-n-v">5</span></label><input type="range" id="clt-n" min="2" max="120" step="1" value="5"></div>
+        <button class="btn ghost" id="clt-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-cltrecap" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 1.2 Delta 主结果 -->
+  <section class="topic-block" id="t-delta">
+    <h3 class="topic cjk">1.2 Delta 方法：让"正态"穿过一个函数还是正态</h3>
+    <p class="topic-en">The delta method — pushing asymptotic normality through a differentiable map.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：<a href="#t-clt-recap">CLT</a> 的渐进正态</span>
+      <span class="rel general"><span class="dot"></span>类比：LOTUS / 链式法则的"渐进版"</span>
+      <span class="rel tool"><span class="dot"></span>工具：为 <a href="#t-estimator">CI</a> / <a href="#t-test-frame">检验</a> 提供函数的方差</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>你已经知道 \(\bar X_n\) 渐进正态。现在你关心的不是 \(\bar X_n\) 本身，而是它的某个函数 \(g(\bar X_n)\)——比如收益率取了对数、价格做了平方。
+      Delta 方法说：<b>只要 \(g\) 可微、\(g'(\mu)\neq0\)，那么 \(g(\bar X_n)\) 也是渐进正态的</b>，而且新方差只要把旧方差乘上 \([g'(\mu)]^2\)。</p>
+      <p style="margin-bottom:0">老师的两个比方：① 它像 <b>"懒人统计学家法则（LOTUS）"的渐进版</b>——不必重新推 \(g(\bar X_n)\) 的分布，直接套公式；② 它像 <b>链式法则</b>——在 \(\mu\) 处把 \(g\) 线性化，斜率 \(g'(\mu)\) 就是"放大倍数"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式（定理 3.11）</div>
+      <p>若 \(\displaystyle \frac{\sqrt n(Y_n-\mu)}{\sigma}\xrightarrow{D}N(0,1)\) 且 \(g\) 可微、\(g'(\mu)\neq0\)，则
+      \[\frac{\sqrt n\,[\,g(Y_n)-g(\mu)\,]}{|g'(\mu)|\,\sigma}\xrightarrow{D}N(0,1).\]
+      等价地：\(g(Y_n)\) 近似服从 \(\displaystyle N\!\Big(g(\mu),\ \frac{[g'(\mu)]^2\sigma^2}{n}\Big)\)。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 对数正态：\(W_n=e^{\bar X_n}\)</div>
+      <p>设 \(X_i\) iid，均值 \(\mu\)、方差 \(\sigma^2\)。取 \(g(x)=e^x\)，则 \(g'(x)=e^x\)，\(g'(\mu)=e^{\mu}\)。代入即得
+      \[W_n=e^{\bar X_n}\ \text{近似}\ N\!\Big(e^{\mu},\ \frac{e^{2\mu}\sigma^2}{n}\Big).\]
+      课堂语："正态肯定是渐进正态的，所以我们就能求出对数正态所服从的渐进分布"——指数、对数、幂这些函数都一招搞定。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 抽样分布 vs Delta 的正态近似</div>
+      <p class="cap">底层 \(X_i\) 取右偏分布。反复抽 n 个算 \(g(\bar X_n)\)，得到直方图（青）；红色平滑线是 Delta 给的 \(N(g(\mu),[g'(\mu)]^2\sigma^2/n)\)。换函数、拖 n，观察：n 越大越贴合；函数越弯（非线性越强），小 n 时偏差越明显。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="dl-n-v">20</span></label><input type="range" id="dl-n" min="3" max="200" step="1" value="20"></div>
+        <div class="ctrl"><label class="cjk">选函数 g</label>
+          <div class="seg" id="dl-seg">
+            <button data-g="exp" class="on">eˣ</button>
+            <button data-g="log">ln x</button>
+            <button data-g="sq">x²</button>
+            <button data-g="inv">1/x</button>
+          </div>
+        </div>
+        <button class="btn ghost" id="dl-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-delta" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 一个函数如何"推着"一团分布走（可拖动旋转）</div>
+      <p class="cap">这是 Delta 的几何本质："函数把输入的分布<b>推前（push-forward）</b>成输出的分布"。蓝色钟形铺在水平面上 = 输入 \(\bar X_n\sim N(\mu,\sigma^2/n)\)；金色曲线 = \(y=g(x)\)；紫色钟形立在右侧墙上 = 被 \(g\) 推过去的输出分布。拖 n 让输入钟变窄，你会看到：输入越集中在 \(\mu\) 附近，曲线在那段就越像它的<b>切线</b>，于是输出也越接近正态——这正是"线性化"。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n（越大输入越集中） <span class="val" id="d3-n-v">15</span></label><input type="range" id="d3-n" min="2" max="120" step="1" value="15"></div>
+      </div>
+      <div class="plotwrap"><div id="p-delta3" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 1.3 证明 -->
+  <section class="topic-block" id="t-delta-proof">
+    <h3 class="topic cjk">1.3 证明：Taylor 展开 + 把一阶项"对冲"掉</h3>
+    <p class="topic-en">Why it works — Taylor's theorem, a vanishing remainder, and Slutsky.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>用到：<a href="#t-clt-recap">Slutsky</a> / 连续映射 / 概率收敛</span>
+      <span class="rel general"><span class="dot"></span>解释 <a href="#t-delta2">为何 g′=0 要升二阶</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉：为什么叫 "Delta"？</div>
+      <p>老师点了个金融梗：学过期权/期货的人知道 <b>Delta = 对冲（hedge）</b>。证明的核心动作，就是用对冲把"函数增量"里的<b>一阶（线性）项</b>精准抵掉，只留下能收敛的部分。三步：</p>
+      <ol class="steps cjk">
+        <li><b>用导数的定义</b>把 \(g\) 在 \(\mu\) 处线性化：\(g(\mu+h)=g(\mu)+g'(\mu)h+r(h)h\)，余项系数 \(r(h)\to0\)。</li>
+        <li><b>令 \(h=Y_n-\mu\)</b>，乘上 \(\sqrt n/[g'(\mu)\sigma]\) 把式子整理成"主项 + 余项"。主项就是 \(\sqrt n(Y_n-\mu)/\sigma\)（已知 \(\to N(0,1)\)）。</li>
+        <li><b>证余项一概率收敛到 0</b>，再用 Slutsky 把它"扔掉"——剩下的就是标准正态。</li>
+      </ol>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>关键构造</div>
+      <p>定义 \(\displaystyle r(h)=\begin{cases}\dfrac{g(\mu+h)-g(\mu)}{h}-g'(\mu),&h\neq0\\[4pt]0,&h=0\end{cases}\)，则 \(\lim_{h\to0}r(h)=0\)，且 \(g(\mu+h)=g(\mu)+g'(\mu)h+r(h)h\)。</p>
+      <p style="margin-bottom:0">代 \(h=Y_n-\mu\)、整理：\(\displaystyle \frac{\sqrt n[g(Y_n)-g(\mu)]}{g'(\mu)\sigma}=\underbrace{\frac{\sqrt n(Y_n-\mu)}{\sigma}}_{\to N(0,1)}+\underbrace{[g'(\mu)]^{-1}r(Y_n-\mu)\cdot\frac{\sqrt n(Y_n-\mu)}{\sigma}}_{\xrightarrow{P}\,0}.\) 因 \(Y_n-\mu\xrightarrow{P}0\) ⇒ \(r(Y_n-\mu)\xrightarrow{P}0\)（连续映射），余项整体 \(\to0\)。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 线性化与"正在缩小的余项"</div>
+      <p class="cap">金色曲线 \(g(x)=e^x\)，红色虚线是它在 \(\mu\) 处的切线（一阶 Taylor）。灰色竖条 = 真实增量与切线之间的<b>余项 \(r(h)\cdot h\)</b>。拖动"邻域半径 h"把取值范围收窄——余项以比 h 更快的速度塌缩到 0。这就是大样本下"高阶项可忽略"的画面。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">邻域半径 h（≈ \(\bar X_n-\mu\) 的波动幅度） <span class="val" id="dp-h-v">1.20</span></label><input type="range" id="dp-h" min="0.05" max="2" step="0.05" value="1.2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-deltaproof" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="dp-info" style="margin-bottom:0">最大余项 ≈ —</p>
+    </div>
+  </section>
+
+  <!-- 1.4 二阶 Delta -->
+  <section class="topic-block" id="t-delta2">
+    <h3 class="topic cjk">1.4 当 \(g'(\mu)=0\)：一阶 Delta 失效，升到二阶</h3>
+    <p class="topic-en">Second-order delta method — and three honest caveats.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>由 <a href="#t-delta-proof">证明</a> 推广</span>
+      <span class="rel warn"><span class="dot"></span>盲点：放宽条件 / 大样本近似</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>一阶 Delta 的方差是 \([g'(\mu)]^2\sigma^2/n\)。如果恰好 \(g'(\mu)=0\)，这个方差变成 0——意思是"一阶看不出波动了"，得把放大镜调到<b>二阶</b>。此时主导的是 \(\tfrac12 g''(\mu)(Y_n-\mu)^2\)，而 \((Y_n-\mu)^2\) 的渐进分布是<b>卡方</b>，不再是正态。</p>
+      <p style="margin-bottom:0">课堂语："如果一阶导等于零，我们就用二阶 Delta 方法对冲——把二阶项消掉。它有一种<b>传递性</b>：一阶不行就上二阶。"这也回答了老师第一次讲时埋的伏笔——"\(g'(\mu)\neq0\) 这个限制其实可以放宽"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>若 \(g'(\mu)=0\) 但 \(g''(\mu)\neq0\)，则 \(\displaystyle n\,[\,g(\bar X_n)-g(\mu)\,]\xrightarrow{D}\frac{1}{2}g''(\mu)\,\sigma^2\,\chi^2_1.\)
+      注意标准化用的是 \(n\)（不是 \(\sqrt n\)）——收敛更慢，分布是<b>非对称的卡方</b>。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · \(g(x)=x^2\) 在 \(\mu=0\)</div>
+      <p>设 \(X_i\) iid、\(\mu=0\)、方差 \(\sigma^2\)。\(g'(0)=0\)。于是 \(g(\bar X_n)=\bar X_n^2\)，而 \(\displaystyle n\bar X_n^2=\Big(\frac{\sqrt n\,\bar X_n}{\sigma}\Big)^2\sigma^2\xrightarrow{D}\sigma^2\chi^2_1.\) 一阶 Delta 会错误地预测"方差为 0、退化成点"，二阶才给出正确的卡方形状。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · \(n\bar X_n^2\) 收敛到 \(\chi^2_1\)，不是正态</div>
+      <p class="cap">底层 \(X_i\sim N(0,1)\)。反复抽样、画 \(n\bar X_n^2\) 的直方图（青），红线是 \(\chi^2_1\) 密度，灰虚线是"一阶 Delta 误以为的正态"。拖 n：直方图始终贴<b>卡方</b>（右偏、堆在 0 附近），永远贴不上对称正态。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="d2-n-v">30</span></label><input type="range" id="d2-n" min="3" max="200" step="1" value="30"></div>
+        <button class="btn ghost" id="d2-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-delta2" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 三条别忘的前提</div>
+      <p>① <b>Delta 是大样本近似，不是恒等式。</b>有限样本下，非线性的 \(g\) 会带来系统偏差（与 <a class="inlink" href="#t-bias-var">Jensen 不等式</a>同向：凸函数让 \(\mathbb E[g(\bar X)]>g(\mathbb E\bar X)\)）。课堂说"大样本下高阶小项可忽略"——反过来说，<b>小样本时它们不可忽略</b>。</p>
+      <p>② <b>\(g'(\mu)=0\) 不是个罕见角落。</b>只要你估计的目标恰好落在 \(g\) 的极值点（比如方差、某些比率、在峰顶取值的函数），就会触发它，分布从正态跳到卡方——区间和检验都得改。</p>
+      <p style="margin-bottom:0">③ <b>"渐进正态"≠"对任何 n 都正态"。</b>它只保证 \(n\to\infty\) 的极限。工程上更稳的做法，是不依赖这些解析近似、直接用 <a class="inlink" href="#t-boot-why">Bootstrap</a> 把分布"重采样"出来——这正是第五部分要做的。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART II -->
+  <header class="part-head" id="part2">
+    <div class="pk">Ⅱ</div>
+    <h2 class="cjk">统计推断的地基</h2>
+    <p>正式进入统计。先把"我们到底在估什么、用什么尺子衡量好坏"说清楚：统计模型、点估计量、偏差、方差、均方误差、一致性。这套语言是后面经验 CDF、Bootstrap、检验共用的底座。</p>
+  </header>
+
+  <!-- 2.1 推断与模型 -->
+  <section class="topic-block" id="t-infer">
+    <h3 class="topic cjk">2.1 统计推断是什么 · 统计模型 ℳ（你的"地基"）</h3>
+    <p class="topic-en">Statistical inference and the statistical model.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>承接：概率"由分布推数据"的<b>反问题</b></span>
+      <span class="rel general"><span class="dot"></span>分叉 → <a href="#t-edf">非参数</a> / 参数两条路</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>统计推断 = <i>infer the distribution that generated the data</i>。你看到的只是样本，背后那台"生成数据的机器"（总体分布 \(F\)）是未知的，正是要反推的目标。</p>
+      <p style="margin-bottom:0">动手前要先选一个<b>统计模型 \(\mathcal M\)</b>——它是你认为"数据可能来自"的候选分布集合。老师把它叫做<b>"地基"</b>：地基（候选范围）打对了，后面才稳；打错了，楼盖得再漂亮也是歪的。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p><b>参数模型</b>：能用有限个参数刻画的分布集合，\(\mathcal M=\{f(x;\theta):\theta\in\Theta\}\)。例如正态族
+      \(\displaystyle \mathcal M=\Big\{\tfrac{1}{\sigma\sqrt{2\pi}}e^{-(x-\mu)^2/2\sigma^2}:\mu\in\mathbb R,\sigma>0\Big\}.\)</p>
+      <p style="margin-bottom:0"><b>非参数模型</b>：无法用有限个参数刻画，如 \(\mathcal M=\{\tilde F:\tilde F\text{ 是任意 CDF}\}\)。此后我们写 \(f(x;\theta)\) 强调"参数未知"，而非 \(f(x)\)。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 金融里的"无摩擦 / 完全市场"假设</div>
+      <p>做金融模型常假设"市场无摩擦""市场完全（信息瞬间被消化、无套利）"。大家都知道这不可能成立——那为什么还用？老师给了两个理由：① <b>假设=补充条件</b>，能让难题变得可推；② 假设能<b>指导思路</b>（"如果市场不完全，是不是就有套利？"）。代价是：<b>假设错了，地基就错了，整座模型大概率塌</b>。这就是"用假设"的双刃剑。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 参数模型 = 一条"被参数牵着走"的密度曲线族</div>
+      <p class="cap">参数模型的本质：整族分布只由少数旋钮决定。拖动 \(\mu,\sigma\)，看正态族里这一条密度如何被你"牵"着平移、胖瘦。<b>对比</b>：非参数不预设这条曲线长什么样——把自由度全交给数据（下一部分的经验 CDF）。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">位置参数 μ <span class="val" id="md-mu-v">0.0</span></label><input type="range" id="md-mu" min="-3" max="3" step="0.1" value="0"></div>
+        <div class="ctrl"><label class="cjk">尺度参数 σ <span class="val" id="md-s-v">1.0</span></label><input type="range" id="md-s" min="0.4" max="2.6" step="0.05" value="1"></div>
+      </div>
+      <div class="plotwrap"><div id="p-model" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>参数 vs 非参数 · 一表看清取舍</div>
+      <div class="scrollx">
+      <table class="tab cjk">
+        <tr><th></th><th>参数估计</th><th>非参数估计</th></tr>
+        <tr><td class="lbl">前提</td><td>假设属于某个分布族</td><td>不假设具体分布形式</td></tr>
+        <tr><td class="lbl">信息来源</td><td>数据 + 主观模型</td><td>完全靠数据说话</td></tr>
+        <tr><td class="lbl">优点</td><td>结论强、效率高、外推容易</td><td>稳健，假设错不了（因为没假设）</td></tr>
+        <tr><td class="lbl">风险 / 代价</td><td>假设错 → 系统性偏差</td><td>结论弱、收敛慢、要更多数据</td></tr>
+        <tr><td class="lbl">代表工具</td><td>正态族 + 极大似然（第四节）</td><td><a href="#t-edf">经验 CDF</a> / <a href="#t-boot-why">Bootstrap</a></td></tr>
+      </table>
+      </div>
+      <p class="cap" style="margin-bottom:0">课堂金句："你要想获得一些东西，就要失去一些东西。"——天下没有免费的强结论。</p>
+    </div>
+  </section>
+
+  <!-- 2.2 点估计/偏差/方差/MSE -->
+  <section class="topic-block" id="t-estimator">
+    <h3 class="topic cjk">2.2 点估计量 · 偏差 · 方差 · 均方误差</h3>
+    <p class="topic-en">Point estimator, bias, variance, MSE, consistency, confidence set.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：大数定律 → <b>一致性</b></span>
+      <span class="rel tool"><span class="dot"></span>被 <a href="#t-delta">Delta</a> 喂方差 / 被 <a href="#t-boot-why">Bootstrap</a> 估方差</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉：估计量是个"随机变量"</div>
+      <p>先分清两个词：<b>估计量（estimator）\(\hat\theta=\tau(X_1,\dots,X_n)\)</b> 是一个"公式/工具"，因为样本是随机的，它本身是<b>随机变量</b>；<b>估计值（estimate）</b> 是把具体数据代进去算出的那个数。</p>
+      <p style="margin-bottom:0">衡量一个估计量好坏，盯两件事：<b>偏差</b>（平均下来打偏多少 = 系统误差）和<b>方差</b>（每次结果抖动多大 = 随机波动）。把两者合成一个总分，就是<b>均方误差 MSE</b>。一致性则要求：样本越多，估计量越收敛到真值。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>偏差 \(\operatorname{bias}_F(\hat\theta)=\mathbb E_F(\hat\theta)-\theta\)；
+      均方误差 \(\displaystyle \mathbb E_F[(\hat\theta-\theta)^2]=\operatorname{bias}_F^2(\hat\theta)+\mathbb V_F(\hat\theta)\)。</p>
+      <p>一致性：\(\hat\theta_n\xrightarrow{P}\theta\)（\(n\to\infty\)）。</p>
+      <p style="margin-bottom:0">\(100(1-\alpha)\%\) 置信集：依赖数据、但不依赖 \(\theta\) 的集合 \(C\)，使 \(\mathbb P_F(\theta\in C)=1-\alpha\) 对所有 \(F\in\mathcal M\) 成立（下标 \(F\) 强调概率是相对真实 \(F\) 算的）。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 打靶图：偏差 vs 方差，MSE = 偏差² + 方差</div>
+      <p class="cap">靶心 = 真值 \(\theta\)。每个点 = 一次实验得到的估计值。<b>偏差</b>把整团点系统性推离靶心；<b>方差</b>让点散开。拖两个滑块，右上角实时显示 \(\text{MSE}=\text{偏差}^2+\text{方差}\) 的分解——你会发现：有时<b>略带偏差但方差很小</b>反而 MSE 更低（这正是下一节"权衡"的种子）。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">偏差（系统性打偏） <span class="val" id="bs-b-v">0.0</span></label><input type="range" id="bs-b" min="0" max="2.5" step="0.05" value="0"></div>
+        <div class="ctrl"><label class="cjk">标准差（随机抖动） <span class="val" id="bs-s-v">0.8</span></label><input type="range" id="bs-s" min="0.1" max="2" step="0.05" value="0.8"></div>
+        <button class="btn ghost" id="bs-resample">重新打靶</button>
+      </div>
+      <div class="plotwrap"><div id="p-bias" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="bs-info" style="margin-bottom:0">偏差² ≈ — ＋ 方差 ≈ — ＝ MSE ≈ —</p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 估计量的抽样分布如何随 n "收紧"（可拖动旋转）</div>
+      <p class="cap">横轴 = 估计值，纵深轴 = 样本量 n，高度 = 该 n 下抽样分布的密度。沿 n 往里走，山脊<b>越来越高、越来越窄</b>并锁定到真值——这就是<b>一致性</b>的立体画面；而每一层切片都近似正态，则是 <a class="inlink" href="#t-clt-recap">CLT</a> / <a class="inlink" href="#t-delta">Delta</a> 的功劳。把概率收敛和渐进正态<b>一张图说清</b>。</p>
+      <div class="plotwrap"><div id="p-sampsurf" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 2.3 偏差方差权衡 -->
+  <section class="topic-block" id="t-bias-var">
+    <h3 class="topic cjk">2.3 偏差–方差权衡：为什么不能两头都要</h3>
+    <p class="topic-en">The bias–variance tradeoff.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>由 <a href="#t-estimator">MSE 分解</a> 而来</span>
+      <span class="rel warn"><span class="dot"></span>盲点：MSE 等权 / 一致性≠无偏</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>偏差和方差常常<b>此消彼长</b>。老师的因果链很清楚：<b>假设越强（模型越"自信"）→ 方差越小，但偏差风险越大</b>；反之，假设越弱（越"谦虚"）→ 偏差小，但方差大。MSE 把两者加起来，于是存在一个"刚刚好"的折中点——既不过度自信，也不过度谦虚。</p>
+      <p style="margin-bottom:0">对你（ML / 因果背景）这就是<b>欠拟合 ↔ 过拟合</b>的同一枚硬币：模型太简单=高偏差，模型太复杂=高方差。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p style="margin-bottom:0">\(\operatorname{MSE}(\hat\theta)=\underbrace{\operatorname{bias}^2(\hat\theta)}_{\text{随复杂度↓}}+\underbrace{\mathbb V(\hat\theta)}_{\text{随复杂度↑}}\)。
+      最优复杂度在 \(\dfrac{d}{d(\text{复杂度})}\operatorname{MSE}=0\) 处，即两条曲线的"边际变化"相互抵消的地方。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 三条曲线与那个最低点</div>
+      <p class="cap">横轴 = 模型复杂度 / 假设强度（左=强假设，右=弱假设）。<span style="color:#B7892A">金</span>=偏差²（强假设处可能很大），<span style="color:#1F6B66">青</span>=方差（弱假设处涨上去），<span style="color:#8A3A66">紫</span>=两者之和 MSE，呈 U 形。拖滑块挪动"当前选择"的竖线，右下角读出此处的三个值。把竖线推到 U 形谷底，就是 MSE 最优。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">当前复杂度 / 假设强度（左强→右弱） <span class="val" id="bv-c-v">0.50</span></label><input type="range" id="bv-c" min="0.02" max="0.98" step="0.01" value="0.5"></div>
+      </div>
+      <div class="plotwrap"><div id="p-biasvar" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="bv-info" style="margin-bottom:0">偏差² ≈ — ｜ 方差 ≈ — ｜ MSE ≈ —</p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 几处别被"标准说法"带偏</div>
+      <p>① <b>"统计里大样本除了费钱费时间，没有缺点"——只在"模型设定正确"时成立。</b>课堂这句话在纯统计（有大数定律兜底）里没错；但在你做的<b>因果推断 / ML</b> 里，如果存在<b>混淆、选择偏差、模型误设</b>，样本再多也只会把你<b>更精确地推向错误答案</b>——方差被压到 0，偏差却不动。"信息越多算得越准"的前提是<b>方法本身无系统性错误</b>；否则正如老师自己说的："为什么我掌握的信息越多，算得越不准？那是方法存在问题。"</p>
+      <p>② <b>MSE 把偏差²和方差等权相加，是一种"默认审美"，不是真理。</b>在决策里两类误差的代价往往不同（见 <a class="inlink" href="#t-errors">两类错误</a>）。该用加权风险时，最优折中点会移动。</p>
+      <p style="margin-bottom:0">③ <b>一致性 ≠ 无偏。</b>一致性是 \(n\to\infty\) 的极限性质；一个估计量可以"对每个有限 n 都有偏"、却仍然一致（偏差随 n 消失）。别把"渐进无偏 / 一致"当成"无偏"用。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART III -->
+  <header class="part-head" id="part3">
+    <div class="pk">Ⅲ</div>
+    <h2 class="cjk">经验 CDF 与置信带</h2>
+    <p>本课程唯一的非参数估计：完全不假设分布形式，直接把整条分布"堆"出来。再用一条置信带，诚实地量出"我堆出来的 CDF 离真相有多远"。</p>
+  </header>
+
+  <!-- 3.1 经验分布函数 -->
+  <section class="topic-block" id="t-edf">
+    <h3 class="topic cjk">3.1 经验分布函数 F̂ₙ：让数据自己画出 CDF</h3>
+    <p class="topic-en">The empirical distribution function.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：弱大数定律</span>
+      <span class="rel general"><span class="dot"></span>非参数主力 · 通向 <a href="#t-plugin">插件</a> / <a href="#t-boot-why">Bootstrap</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>不知道总体长啥样？那就别假设。经验 CDF 的做法朴素到极致：<b>在每个样本点上放 \(1/n\) 的概率质量</b>，于是分布函数就是一条<b>阶梯</b>——每遇到一个数据点就往上跳 \(1/n\)。它<b>不假设</b>总体连续还是离散、是正态还是别的，纯粹从样本"堆"出来。</p>
+      <p style="margin-bottom:0">代价（老师反复强调）：<b>结论弱</b>。因为它最"公平"、不带任何先验，所以也无法借助假设去外推——稳健是用"结论强度"换来的。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式（定义 4.1）</div>
+      <p>\(\displaystyle \hat F_n(x)=\frac1n\sum_{i=1}^n \mathbf 1(X_i\le x)\)，即"\(\le x\) 的样本比例"。</p>
+      <p style="margin-bottom:0">弱大数定律保证逐点收敛：\(\hat F_n(x)\xrightarrow{P}F(x)\)。把 \(F(x)=\mathbb E[\mathbf 1(X\le x)]\) 写成期望，再对每个 \(x\) 用大数定律即可——经验 CDF 收敛到真 CDF。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 阶梯随 n 逼近真 CDF</div>
+      <p class="cap">底层真分布（黑色光滑线）可切换。<span style="color:#8A3A66">紫色阶梯</span> = 经验 CDF \(\hat F_n\)，小圆点是样本落点。拖大 n：台阶越来越细，整条阶梯越贴越紧地包住黑线——这就是 \(\hat F_n\xrightarrow{P}F\)。点"重新抽样"感受随机波动。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="edf-n-v">12</span></label><input type="range" id="edf-n" min="3" max="300" step="1" value="12"></div>
+        <div class="ctrl"><label class="cjk">真分布</label>
+          <div class="seg" id="edf-seg"><button data-d="norm" class="on">正态</button><button data-d="exp">指数</button><button data-d="bi">双峰</button></div>
+        </div>
+        <button class="btn ghost" id="edf-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-edf" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 3.2 置信带 -->
+  <section class="topic-block" id="t-band">
+    <h3 class="topic cjk">3.2 DKW 置信带：诚实地圈出"误差范围"</h3>
+    <p class="topic-en">The DKW confidence band for the CDF.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>由 <a href="#t-edf">经验 CDF</a> 加一条误差带</span>
+      <span class="rel warn"><span class="dot"></span>盲点：同时覆盖 ≠ 逐点区间</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>经验 CDF 是估计，估计就有误差。置信带在 \(\hat F_n\) 上下各留一条缝 \(\varepsilon_n\)，宣称："真 CDF \(F\) 有 \(1-\alpha\) 的把握<b>整条都</b>落在这条带子里"。带宽由<b>置信水平 \(\alpha\)</b> 和<b>样本量 \(n\)</b> 共同决定：要更有把握（\(\alpha\) 小）就更宽，样本越多就越窄。</p>
+      <p style="margin-bottom:0">注意"<b>整条都</b>"三个字——这是 <b>同时（uniform）</b>覆盖，比"某一点的区间"强得多，也宽一些。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>\(L(x)=\max\{\hat F_n(x)-\varepsilon_n,\,0\}\)，\(U(x)=\min\{\hat F_n(x)+\varepsilon_n,\,1\}\)，其中
+      \(\displaystyle \varepsilon_n=\sqrt{\frac{\log(2/\alpha)}{2n}}.\)</p>
+      <p style="margin-bottom:0">保证：\(\displaystyle \mathbb P\big[L(x)\le F(x)\le U(x)\ \text{对所有 } x\big]\ge 1-\alpha.\) 注意 \(\varepsilon_n\) 与 \(x\) 无关——带宽处处相同，随 \(n\) 以 \(1/\sqrt n\) 收窄。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 经验 CDF + 置信带，真 CDF 是否被罩住？</div>
+      <p class="cap">紫阶梯=\(\hat F_n\)，紫色阴影=置信带 \([L,U]\)，黑线=真 CDF。拖 n（变窄）、拖 \(\alpha\)（越小越宽）。带宽 \(\varepsilon_n\) 实时显示。多点几次"重新抽样"：绝大多数时候黑线整条都在带内——失手的频率应当 ≤ \(\alpha\)。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="bd-n-v">25</span></label><input type="range" id="bd-n" min="5" max="400" step="1" value="25"></div>
+        <div class="ctrl"><label class="cjk">显著性水平 α <span class="val" id="bd-a-v">0.05</span></label><input type="range" id="bd-a" min="0.01" max="0.4" step="0.01" value="0.05"></div>
+        <button class="btn ghost" id="bd-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-band" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="bd-info" style="margin-bottom:0">带宽 εₙ ≈ — ｜ 本次真 CDF 是否整条在带内：—</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · "同时覆盖"到底意味着什么：跑很多次实验数一数</div>
+      <p class="cap">点按钮自动跑 200 次独立实验，每次都判断"真 CDF 是否<b>整条</b>落在置信带内"。下面的条形显示<b>整体覆盖率</b>——它应当 ≥ \(1-\alpha\)（这里目标 0.95）。这就是 DKW 的"同时"含义：不是某个 x 处 95%，而是对所有 x 一起 95%。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">每次实验样本量 n <span class="val" id="bc-n-v">40</span></label><input type="range" id="bc-n" min="10" max="200" step="5" value="40"></div>
+        <button class="btn accent" id="bc-run">跑 200 次实验</button>
+      </div>
+      <div class="plotwrap"><div id="p-bandcov" class="plot" style="height:200px"><div class="loading">点上方按钮开始</div></div></div>
+      <p class="cap readout" id="bc-info" style="margin-bottom:0">尚未运行</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>课堂原话 · 论文里画置信带的"小心机"</p>
+      <p style="margin-bottom:0">"我同门发现，发统计/概率相关的文章，<b>带置信带的接收概率更高</b>。我理解是因为它更科学——没把话说满，直观展示了经验结果和真实结果的差距，相当于<b>不藏着掖着、主动暴露问题</b>。就像论文答辩故意留几个问题等专家提问，他发现这个问题被你大大方方化解了，就觉得没有别的问题了。但前提是<b>带子一定要收窄</b>。"</p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 三处要小心</div>
+      <p>① <b>"画置信带→更容易被接收"是个人观察，老师自己也承认"没经过广泛验证"。</b>把它当作一种"诚实展示不确定性"的<b>好习惯</b>来学是对的；但别当成"投稿技巧"或因果规律——接收与否取决于内容，审稿大牛"你藏成什么样他都看得出来"。</p>
+      <p>② <b>同时覆盖（uniform band）≠ 逐点置信区间。</b>DKW 带保证"所有 \(x\) 一起落在带内的概率 ≥ \(1-\alpha\)"。如果你只关心某一个 \(x_0\) 处的 \(F(x_0)\)，逐点区间会<b>更窄</b>；反过来，拿逐点区间去说"整条曲线被覆盖"会高估把握。两者含义不同，别混用。</p>
+      <p style="margin-bottom:0">③ <b>小样本时带子非常宽。</b>\(\varepsilon_n\propto1/\sqrt n\)：\(n=10,\alpha=0.05\) 时 \(\varepsilon_n\approx0.43\)——带宽几乎横跨整个 \([0,1]\)，等于"几乎没约束"。所以"带子要收窄"不只是好看，而是结论<b>有没有信息量</b>的底线。</p>
+    </div>
+  </section>
+
+  <!-- 3.3 多元经验 CDF -->
+  <section class="topic-block" id="t-mvcdf">
+    <h3 class="topic cjk">3.3 多元经验 CDF：把阶梯升到曲面</h3>
+    <p class="topic-en">Multivariate CDF and multivariate empirical CDF.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>一元 → 多元的推广</span>
+      <span class="rel tool"><span class="dot"></span>为多维 <a href="#t-plugin">插件</a> / <a href="#t-boot-ci">Bootstrap</a> 服务</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>把一维那套搬到多维：随机向量 \(X=(X_1,\dots,X_k)\) 的多元 CDF 是"所有分量同时 \(\le\) 对应阈值"的概率。多元经验 CDF 同样在每个数据点放 \(1/n\)，于是它是一座<b>逐级上升的阶梯曲面</b>——你越往右上角走（两个阈值都放大），罩住的样本比例越高，曲面越接近 1。</p>
+      <p style="margin-bottom:0">老师的提醒：一元是多元的特例，推导思路（独立同分布 ⇒ 联合 = 边缘乘积）完全一致；"只要不是无穷维，基本都能这样延展"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式（定义 4.2 / 4.3）</div>
+      <p>多元 CDF：\(F(x)=\mathbb P(X\le x)=\mathbb P(X_1\le x_1,\dots,X_k\le x_k)\)（这里 \(X\le x\) 指逐分量都 \(\le\)）。</p>
+      <p style="margin-bottom:0">多元经验 CDF：\(\displaystyle \hat F_n(x)=\frac1n\sum_{i=1}^n\mathbf 1(X^i\le x)\) = "所有分量都 \(\le x\) 的样本比例"。</p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 二元经验 CDF 阶梯曲面（可拖动旋转）</div>
+      <p class="cap">这是 \(\hat F_n(x,y)\) 的真身：一座从 \((-\infty)\) 角的 0 爬到 \((+\infty)\) 角的 1 的<b>台阶状曲面</b>，每个样本点把它的"东北象限"整体抬高 \(1/n\)。拖<b>样本量 n</b>看台阶变细、曲面变光滑；拖<b>相关系数 ρ</b>看样本云从圆变扁，曲面的"爬升路线"随之倾斜。旋转它，从正上方看就是散点，从侧面看就是阶梯。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="mv-n-v">60</span></label><input type="range" id="mv-n" min="15" max="400" step="5" value="60"></div>
+        <div class="ctrl"><label class="cjk">相关系数 ρ <span class="val" id="mv-r-v">0.50</span></label><input type="range" id="mv-r" min="-0.9" max="0.9" step="0.05" value="0.5"></div>
+        <button class="btn ghost" id="mv-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-mvcdf" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART IV -->
+  <header class="part-head" id="part4">
+    <div class="pk">Ⅳ</div>
+    <h2 class="cjk">统计泛函与插件估计</h2>
+    <p>把"均值、方差、分位数……"统一成一个概念：分布的泛函 T(F)。然后给出一招通吃的估计配方——把真分布 F 换成经验分布 F̂ₙ。这把"样本替代总体"做成了流水线。</p>
+  </header>
+
+  <!-- 4.1 统计泛函 -->
+  <section class="topic-block" id="t-functional">
+    <h3 class="topic cjk">4.1 统计泛函 T(F)：把"整条分布"压成一个数</h3>
+    <p class="topic-en">Statistical functionals.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>统一描述均值/方差/分位数</span>
+      <span class="rel tool"><span class="dot"></span>被 <a href="#t-plugin">插件</a> / <a href="#t-boot-why">Bootstrap</a> 直接套用</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>泛函（functional）就是"<b>吃进一个函数，吐出一个数</b>"的机器。老师当年照顾你计算机背景的粗略讲法："把一个东西（这里是分布/CDF）映成一个数。"</p>
+      <p style="margin-bottom:0">于是<b>任何由分布决定的特征</b>——均值、方差、中位数、任意分位数、偏度、相关系数——都可以写成 \(T(F)\)。它们不是孤立的公式，而是同一台机器读取分布的不同"刻度"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>均值 \(\mu=\int_{\mathbb R}x\,dF(x)\)；方差 \(\sigma^2=\int_{\mathbb R}(x-\mu)^2\,dF(x)\)；\(q\) 分位数
+      \(F^{-1}(q)=\inf\{x:F(x)\ge q\}\)。它们都是 \(T(F)\) 的具体例子。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 同一台机器读出三个刻度</div>
+      <p class="cap">拖"偏度"把分布从对称推向右偏。竖线分别标出 <span style="color:#8A3A66">均值 \(\int x\,dF\)</span>、<span style="color:#1F6B66">中位数（0.5 分位）</span> 和你选的<span style="color:#B7892A">分位数</span>。观察：对称时均值=中位数重合；一旦右偏，<b>均值被尾巴拉到中位数右边</b>——这正说明"泛函是对整条分布的读取，对形状敏感"。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">偏度（0=对称 → 右偏） <span class="val" id="fn-sk-v">0.0</span></label><input type="range" id="fn-sk" min="0" max="0.95" step="0.05" value="0"></div>
+        <div class="ctrl"><label class="cjk">看哪个分位数 q <span class="val" id="fn-q-v">0.90</span></label><input type="range" id="fn-q" min="0.05" max="0.95" step="0.05" value="0.9"></div>
+      </div>
+      <div class="plotwrap"><div id="p-func" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 4.2 插件估计 -->
+  <section class="topic-block" id="t-plugin">
+    <h3 class="topic cjk">4.2 插件估计 T(F̂ₙ)：把真分布换成经验分布</h3>
+    <p class="topic-en">The plug-in estimator.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>用 <a href="#t-edf">经验 CDF</a> 替换真 CDF</span>
+      <span class="rel general"><span class="dot"></span>通用配方 → 通向 <a href="#t-boot-why">Bootstrap</a></span>
+      <span class="rel warn"><span class="dot"></span>盲点：可能有偏 / 极值失效</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉：一座"样本替代总体"的桥</div>
+      <p>有了泛函 \(T(F)\)，估计就只剩一步：<b>把不知道的真分布 \(F\) 换成知道的经验分布 \(\hat F_n\)</b>，得到 \(\hat\theta_n=T(\hat F_n)\)。老师的话："没有总体均值，就用样本均值替代；没有总体方差，用样本方差；没有总体分位数，用样本分位数——只要 \(n\to\infty\) 它就有收敛性。"</p>
+      <p style="margin-bottom:0">这就是"样本替代总体"的<b>桥</b>：不保证和真值完全相等，但是一个"可接受、且会随数据变多越来越准"的方案。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式（定义 4.4）</div>
+      <p>插件估计：\(\hat\theta_n=T(\hat F_n)\)。对<b>线性泛函</b> \(T(F)=\int r(x)\,dF(x)\)，插件就退化成样本平均：
+      \(\displaystyle T(\hat F_n)=\int r(x)\,d\hat F_n(x)=\frac1n\sum_{i=1}^n r(X_i).\)</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 样本相关系数 = 总体相关系数的插件</div>
+      <p>相关系数 \(\rho\) 可写成几个矩泛函的组合：\(\displaystyle \rho=\frac{T_3-T_1T_2}{\sqrt{(T_4-T_1^2)(T_5-T_2^2)}}\)，其中 \(T_1=\int x\,dF,\,T_2=\int y\,dF,\,T_3=\int xy\,dF,\dots\)。把每个 \(T_j(F)\) 都换成 \(T_j(\hat F_n)\)，化简后正是你熟悉的
+      \(\displaystyle \hat\rho=\frac{\sum(X_i-\bar X)(Y_i-\bar Y)}{\sqrt{\sum(X_i-\bar X)^2}\sqrt{\sum(Y_i-\bar Y)^2}}.\) ——所谓"样本相关系数"，本质就是相关系数泛函的插件估计。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 插件估计随 n 收敛到真值</div>
+      <p class="cap">真分布固定（真值在图上用黑虚线标出）。选一个泛函（均值/方差/中位数），从同一总体不断抽更大的样本，画出插件估计 \(T(\hat F_n)\) 随 n 的轨迹（紫点连线）。拖 n / 重新抽样：轨迹会<b>抖动着收敛</b>到黑线——这就是插件估计的一致性。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">最大样本量 n <span class="val" id="pg-n-v">300</span></label><input type="range" id="pg-n" min="20" max="2000" step="20" value="300"></div>
+        <div class="ctrl"><label class="cjk">看哪个泛函</label>
+          <div class="seg" id="pg-seg"><button data-t="mean" class="on">均值</button><button data-t="var">方差</button><button data-t="med">中位数</button></div>
+        </div>
+        <button class="btn ghost" id="pg-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-plugin" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 插件不是"免费且完美"的</div>
+      <p>① <b>插件常常有偏（哪怕一致）。</b>最经典的例子：方差泛函的插件给出 \(\frac1n\sum(X_i-\bar X)^2\)，分母是 \(n\) 不是 \(n-1\)——它<b>系统性低估</b>真方差（这就是为什么样本方差常用 \(n-1\) 纠偏）。偏差随 \(n\) 消失，但有限样本里真实存在。</p>
+      <p>② <b>只有"光滑/连续"的泛函才有漂亮的渐进性质。</b>均值、方差这类对分布"平滑依赖"的泛函好办；像<b>众数</b>、密度值这种对分布形状高度敏感的，插件可能收敛很慢或不稳定。</p>
+      <p style="margin-bottom:0">③ <b>极值类泛函直接失效。</b>比如"总体上确界 / 最大值"，它由分布的尾端单点决定，而 \(\hat F_n\) 的支撑被样本最大值卡死——插件估计永远低估且不收敛到正确的极限分布。这也预告了下一部分 <a class="inlink" href="#t-boot-validity">Bootstrap 的失效场景</a>。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART V -->
+  <header class="part-head" id="part5">
+    <div class="pk">Ⅴ</div>
+    <h2 class="cjk">Bootstrap 自助法</h2>
+    <p>当理论算不出方差或分布时（比如中位数的方差），Bootstrap 用"重采样"把它<b>硬算出来</b>。核心是一句话：把"用 F̂ₙ 替换 F"再叠一层蒙特卡洛。它的威力和它的失效边界，一样重要。</p>
+  </header>
+
+  <!-- 5.1 动机 + 两层近似 -->
+  <section class="topic-block" id="t-boot-why">
+    <h3 class="topic cjk">5.1 动机：不是"算得准不准"，是"能不能算出来"</h3>
+    <p class="topic-en">Why bootstrap — the two-layer approximation.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：<a href="#t-plugin">插件</a>"替换"思想</span>
+      <span class="rel tool"><span class="dot"></span>工具：蒙特卡洛 + <a href="#t-inverse">造数</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>均值的方差有现成公式 \(\sigma^2/n\)。可<b>中位数的方差</b>呢？分位数的方差呢？很多统计量根本没有干净的解析方差。老师点破要害："Bootstrap 解决的不是<b>算得准不准</b>的问题，而是<b>能不能算出来</b>的问题。"</p>
+      <p style="margin-bottom:0">思路朴素得惊人：理论上方差 \(\mathbb V_F(T_n)\) 要对"真分布 \(F\) 反复生成数据"才能算——可 \(F\) 未知。那就分两步替代：① 用<b>经验分布 \(\hat F_n\)</b> 替换 \(F\)（这是插件思想）；② 从 \(\hat F_n\) 里<b>有放回地重采样</b>很多次，用这些"重采样统计量"的离散程度去近似方差。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>两层近似（核心公式）</div>
+      <p style="margin-bottom:0">\[\underbrace{\mathbb V_F(T_n)}_{\text{真方差(想要)}}\ \approx\ \underbrace{\mathbb V_{\hat F_n}(T_n)}_{\text{用 }\hat F_n\text{ 替换 }F}\ \approx\ \underbrace{v_{\text{boot}}=\frac1B\sum_{b=1}^B\Big(T_n^{*b}-\overline{T_n^{*}}\Big)^2}_{\text{重采样 }B\text{ 次的蒙特卡洛}}.\]
+      第一个 \(\approx\) 的误差<b>由原样本量 \(n\) 控制</b>（\(\hat F_n\) 离 \(F\) 多近）；第二个 \(\approx\) 的误差<b>由重采样次数 \(B\) 控制</b>（蒙特卡洛噪声）。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⇲</span>把两层近似画成一条流水线</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:'Fraunces';font-size:14px;margin:6px 0">
+        <div style="border:1.5px solid var(--rust);border-radius:10px;padding:8px 12px;background:#fff"><b>真分布 F</b><br><span style="font-size:12px;color:var(--ink-faint)">未知 · 想要 V<sub>F</sub>(Tₙ)</span></div>
+        <div style="text-align:center;color:var(--green);min-width:120px"><div style="font-size:12px;color:var(--ink-soft)">① 替换<br>误差 ~ 1/n</div>→</div>
+        <div style="border:1.5px solid var(--teal);border-radius:10px;padding:8px 12px;background:#fff"><b>经验分布 F̂ₙ</b><br><span style="font-size:12px;color:var(--ink-faint)">已知 · 由样本堆出</span></div>
+        <div style="text-align:center;color:var(--green);min-width:120px"><div style="font-size:12px;color:var(--ink-soft)">② 蒙特卡洛<br>误差 ~ 1/√B</div>→</div>
+        <div style="border:1.5px solid var(--accent);border-radius:10px;padding:8px 12px;background:#fff"><b>v<sub>boot</sub></b><br><span style="font-size:12px;color:var(--ink-faint)">重采样 B 次算出</span></div>
+      </div>
+      <p class="cap" style="margin-bottom:0">想减小误差：第一层要<b>更多原始数据（n↑）</b>，第二层只要<b>多跑几轮重采样（B↑）</b>——而 B 是你免费能加的（多算一会儿就行），n 往往是花钱买的。这个区别下一小节会用 3D 看清。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 求"全校身高中位数"的波动</div>
+      <p>老师的比方：你只测了一个班（样本），想知道"如果重测很多次，中位数会抖多大"。你没法真的把全校测很多遍。于是把这个班的数据当成一个"小总体"，<b>有放回地重抽很多个同样大小的班</b>，每个班算一个中位数——这些中位数的散布，就近似了中位数估计的波动。"分位数这种东西，你得有<b>很多个值</b>才能看出它的分布，Bootstrap 正好造得出来。"</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 亲手做一次 Bootstrap：重采样分布长出来了</div>
+      <p class="cap">上方<b>固定一份原始样本</b>（灰色须状点）。每次重采样 = 从这份数据里<b>有放回</b>地抽同样多个、算一个统计量 \(T_n^{*}\)。重复 B 次得到<b>Bootstrap 分布</b>（紫色直方图），它的标准差就是估计量的标准误。换统计量（均值/中位数/0.9分位）、拖 B、点重采样，看分布如何成形——注意<b>中位数/分位数</b>的 Bootstrap 分布常呈"梳齿状"，因为它只能取原始数据里的若干值。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">重采样次数 B <span class="val" id="bw-B-v">600</span></label><input type="range" id="bw-B" min="50" max="3000" step="50" value="600"></div>
+        <div class="ctrl"><label class="cjk">统计量 Tₙ</label>
+          <div class="seg" id="bw-seg"><button data-t="mean" class="on">均值</button><button data-t="med">中位数</button><button data-t="q90">0.9 分位</button></div>
+        </div>
+        <button class="btn ghost" id="bw-resample">换一份原始样本</button>
+      </div>
+      <div class="plotwrap"><div id="p-boot" class="plot tall"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 5.2 为何有效 + 失效 -->
+  <section class="topic-block" id="t-boot-validity">
+    <h3 class="topic cjk">5.2 为什么有效 · 何时会失效</h3>
+    <p class="topic-en">Why it works, and when it breaks.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>有效性来自 <a href="#t-edf">F̂ₙ → F</a></span>
+      <span class="rel warn"><span class="dot"></span>盲点：极值 / 重尾 / 小 n / B≠n</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉：两层误差，来源完全不同</div>
+      <p>有效性的逻辑：因为 \(\hat F_n\xrightarrow{P}F\)（经验 CDF 收敛到真 CDF），所以"在 \(\hat F_n\) 上算的方差"会逼近"在 \(F\) 上算的方差"——<b>第一层误差靠 n 消失</b>。而第二层只是用有限次重采样去逼近"在 \(\hat F_n\) 上的理论方差"，<b>多重采样几次（B 大）就能压下去</b>。</p>
+      <p style="margin-bottom:0">关键认知：<b>B 和 n 不是一回事。</b>B 大只能消掉蒙特卡洛噪声，<b>救不了"原始样本太小/太偏"带来的第一层误差</b>。下面用 3D 把这两条误差轴分开看。</p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · \(v_{\text{boot}}\) 在 (n, B) 平面上的两条误差轴（可拖动旋转）</div>
+      <p class="cap">竖轴 = Bootstrap 算出的方差估计 \(v_{\text{boot}}\)。<b>红色水平面</b>=真方差（目标）。曲面是 \(v_{\text{boot}}(n,B)\)：沿 <b>B 轴（一个方向）</b>走，曲面的<b>上下抖动</b>变小但<b>平均高度不变</b>——这是蒙特卡洛噪声被 B 抹平；沿 <b>n 轴（另一方向）</b>走，曲面整体<b>贴向红色真值面</b>——这是第一层偏差靠 n 消失。一句话：<b>B 治抖动，n 治偏差</b>。</p>
+      <div class="plotwrap"><div id="p-boot2" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · Bootstrap 不是万能钥匙</div>
+      <p>① <b>极值统计量会失效。</b>估计"最大值/上确界"时，重采样的最大值<b>永远 ≤ 原样本最大值</b>，无法越过它——Bootstrap 分布退化、给不出正确的极限分布。这与上一节 <a class="inlink" href="#t-plugin">插件对极值失效</a>是同一个病根。</p>
+      <p>② <b>重尾分布要小心。</b>方差不存在（如柯西、某些金融收益尾部）时，"方差"这个目标本身没意义，Bootstrap 估它自然不收敛。重尾下分位数也可能很不稳定。</p>
+      <p>③ <b>小 n 救不回来。</b>\(\hat F_n\) 只有 n 个原子，第一层误差被 n 锁死。把 B 调到一百万也只是把一个<b>有偏的</b>近似算得"更精确"——精确地错。"宁可花钱多抽样，也别指望 B 补上 n。"</p>
+      <p style="margin-bottom:0">④ <b>有结构的数据不能朴素重采样。</b>时间序列、聚类、网络数据里样本不独立，直接 iid 重采样会破坏依赖结构（需块 Bootstrap 等变体）——这正是你做计量/因果时最容易踩的坑。</p>
+    </div>
+  </section>
+
+  <!-- 5.3 百分位 vs 枢轴 -->
+  <section class="topic-block" id="t-boot-ci">
+    <h3 class="topic cjk">5.3 Bootstrap 置信区间：百分位 vs 枢轴（"圆回来了"）</h3>
+    <p class="topic-en">Percentile vs pivotal bootstrap intervals; the pivotal quantity.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>由 Bootstrap 分布构造区间</span>
+      <span class="rel tool"><span class="dot"></span>枢轴量：分布不依赖未知参数</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉：两种取区间的方式</div>
+      <p><b>百分位区间（percentile）</b>最直接：把 Bootstrap 分布的 \(\alpha/2\) 与 \(1-\alpha/2\) 分位点直接拿来当区间端点。简单，但分布<b>偏态</b>时它会偏。</p>
+      <p style="margin-bottom:0"><b>枢轴区间（pivotal）</b>更讲究：盯住一个<b>枢轴量</b> \(R_n=\hat\theta-\theta\)——它的分布"不依赖未知参数"。先用 Bootstrap 估出 \(R_n\) 的分布，再反解 \(\theta\)。代数上它表现为把 Bootstrap 分布<b>关于 \(\hat\theta\) 做一次镜像反射</b>。老师说这叫"<b>圆回来了</b>"——你绕一圈，又回到了对 \(\theta\) 的区间。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>百分位区间：\(C_n=\big[\hat\theta^{*}_{\alpha/2},\ \hat\theta^{*}_{1-\alpha/2}\big]\)（\(\hat\theta^{*}_{q}\) 是 Bootstrap 分布的 \(q\) 分位）。</p>
+      <p style="margin-bottom:0">枢轴区间：基于 \(R_n=\hat\theta-\theta\)，得 \(C_n=\big[\,2\hat\theta-\hat\theta^{*}_{1-\alpha/2},\ \ 2\hat\theta-\hat\theta^{*}_{\alpha/2}\,\big]\)。注意端点用了 \(2\hat\theta-(\cdot)\)——这正是"绕 \(\hat\theta\) 反射"。对称分布下两者重合；偏态下分道扬镳。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 两种区间在偏态下如何分家</div>
+      <p class="cap">紫色直方图 = Bootstrap 分布，黑虚线 = 点估计 \(\hat\theta\)。<span style="color:#1F6B66">青色区间</span>=百分位法（直接取分位）；<span style="color:#8A3A66">紫色区间</span>=枢轴法（关于 \(\hat\theta\) 反射）。把"分布偏度"从 0 拖大：对称时两区间几乎重叠；越偏，两者越<b>朝相反方向错开</b>——这就是为什么偏态问题里"选哪种区间"会影响结论。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">Bootstrap 分布偏度 <span class="val" id="bc2-sk-v">0.0</span></label><input type="range" id="bc2-sk" min="0" max="0.95" step="0.05" value="0"></div>
+        <div class="ctrl"><label class="cjk">置信水平 1−α <span class="val" id="bc2-a-v">0.90</span></label><input type="range" id="bc2-a" min="0.8" max="0.99" step="0.01" value="0.9"></div>
+      </div>
+      <div class="plotwrap"><div id="p-bootci" class="plot"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 相关系数 ρ 的 Bootstrap 区间</div>
+      <p>相关系数 \(\hat\rho\) 的抽样分布是<b>偏的</b>（尤其 \(|\rho|\) 大时被挤向 ±1），且没有简单方差公式——正是 Bootstrap 的主场。把 \((X_i,Y_i)\) 成对地有放回重采样 B 次，每次算一个 \(\hat\rho^{*}\)，得到 Bootstrap 分布后取区间。因为分布偏，<b>枢轴/或先做 Fisher-z 变换</b>通常比朴素百分位更靠谱——这也呼应了 <a class="inlink" href="#t-delta">Delta 方法</a>里"对非线性目标先变换"的思路。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>课堂原话 · 枢轴量为什么"圆回来了"</p>
+      <p style="margin-bottom:0">"我们构造一个量 \(R_n=\hat\theta-\theta\)，它的分布<b>不依赖于那个未知参数</b>。既然不依赖，我就能用样本/Bootstrap 把它的分布估出来，求出分位数，再反解出 \(\theta\) 的区间——你看，绕了一圈，<b>又圆回到对 \(\theta\) 的推断上了</b>。这就是枢轴的妙处。"</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART VI -->
+  <header class="part-head" id="part6">
+    <div class="pk">Ⅵ</div>
+    <h2 class="cjk">随机变量生成</h2>
+    <p>Bootstrap 和蒙特卡洛都要"造数"——但计算机只会生成均匀随机数 U(0,1)。如何把它变成任意分布？三把螺丝刀：逆变换、拒绝采样、Box–Muller。老师的"螺丝刀哲学"贯穿始终：<b>知道工具能拧哪种螺丝，比记住它的内部构造更重要</b>。</p>
+  </header>
+
+  <!-- 6.1 逆变换 -->
+  <section class="topic-block" id="t-inverse">
+    <h3 class="topic cjk">6.1 逆变换法：把均匀数"水平投"到 CDF 上</h3>
+    <p class="topic-en">The inverse transform method.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>用到 Ch1 的 CDF / 逆函数</span>
+      <span class="rel tool"><span class="dot"></span>给 <a href="#t-boot-why">Bootstrap</a> / 蒙特卡洛供料</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>你只有一台会吐 \(U\sim\text{Uniform}(0,1)\) 的机器，却想要服从某分布 \(F\) 的数。诀窍：<b>把 \(U\) 当成"纵轴上的高度"，水平投到 \(F\) 曲线上，再竖直落到横轴</b>，落点 \(X=F^{-1}(U)\) 就服从 \(F\)。</p>
+      <p style="margin-bottom:0">为什么对？因为 \(F\) 陡的地方（密度大）对应纵轴上一大段高度，会"接住"更多的 \(U\) → 那里落点更密；\(F\) 平的地方落点稀。<b>CDF 的斜率自动复刻了密度</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式（定理 4.1）</div>
+      <p>令 \(U\sim\text{Uniform}(0,1)\)，\(X=F^{-1}(U)\)，则 \(X\sim F\)。<b>证明一行</b>：\(\mathbb P(X\le x)=\mathbb P(F^{-1}(U)\le x)=\mathbb P(U\le F(x))=F(x).\)（中间用了 \(F\) 单调）。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 生成指数分布</div>
+      <p>指数分布 \(F(x)=1-e^{-\theta x}\)，反解 \(F^{-1}(u)=-\tfrac1\theta\ln(1-u)\)。于是
+      \[X=-\frac1\theta\ln(1-U)\quad(\text{或等价地 }-\tfrac1\theta\ln U)\] 就是指数随机数。一行代码，无需任何近似。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 纵轴上的均匀点，水平投出目标分布</div>
+      <p class="cap">黑线 = 目标 CDF。左侧纵轴上撒<b>均匀随机高度</b>（紫点），每个点水平射到曲线、再竖直落到横轴（细灰线演示几条）。底部直方图 = 落点 \(X\) 的分布，红线 = 目标密度。换分布、加点数：直方图越堆越像红线。观察 CDF<b>陡峭段</b>下方落点最密。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">生成点数 N <span class="val" id="iv-n-v">400</span></label><input type="range" id="iv-n" min="50" max="4000" step="50" value="400"></div>
+        <div class="ctrl"><label class="cjk">目标分布</label>
+          <div class="seg" id="iv-seg"><button data-d="exp" class="on">指数</button><button data-d="norm">正态</button><button data-d="tri">三角</button></div>
+        </div>
+        <button class="btn ghost" id="iv-resample">重新生成</button>
+      </div>
+      <div class="plotwrap"><div id="p-inverse" class="plot tall"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- 6.2 拒绝采样 -->
+  <section class="topic-block" id="t-reject">
+    <h3 class="topic cjk">6.2 拒绝采样：在"包络"下扔飞镖</h3>
+    <p class="topic-en">Rejection sampling with a proposal distribution.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>逆变换难求时的替代</span>
+      <span class="rel warn"><span class="dot"></span>盲点：包络太松 → 接受率暴跌</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>有些分布的 CDF 反函数没有闭式（正态就是），逆变换用不了。换个思路：找一个<b>好抽样的"建议分布" \(g\)</b>（proposal），把它放大 \(M\) 倍做成一顶<b>罩住目标密度 \(f\) 的帐篷</b> \(Mg\)（即 \(f\le Mg\)）。然后在帐篷下<b>随机扔飞镖</b>：飞镖若落在 \(f\) 曲线<b>下方</b>就<b>接受</b>，否则<b>拒绝</b>。留下的点就服从 \(f\)。</p>
+      <p style="margin-bottom:0">帐篷越贴合 \(f\)（\(M\) 越接近 1），浪费越少。这就是"螺丝刀哲学"：你不需要懂 \(f\) 的反函数，只要会扔飞镖、会比高低。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>算法 & 接受率</div>
+      <p>① 从 \(g\) 抽 \(Y\)、从 \(\text{Uniform}(0,1)\) 抽 \(U\)；② 若 \(U\le \dfrac{f(Y)}{M\,g(Y)}\) 则接受 \(X=Y\)，否则重来。</p>
+      <p style="margin-bottom:0">每次试验的<b>接受概率 \(=1/M\)</b>（\(f,g\) 都是密度，积分各为 1）。\(M\) 越大越浪费——平均要试 \(M\) 次才得到 1 个样本。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 用指数包络生成 Gamma</div>
+      <p>Gamma 密度可被一个<b>指数建议分布</b>罩住。课件结论：当 Gamma 形状/尺度为 \((a,b)\) 时，使包络最紧（接受率最高）的指数率参数为 \(\displaystyle \lambda^{*}=\frac{1}{ab}\)（即与 Gamma 同均值）。直觉上：建议分布的"重心"对齐目标，才最省飞镖。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 扔飞镖：接受 vs 拒绝，看接受率</div>
+      <p class="cap">红线=目标密度 \(f\)，紫线=放大的建议密度 \(Mg\)（帐篷）。每个飞镖随机落在帐篷下：<span style="color:#1F6B66">青点=接受</span>（落在 \(f\) 下），<span style="color:#B0442B">红点=拒绝</span>。把"包络系数 M"调小让帐篷更贴 \(f\) → 接受率上升、红点变少；调大 → 大量浪费。右下角实时显示接受率 ≈ 1/M。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">包络系数 M（越小越贴合） <span class="val" id="rj-M-v">1.8</span></label><input type="range" id="rj-M" min="1.05" max="4" step="0.05" value="1.8"></div>
+        <div class="ctrl"><label class="cjk">飞镖数 <span class="val" id="rj-n-v">600</span></label><input type="range" id="rj-n" min="100" max="3000" step="100" value="600"></div>
+        <button class="btn ghost" id="rj-resample">重新投掷</button>
+      </div>
+      <div class="plotwrap"><div id="p-reject" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="rj-info" style="margin-bottom:0">接受率 ≈ — ｜ 理论上限 1/M ≈ —</p>
+    </div>
+  </section>
+
+  <!-- 6.3 Box-Muller + 不相关≠独立 -->
+  <section class="topic-block" id="t-boxmuller">
+    <h3 class="topic cjk">6.3 Box–Muller：一组种子造两个独立正态</h3>
+    <p class="topic-en">Box–Muller, and the trap: uncorrelated ≠ independent.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>用 Ch1 的 Jacobian / 极坐标</span>
+      <span class="rel tool"><span class="dot"></span>实践直接调库（螺丝刀哲学）</span>
+      <span class="rel warn"><span class="dot"></span>盲点：不相关≠独立</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>正态没有闭式 CDF 反函数，逆变换用不了。Box–Muller 走<b>极坐标</b>的巧路：用两个独立均匀数 \(U_1,U_2\)，一个决定<b>半径</b>、一个决定<b>角度</b>，一次性吐出<b>两个相互独立的标准正态</b> \(Z_1,Z_2\)。老师的比方："从一台机器、一组种子，造出两个独立的正态——很优雅。"</p>
+      <p style="margin-bottom:0">为什么半径用 \(\sqrt{-2\ln U_1}\)？因为二维标准正态的<b>半径平方 \(R^2\) 服从指数（=自由度 2 的卡方）</b>，而指数恰好能用逆变换从 \(U_1\) 生成；角度则在 \([0,2\pi)\) 上均匀。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p style="margin-bottom:0">\[Z_1=\sqrt{-2\ln U_1}\,\cos(2\pi U_2),\qquad Z_2=\sqrt{-2\ln U_1}\,\sin(2\pi U_2).\]
+      由变量替换（Jacobian）可证联合密度恰好等于两个 \(N(0,1)\) 密度的乘积 ⇒ \(Z_1,Z_2\) 独立且均为标准正态。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 从均匀方块到正态云（半径 & 角度）</div>
+      <p class="cap"><b>左</b>：\((U_1,U_2)\) 在单位正方形里均匀撒点。<b>右</b>：经 Box–Muller 映射成的 \((Z_1,Z_2)\)——一团以原点为中心的正态云，按角度着色（颜色对应你在方块里看到的 \(U_2\)）。下方两个小直方图：<b>半径</b>呈瑞利/向外稀疏，<b>角度</b>完全均匀。拖点数感受云的成形。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">点数 <span class="val" id="bm-n-v">800</span></label><input type="range" id="bm-n" min="100" max="4000" step="100" value="800"></div>
+        <button class="btn ghost" id="bm-resample">重新生成</button>
+      </div>
+      <div class="plotwrap"><div id="p-bm2" class="plot tall"><div class="loading">加载中…</div></div></div>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 二元标准正态的钟形（可拖动旋转）</div>
+      <p class="cap">Box–Muller 造出的 \((Z_1,Z_2)\) 服从的就是这口<b>二维钟</b>：\(\displaystyle f(z_1,z_2)=\frac{1}{2\pi}e^{-(z_1^2+z_2^2)/2}\)。它<b>旋转对称</b>（只依赖到原点的距离 \(R\)）——这正是"半径管大小、角度均匀"为何成立的几何原因。旋转它，从正上方俯视是一圈圈等高线（同心圆），侧看是光滑的钟。</p>
+      <div class="plotwrap"><div id="p-bm3" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>关键定理 · 正态下"独立"和"不相关"才等价</div>
+      <p style="margin-bottom:0">一般地：<b>独立 ⇒ 不相关（\(\operatorname{cov}=0\)）</b>，但<b>反过来不成立</b>。唯有当 \((X,Y)\) <b>联合正态</b>时，三者才打通：
+      \[\text{联合正态下：}\quad \text{独立}\ \Longleftrightarrow\ \text{不相关}\ \Longleftrightarrow\ \operatorname{cov}(X,Y)=0.\]
+      Box–Muller 的两个输出"不相关"，又因联合正态，所以才能直接断定"独立"。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 反例：相关系数为 0，却高度依赖</div>
+      <p class="cap">点构造成 \(Y=X^2+\)小噪声 这种<b>抛物线结构</b>：左右对称使 \(\operatorname{cov}(X,Y)=0\)（测得的 \(\hat\rho\approx0\)），但 \(Y\) 显然被 \(X\) 完全决定——<b>不相关绝不等于独立</b>。拖"结构强度"在"独立正态云（无结构）"与"强抛物线依赖"之间切换：注意<b>无论结构多强，\(\hat\rho\) 都贴着 0</b>。相关系数只能看到<b>线性</b>关系，对这种非线性依赖完全失明。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">非线性依赖强度 <span class="val" id="id-k-v">0.80</span></label><input type="range" id="id-k" min="0" max="1" step="0.05" value="0.8"></div>
+        <button class="btn ghost" id="id-resample">重新生成</button>
+      </div>
+      <div class="plotwrap"><div id="p-indep" class="plot"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="id-info" style="margin-bottom:0">测得相关系数 ρ̂ ≈ —</p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 三条</div>
+      <p>① <b>"不相关 = 独立"是初学者头号陷阱。</b>只有联合正态才等价。你做<b>因果/特征工程</b>时，看到 \(\rho\approx0\) 就断言"无关系"，可能漏掉强非线性依赖（如 \(Y=X^2\)、周期关系）。要查依赖该用互信息、距离相关、HSIC 等，而非只看 Pearson \(\rho\)。</p>
+      <p>② <b>Box–Muller 只造正态。</b>它是为正态量身定做的极坐标技巧，不能直接搬去生成别的分布。别把"优雅的特例"误当通法。</p>
+      <p style="margin-bottom:0">③ <b>螺丝刀哲学的双刃。</b>老师说"实践中直接调库（<span class="kbd">numpy.random.normal</span> 等），知道工具解决什么问题就够了"——这对工程<b>高效</b>；但当结果异常、需要诊断或定制（截断、相关结构、重尾）时，<b>不懂内部构造就会卡死</b>。会用 + 知其所以然，才不被工具反噬。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART VII -->
+  <header class="part-head" id="part7">
+    <div class="pk">Ⅶ</div>
+    <h2 class="cjk">分布检验与两类错误</h2>
+    <p>推断是"小心地猜"，检验是"甩出一个结论再用数据裁决"。框架很简洁：原假设、检验统计量、拒绝域、显著性水平。难点全在两类错误的权衡——以及别被几句顺口的"经验法则"带进沟里。</p>
+  </header>
+
+  <!-- 7.1 检验框架 -->
+  <section class="topic-block" id="t-test-frame">
+    <h3 class="topic cjk">7.1 推断 vs 检验 · 检验的零件清单</h3>
+    <p class="topic-en">Inference vs testing; the anatomy of a test.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>与 <a href="#t-estimator">置信集</a> 互为表里</span>
+      <span class="rel tool"><span class="dot"></span>统计量的零分布来自 <a href="#t-clt-recap">CLT</a> / <a href="#t-locscale">位置尺度</a></span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>老师的对照："<b>推断</b>是我们小心翼翼地去<b>猜</b>一个量；<b>检验</b>是我们先<b>甩出一个论断</b>（原假设），再让数据来<b>裁决</b>是否推翻它。"检验的零件：</p>
+      <p style="margin-bottom:0"><b>原假设 \(H_0\)</b>（默认/想推翻的论断）vs <b>备择 \(H_1\)</b>；<b>检验统计量 \(\tau\)</b>（从样本算出的一个数）；<b>拒绝域 \(R\)</b>（\(\tau\) 落进去就拒绝 \(H_0\)）；<b>显著性水平 \(\alpha\)</b>（容忍的"冤枉好人"概率）。简单假设=完全指定分布；复合假设=只说"属于某子集"。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>第一类错误（弃真）：\(\alpha=\mathbb P_F(\tau\in R)\)（在 \(H_0\) 为真时拒绝）。第二类错误（取伪）：\(\beta=\mathbb P_F(\tau\notin R)\)（在 \(H_1\) 为真时不拒绝）。<b>功效</b> \(=1-\beta\)。</p>
+      <p style="margin-bottom:0"><b>复合假设</b>下取最坏情形：\(\displaystyle \sup_{F\in\mathcal M_0}\mathbb P_F(\tau\in R)=\alpha\)——要对子集里<b>所有</b> \(F\) 都把弃真概率压在 \(\alpha\) 以内。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 两条分布、一条阈值线，看清 α / β / 功效</div>
+      <p class="cap"><span style="color:#5A544B">灰</span>=\(H_0\) 下统计量的分布，<span style="color:#8A3A66">紫</span>=\(H_1\) 下的分布（被效应量 \(\delta\) 推开）。竖线=临界值（拒绝域是它右侧）。<span style="color:#B0442B">红色面积=α</span>（弃真），<span style="color:#B7892A">金色面积=β</span>（取伪），功效=1−β。拖三个滑块：<b>阈值</b>左右移动看 α↔β 此消彼长；<b>效应量 δ</b> 拉开两峰让检验更易；<b>样本量 n</b> 让<b>两条曲线一起变窄 → α、β 同时下降</b>（这正是 7.2 的关键）。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">临界值（阈值） <span class="val" id="ts-c-v">1.64</span></label><input type="range" id="ts-c" min="-1" max="5" step="0.05" value="1.64"></div>
+        <div class="ctrl"><label class="cjk">效应量 δ（两假设差距） <span class="val" id="ts-d-v">2.0</span></label><input type="range" id="ts-d" min="0.3" max="5" step="0.1" value="2"></div>
+        <div class="ctrl"><label class="cjk">样本量 n <span class="val" id="ts-n-v">15</span></label><input type="range" id="ts-n" min="2" max="120" step="1" value="15"></div>
+      </div>
+      <div class="plotwrap"><div id="p-test" class="plot tall"><div class="loading">加载中…</div></div></div>
+      <p class="cap readout" id="ts-info" style="margin-bottom:0">α ≈ — ｜ β ≈ — ｜ 功效 = 1−β ≈ —</p>
+    </div>
+  </section>
+
+  <!-- 7.2 两类错误 -->
+  <section class="topic-block" id="t-errors">
+    <h3 class="topic cjk">7.2 两类错误：误诊 vs 漏诊，以及如何同时压低</h3>
+    <p class="topic-en">Type I vs Type II errors; the role of sample size.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>承接 <a href="#t-test-frame">检验框架</a></span>
+      <span class="rel warn"><span class="dot"></span>盲点：H₀ 由约定 / n&lt;30 经验法则 / 疫情</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 两个错误，两种代价</div>
+      <p><b>第一类错误（α，弃真 / false positive / 误诊）</b>：明明没病，却判成有病。<b>第二类错误（β，取伪 / false negative / 漏诊）</b>：明明有病，却放过了。在<b>样本量固定</b>时，把阈值往一边挪，必然一个降、另一个升——<b>此消彼长，不能同时变小</b>。</p>
+      <p style="margin-bottom:0">唯一能"两头都降"的办法：<b>增大样本量 n</b>。n 大 → 统计量的零分布与备择分布都收窄、重叠减少 → α、β 一起降。老师："多做几项检查（≈ 增大 n / 增加信息），就能同时压低误诊和漏诊。"</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✎</span>案例 · 为什么医学常"宁可错杀，不可放过"</div>
+      <p>癌症初筛里，<b>漏诊（第二类）</b>的代价远高于<b>误诊（第一类）</b>——放过一个真患者可能致命，而误报只是让人虚惊一场、再做一次复查。所以筛查阈值被故意调"敏感"：<b>主动容忍更高的 α，去把 β 压到很低</b>。化验单上写"各项指标 99% 正常"而不是"100% 健康"，正是这种<b>留余地、不说满</b>的严谨——和 <a class="inlink" href="#t-band">置信带"主动暴露不确定性"</a>是同一种科学态度。</p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D · 检验功效曲面 power(δ, n)（可拖动旋转）</div>
+      <p class="cap">在固定 \(\alpha\) 下，功效（=1−β=正确检出的概率）同时取决于<b>效应量 δ</b> 和<b>样本量 n</b>。曲面显示：沿 <b>δ 轴</b>（信号更强）功效上升；沿 <b>n 轴</b>（数据更多）功效也上升。两者都小时功效趴在低处——这解释了为什么"<b>真效应很弱 + 样本很小</b>"时，检验几乎注定漏诊。做实验设计/AB 测试时，这张图就是你算"需要多少样本量"的依据。</p>
+      <div class="plotwrap"><div id="p-power" class="plot d3"><div class="loading">加载 3D 中…</div></div></div>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 三句"顺口的话"要拆开看</div>
+      <p>① <b>"哪个当 H₀"不是天定的，取决于约定与代价。</b>检验对 \(H_0\) 和 \(H_1\) <b>不对称</b>——我们只严格控制弃真 α，对取伪 β 较宽松。所以"把什么放进 \(H_0\)"是一个<b>价值判断</b>：通常把"误拒代价更大、或想保守对待"的论断设为 \(H_0\)。换了立场，结论可能反转。别把它当客观事实。</p>
+      <p>② <b>"n&lt;30 用 T 分布，n≥30 用正态"只是经验法则（rule of thumb）。</b>真正决定用谁的，是<b>方差 σ 是否已知</b>（未知且用样本估 → 严格说该用 t）和<b>数据是否接近正态</b>。30 这个数没有理论神圣性：重尾/强偏数据下 n=50 也未必能用正态近似；近正态且 σ 已知时 n=10 用正态也行。把"30"当硬规则套，会在该用稳健方法时翻车。</p>
+      <p style="margin-bottom:0">③ <b>"疫情样本太小、不算统计问题"是个混淆。</b>这里偷换了两个"样本"：把"历史上够格的大疫情<b>事件数</b>"（确实少，属罕见/黑天鹅）当成了"单次疫情内的<b>病例数</b>"（动辄成千上万，是大样本）。老师自己也说"几百上千个 COVID 病例可以研究"——事实上<b>流行病学、临床试验正是统计学用得最重的地方</b>（传播率、疫苗效力、病死率全靠统计推断）。罕见的是"大流行作为一个事件"，不是"疫情内的数据"。</p>
+    </div>
+  </section>
+
+  <!-- 7.3 位置-尺度族 -->
+  <section class="topic-block" id="t-locscale">
+    <h3 class="topic cjk">7.3 位置-尺度族：检验前的"自检"与参数无关统计量</h3>
+    <p class="topic-en">Location-scale families and pivotal (parameter-free) statistics.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>为 <a href="#t-test-frame">检验</a> 提供"零分布不依赖参数"的统计量</span>
+      <span class="rel tool"><span class="dot"></span>呼应 <a href="#t-boot-ci">枢轴量</a> 思想</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉</div>
+      <p>在检验"数据是否来自某分布族"之前，先认识一类很常见的族：<b>位置-尺度族</b>——同一个"标准形状"被平移（位置 \(\mu\)）和拉伸（尺度 \(\sigma\)）后得到的所有分布（正态族就是典型）。</p>
+      <p style="margin-bottom:0">一个漂亮性质：把数据<b>学生化</b> \(Y_i=(X_i-\bar X)/S\) 之后，<b>它的零分布不再依赖 \((\mu,\sigma)\)</b>。这意味着你能构造一个"<b>与未知参数无关</b>"的检验统计量——和 <a class="inlink" href="#t-boot-ci">枢轴量"圆回来"</a>是同一种智慧：把碍事的未知参数<b>消掉</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式</div>
+      <p>位置-尺度族：\(\displaystyle F_{(\mu,\sigma)}(x)=F_{(0,1)}\!\Big(\frac{x-\mu}{\sigma}\Big)\)。学生化 \(Y_i=\dfrac{X_i-\bar X}{S}\)，其分布<b>不含</b> \((\mu,\sigma)\) ⇒ 可作"参数无关"的检验依据。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊹</span>交互 · 原始直方图各异，学生化后"塌"成同一形状</div>
+      <p class="cap"><b>上</b>：从同一位置-尺度族抽样，但你拖动 \(\mu,\sigma\) 时，原始数据的直方图会<b>平移又胖瘦</b>，看起来各不相同。<b>下</b>：把它学生化 \(Y=(X-\bar X)/S\) 后的直方图——<b>无论 \(\mu,\sigma\) 怎么拖，它都塌缩到同一条形状曲线上</b>。这就是"零分布不依赖参数"的肉眼证据。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">位置 μ <span class="val" id="ls-mu-v">0.0</span></label><input type="range" id="ls-mu" min="-4" max="4" step="0.2" value="0"></div>
+        <div class="ctrl"><label class="cjk">尺度 σ <span class="val" id="ls-s-v">1.0</span></label><input type="range" id="ls-s" min="0.4" max="3" step="0.1" value="1"></div>
+        <button class="btn ghost" id="ls-resample">重新抽样</button>
+      </div>
+      <div class="plotwrap"><div id="p-locscale" class="plot tall"><div class="loading">加载中…</div></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CLOSING -->
+  <section class="topic-block" id="closing">
+    <h3 class="topic cjk">∎ 本节总览 · 通向第四节</h3>
+    <p class="topic-en">Recap, and the bridge to Session 4.</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一张表收束七个部分</div>
+      <div class="scrollx">
+      <table class="tab cjk">
+        <tr><th>部分</th><th>解决的问题</th><th>核心工具</th><th>最该记住的一句话</th></tr>
+        <tr><td class="lbl">Ⅰ Delta</td><td>函数后还是不是正态？</td><td>Taylor + Slutsky</td><td>线性化对冲，方差 ×[g′(μ)]²；g′=0 升二阶变卡方</td></tr>
+        <tr><td class="lbl">Ⅱ 地基</td><td>在估什么、好不好？</td><td>偏差/方差/MSE/一致性</td><td>MSE=偏差²+方差；大样本"无缺点"只在模型对时成立</td></tr>
+        <tr><td class="lbl">Ⅲ 经验CDF</td><td>不假设分布怎么办？</td><td>F̂ₙ + DKW 置信带</td><td>用数据堆出分布，再诚实圈出同时误差带</td></tr>
+        <tr><td class="lbl">Ⅳ 插件</td><td>怎么估任意特征？</td><td>T(F̂ₙ)</td><td>把 F 换成 F̂ₙ——样本替代总体的桥</td></tr>
+        <tr><td class="lbl">Ⅴ Bootstrap</td><td>方差/分布算不出？</td><td>重采样 + 蒙特卡洛</td><td>不是算得准，是能不能算出；B 治抖动、n 治偏差</td></tr>
+        <tr><td class="lbl">Ⅵ 造数</td><td>怎么生成随机数？</td><td>逆变换/拒绝/Box–Muller</td><td>U(0,1) 是原料；不相关≠独立</td></tr>
+        <tr><td class="lbl">Ⅶ 检验</td><td>怎么裁决结论？</td><td>H₀/拒绝域/α,β</td><td>两类错误此消彼长，增大 n 才能同时压低</td></tr>
+      </table>
+      </div>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>埋好的伏笔：第四节去哪</div>
+      <p style="margin-bottom:0">本节的非参数路线"稳健但结论弱"。下一节（第 5 章，<b>参数推断</b>）走回另一条路：<b>假设分布族</b>，用<b>极大似然估计（MLE）</b>把参数估出来，配上 Fisher 信息、Cramér–Rao 下界、似然比检验——结论更强，代价是地基（模型设定）必须对。届时本节的 <a class="inlink" href="#t-delta">Delta</a>（求 MLE 函数的渐进方差）、<a class="inlink" href="#t-bias-var">偏差–方差</a>（理解 MLE 的效率）、<a class="inlink" href="#t-test-frame">两类错误</a>（似然比检验的功效）会被反复调用。两条路——参数 vs 非参数——至此合龙。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>留给你的话</p>
+      <p style="margin-bottom:0">老师反复强调的"螺丝刀哲学"——<b>先知道工具能解决什么问题，再深究其构造</b>——很适合你这种 CS 转统计的路径：先用起来建立直觉，再回头补数理细节。但本讲里那些<b>盲点卡片</b>（⚠）提醒你另一半：当你做<b>因果推断</b>时，很多"统计学里成立"的便利（大样本万能、不相关即无关、插件即真值）都会失灵。<b>会用工具是工程，知道工具何时骗你是学问。</b></p>
+    </div>
+  </section>
+
+  <div class="footer cjk">
+    <p>第三节 · 交互式讲义 — 覆盖 Ch2–3 p33–36（Delta）与 Ch4 p1–23（推断 / 经验CDF / 插件 / Bootstrap / 造数 / 检验）。所有图形可拖动、可旋转、可重采样；公式由 KaTeX 渲染，图形由 Plotly 驱动。</p>
+    <p style="margin-bottom:0">配色承接第一节（朱砂）、第二节（靛蓝），本节用梅紫；模态色（案例金 / 2D 青 / 3D 紫罗兰 / 盲点赭红）跨节一致。由 Claude 整理生成，内容以你上传的课件页面图与课堂转写为准；⚠ 盲点卡片为基于课堂说法的批判性补充，供你独立判断。</p>
+  </div>
+
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#211E1A',inkSoft:'#5A544B',faint:'#8C857A',line:'#E4D8C2',lineStrong:'#D2C2A4',
+  accent:'#8A3A66',accentSoft:'#F1DEEA',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:50,r:16,t:16,b:42},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.12,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+function scene3d(extra){
+  var s={bgcolor:'rgba(0,0,0,0)',
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,backgroundcolor:'rgba(0,0,0,0)',showbackground:true,color:C.inkSoft,titlefont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,backgroundcolor:'rgba(0,0,0,0)',showbackground:true,color:C.inkSoft,titlefont:{size:12}},
+    zaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,backgroundcolor:'rgba(0,0,0,0)',showbackground:true,color:C.inkSoft,titlefont:{size:12}},
+    camera:{eye:{x:1.5,y:1.5,z:1.0}}};
+  return Object.assign(s,extra||{});
+}
+var PURPLE_SCALE=[[0,'#F1DEEA'],[0.5,'#C77FA6'],[1,'#6E2A50']];
+var TEAL_SCALE=[[0,'#DCEDEB'],[0.5,'#5AA39D'],[1,'#1F6B66']];
+
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function variance(a,ddof){ddof=ddof||0;var m=mean(a),s=0,i;for(i=0;i<a.length;i++)s+=(a[i]-m)*(a[i]-m);return s/(a.length-ddof);}
+function sd(a,ddof){return Math.sqrt(variance(a,ddof));}
+function qSorted(s,q){if(s.length===0)return NaN;var h=(s.length-1)*q,lo=Math.floor(h);if(lo+1<s.length)return s[lo]+(h-lo)*(s[lo+1]-s[lo]);return s[lo];}
+function quantile(a,q){var s=a.slice().sort(function(x,y){return x-y;});return qSorted(s,q);}
+function median(a){return quantile(a,0.5);}
+
+/* normal / erf / inverse */
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normCdf(x,m,s){m=m||0;s=(s===undefined?1:s);return 0.5*(1+erf((x-m)/(s*Math.SQRT2)));}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+function chi1Pdf(x){if(x<=0)return 0;return Math.exp(-x/2)/Math.sqrt(2*Math.PI*x);}
+function normInv(p){ // Acklam
+  if(p<=0)return -1e9;if(p>=1)return 1e9;
+  var a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  var b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  var c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  var d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  var plow=0.02425,phigh=1-plow,q,r;
+  if(p<plow){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p<=phigh){q=p-0.5;r=q*q;return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+/* RNG */
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,v,s;do{u=2*Math.random()-1;v=2*Math.random()-1;s=u*u+v*v;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=v*m;return u*m;}
+function rexp(rate){rate=rate||1;return -Math.log(1-Math.random())/rate;}
+function sampleNorm(n,m,s){var o=[],i;for(i=0;i<n;i++)o.push((m||0)+(s===undefined?1:s)*randn());return o;}
+function sampleExp(n,rate){var o=[],i;for(i=0;i<n;i++)o.push(rexp(rate||1));return o;}
+function sampleBi(n){var o=[],i;for(i=0;i<n;i++){o.push(Math.random()<0.5?(-1.6+0.6*randn()):(1.6+0.6*randn()));}return o;}
+
+/* histogram density trace */
+function histTrace(data,nb,lo,hi,color,name,opacity){
+  return {type:'histogram',x:data,histnorm:'probability density',name:name||'',
+    marker:{color:color,line:{color:'rgba(255,255,255,.5)',width:0.5}},opacity:(opacity===undefined?0.72:opacity),
+    xbins:{start:lo,end:hi,size:(hi-lo)/(nb||30)}};
+}
+function lineTrace(xs,ys,color,name,width,dash){
+  return {type:'scatter',mode:'lines',x:xs,y:ys,name:name||'',
+    line:{color:color,width:width||2.4,dash:dash||'solid'}};
+}
+
+/* ===================== KaTeX ===================== */
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],
+    throwOnError:false,strict:false});
+}
+
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={base:'#EFE7D5',bridge:C.accentSoft,found:'#F4E9CF',np:'#DCEDEB',tool:'#E5E1F2',gen:'#F4E9CF',test:'#DFEDE2',warn:'#F3E0DA'};
+var NODE_STROKE={base:C.lineStrong,bridge:C.accent,found:C.gold,np:C.teal,tool:C.violet,gen:C.gold,test:C.green,warn:C.rust};
+var NODE_TXT={base:C.inkSoft,bridge:C.accent,found:'#8a6a1f',np:C.teal,tool:C.violet,gen:'#8a6a1f',test:C.green,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+ {id:'s2',x:24,y:330,w:172,h:150,ty:'base',t:['第二节·根基'],sub:['收敛','LLN / CLT','Slutsky'],href:'#spine'},
+ {id:'delta',x:236,y:150,w:150,h:54,ty:'bridge',t:['Delta 方法'],href:'#t-delta'},
+ {id:'delta2',x:236,y:520,w:150,h:54,ty:'warn',t:['⚠ 二阶Delta','(g′=0→卡方)'],href:'#t-delta2'},
+ {id:'model',x:430,y:60,w:152,h:54,ty:'found',t:['统计模型 ℳ'],href:'#t-infer'},
+ {id:'bv',x:430,y:250,w:152,h:54,ty:'found',t:['偏差–方差·MSE'],href:'#t-bias-var'},
+ {id:'consis',x:430,y:430,w:152,h:54,ty:'found',t:['一致性'],href:'#t-estimator'},
+ {id:'cset',x:430,y:600,w:152,h:54,ty:'found',t:['置信集 / CI'],href:'#t-estimator'},
+ {id:'edf',x:642,y:130,w:152,h:54,ty:'np',t:['经验CDF F̂ₙ'],href:'#t-edf'},
+ {id:'band',x:642,y:310,w:152,h:54,ty:'np',t:['DKW 置信带'],href:'#t-band'},
+ {id:'mvcdf',x:642,y:560,w:152,h:54,ty:'np',t:['多元经验CDF'],href:'#t-mvcdf'},
+ {id:'func',x:854,y:130,w:152,h:54,ty:'tool',t:['统计泛函 T(F)'],href:'#t-functional'},
+ {id:'plugin',x:854,y:310,w:152,h:54,ty:'tool',t:['插件 T(F̂ₙ)'],href:'#t-plugin'},
+ {id:'gen',x:854,y:500,w:152,h:54,ty:'gen',t:['随机数生成'],href:'#t-inverse'},
+ {id:'indep',x:854,y:650,w:152,h:54,ty:'warn',t:['⚠ 不相关≠独立'],href:'#t-boxmuller'},
+ {id:'boot',x:1066,y:130,w:152,h:54,ty:'tool',t:['Bootstrap'],href:'#t-boot-why'},
+ {id:'pivot',x:1066,y:310,w:152,h:54,ty:'tool',t:['枢轴 · 区间'],href:'#t-boot-ci'},
+ {id:'bootfail',x:1066,y:470,w:152,h:54,ty:'warn',t:['⚠ Bootstrap失效'],href:'#t-boot-validity'},
+ {id:'test',x:1066,y:630,w:152,h:54,ty:'test',t:['检验·两类错误'],href:'#t-test-frame'}
+];
+var MAP_EDGES=[
+ ['s2','delta','derive'],['s2','consis','derive'],
+ ['delta','delta2','warn'],['delta','cset','tool'],
+ ['model','bv','derive'],['model','consis','derive'],['consis','cset','derive'],
+ ['bv','plugin','tool'],
+ ['edf','band','derive'],['edf','mvcdf','derive'],['edf','func','derive'],['edf','plugin','tool'],
+ ['func','plugin','derive'],
+ ['plugin','boot','derive'],['boot','pivot','derive'],['boot','bootfail','warn'],
+ ['gen','boot','supply'],['gen','indep','warn'],
+ ['cset','test','derive'],['band','test','derive']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong;
+    var p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(Math.abs(b.x-a.x)<10){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+(n.sub?26:n.h/2+5);
+    n.t.forEach(function(line,i){
+      g.appendChild(el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':(n.ty==='base'?14:13.5),
+        'font-weight':600,fill:NODE_TXT[n.ty]})).textContent=line;
+    });
+    if(n.sub){n.sub.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:n.y+58+i*20,'text-anchor':'middle','font-size':12,fill:C.inkSoft});
+      tx.textContent=line;g.appendChild(tx);
+    });}
+    N.appendChild(g);
+  });
+}
+
+/* ===================== nav + sliders ===================== */
+function wireSliderFill(){
+  function setFill(r){var min=+r.min,max=+r.max,p=(+r.value-min)/(max-min)*100;r.style.setProperty('--p',p+'%');}
+  document.querySelectorAll('input[type=range]').forEach(function(r){setFill(r);r.addEventListener('input',function(){setFill(r);});});
+}
+function wireNav(){
+  var mb=document.getElementById('menuBtn'),sc=document.getElementById('scrim');
+  if(mb)mb.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(sc)sc.addEventListener('click',function(){document.body.classList.remove('nav-open');});
+  var links=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  links.forEach(function(a){a.addEventListener('click',function(){document.body.classList.remove('nav-open');});});
+  var map={};links.forEach(function(a){var id=a.getAttribute('href');if(id&&id.length>1){var s=document.querySelector(id);if(s)map[id]=s;}});
+  var ids=Object.keys(map);
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130;
+    ids.forEach(function(id){var off=map[id].offsetTop;if(off<=top&&off>best){best=off;cur=id;}});
+    links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')===cur);});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+
+/* helper: get el + seg wiring */
+function seg(id,cb){var box=document.getElementById(id);if(!box)return;
+  box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    box.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});b.classList.add('on');cb();});});}
+function segVal(id){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute(on.dataset?'data-'+Object.keys(on.dataset)[0]:'data-g'):null;}
+function segData(id,key){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute('data-'+key):null;}
+
+/* ============================================================ PLOTS: PART I */
+function plotCltRecap(){
+  var elDiv=document.getElementById('p-cltrecap');if(!elDiv)return;
+  var nEl=document.getElementById('clt-n'),nv=document.getElementById('clt-n-v');
+  function draw(){
+    var n=+nEl.value;nv.textContent=n;
+    var M=4000,zSig=[],zS=[],i,j,mu=1,sig=1; // Exp(1): mu=1,sig=1
+    for(i=0;i<M;i++){var s=0,ss=0,xs=[];for(j=0;j<n;j++){var x=rexp(1);xs.push(x);s+=x;}
+      var mbar=s/n;for(j=0;j<n;j++)ss+=(xs[j]-mbar)*(xs[j]-mbar);
+      var Sn=Math.sqrt(ss/(n-1>0?n-1:1));
+      zSig.push(Math.sqrt(n)*(mbar-mu)/sig);
+      zS.push(Sn>1e-9?Math.sqrt(n)*(mbar-mu)/Sn:0);
+    }
+    var xs=lin(-4,4,120),ys=xs.map(function(x){return normPdf(x);});
+    Plotly.react(elDiv,[
+      histTrace(zSig,40,-4,4,'rgba(31,92,140,.55)','用真 σ 标准化'),
+      histTrace(zS,40,-4,4,'rgba(138,58,102,.5)','用样本 Sₙ 标准化'),
+      lineTrace(xs,ys,C.ink,'N(0,1)',2.6)
+    ],baseLayout({showlegend:true,barmode:'overlay',xaxis:{range:[-4,4],title:'标准化后的均值'},yaxis:{title:'密度'}}),CONF);
+  }
+  nEl.addEventListener('input',draw);
+  var rb=document.getElementById('clt-resample');if(rb)rb.addEventListener('click',draw);
+  draw();
+}
+
+function gFun(name){
+  if(name==='exp')return{g:function(x){return Math.exp(x);},gp:function(x){return Math.exp(x);},mu:0.3,sig:1,lab:'eˣ'};
+  if(name==='log')return{g:function(x){return Math.log(x);},gp:function(x){return 1/x;},mu:2.0,sig:1,lab:'ln x'};
+  if(name==='sq')return{g:function(x){return x*x;},gp:function(x){return 2*x;},mu:1.5,sig:1,lab:'x²'};
+  return{g:function(x){return 1/x;},gp:function(x){return -1/(x*x);},mu:2.0,sig:1,lab:'1/x'};
+}
+function plotDelta(){
+  var elDiv=document.getElementById('p-delta');if(!elDiv)return;
+  var nEl=document.getElementById('dl-n'),nv=document.getElementById('dl-n-v');
+  var cur='exp';
+  function draw(){
+    var n=+nEl.value;nv.textContent=n;var G=gFun(cur);
+    var M=4000,vals=[],i,j;
+    for(i=0;i<M;i++){var s=0;for(j=0;j<n;j++)s+=G.mu+G.sig*randn();vals.push(G.g(s/n));}
+    var gm=G.g(G.mu),dvar=G.gp(G.mu)*G.gp(G.mu)*G.sig*G.sig/n,dsd=Math.sqrt(dvar);
+    var lo=gm-4*dsd,hi=gm+4*dsd;
+    var xs=lin(lo,hi,140),ys=xs.map(function(x){return normPdf(x,gm,dsd);});
+    Plotly.react(elDiv,[
+      histTrace(vals,42,Math.min(lo,quantile(vals,0.005)),Math.max(hi,quantile(vals,0.995)),'rgba(31,107,102,.6)','g(X̄ₙ) 抽样分布'),
+      lineTrace(xs,ys,C.rust,'Delta 正态近似',2.6)
+    ],baseLayout({showlegend:true,barmode:'overlay',xaxis:{title:'g(X̄ₙ) 的取值'},yaxis:{title:'密度'}}),CONF);
+  }
+  seg('dl-seg',function(){var b=document.querySelector('#dl-seg button.on');cur=b.getAttribute('data-g');draw();});
+  nEl.addEventListener('input',draw);
+  var rb=document.getElementById('dl-resample');if(rb)rb.addEventListener('click',draw);
+  draw();
+}
+
+function plotDelta3(){
+  var elDiv=document.getElementById('p-delta3');if(!elDiv)return;
+  var nEl=document.getElementById('d3-n'),nv=document.getElementById('d3-n-v');
+  function draw(){
+    var n=+nEl.value;nv.textContent=n;
+    var mu=0.3,sig=1,isd=sig/Math.sqrt(n);
+    var g=function(x){return Math.exp(x);};
+    var xlo=mu-3.4*isd,xhi=mu+3.4*isd;
+    var xc=lin(Math.min(xlo,-0.6),Math.max(xhi,1.2),60);
+    var curveX=xc,curveY=xc.map(g),curveZ=xc.map(function(){return 0;});
+    // input density on floor: y=g(mu)-... place along x at fixed y0 baseline, z=density
+    var y0=g(Math.min(xlo,-0.6))-0.4;
+    var ix=lin(xlo,xhi,60),iz=ix.map(function(x){return normPdf(x,mu,isd);});
+    var izmax=Math.max.apply(null,iz);
+    var inX=ix,inY=ix.map(function(){return y0;}),inZ=iz.map(function(v){return v/izmax*1.3;});
+    // output density on wall: x=x0, along y(=g range), z=density of g(X)
+    var x0=Math.min(xlo,-0.6)-0.15;
+    var glo=g(xlo),ghi=g(xhi);var oy=lin(glo*0.6,ghi*1.05,80);
+    var oz=oy.map(function(yv){ if(yv<=0)return 0; var x=Math.log(yv); return normPdf(x,mu,isd)/yv;});
+    var ozmax=Math.max.apply(null,oz)||1;
+    var ouX=oy.map(function(){return x0;}),ouY=oy,ouZ=oz.map(function(v){return v/ozmax*1.3;});
+    Plotly.react(elDiv,[
+      {type:'scatter3d',mode:'lines',x:curveX,y:curveY,z:curveZ,line:{color:C.gold,width:6},name:'y=g(x)=eˣ'},
+      {type:'scatter3d',mode:'lines',x:inX,y:inY,z:inZ,line:{color:'#1F5C8C',width:5},name:'输入 X̄ₙ 的分布'},
+      {type:'scatter3d',mode:'lines',x:ouX,y:ouY,z:ouZ,line:{color:C.violet,width:5},name:'输出 g(X̄ₙ) 的分布'}
+    ],{paper_bgcolor:'rgba(0,0,0,0)',font:FONT,showlegend:true,legend:{orientation:'h',y:1.05,font:{size:11}},margin:{l:0,r:0,t:0,b:0},
+       scene:scene3d({xaxis:{title:'x'},yaxis:{title:'y=g(x)'},zaxis:{title:'密度'},camera:{eye:{x:1.7,y:1.5,z:0.9}}})},CONF);
+  }
+  nEl.addEventListener('input',draw);draw();
+}
+
+function plotDeltaProof(){
+  var elDiv=document.getElementById('p-deltaproof');if(!elDiv)return;
+  var hEl=document.getElementById('dp-h'),hv=document.getElementById('dp-h-v'),info=document.getElementById('dp-info');
+  var mu=0.0,g=function(x){return Math.exp(x);},gp=function(x){return Math.exp(x);};
+  function draw(){
+    var h=+hEl.value;hv.textContent=h.toFixed(2);
+    var xs=lin(mu-h,mu+h,80),ys=xs.map(g);
+    var tan=xs.map(function(x){return g(mu)+gp(mu)*(x-mu);});
+    // remainder bars at several x
+    var bx=lin(mu-h,mu+h,11),shapes=[],maxr=0,i;
+    for(i=0;i<bx.length;i++){var rr=g(bx[i])-(g(mu)+gp(mu)*(bx[i]-mu));if(Math.abs(rr)>maxr)maxr=Math.abs(rr);}
+    var rxs=[],rys=[];
+    for(i=0;i<bx.length;i++){var top=g(bx[i]),bot=g(mu)+gp(mu)*(bx[i]-mu);rxs.push(bx[i],bx[i],null);rys.push(bot,top,null);}
+    Plotly.react(elDiv,[
+      lineTrace(xs,ys,C.gold,'g(x)=eˣ',2.8),
+      lineTrace(xs,tan,C.rust,'μ 处切线（一阶近似）',2,'dash'),
+      {type:'scatter',mode:'lines',x:rxs,y:rys,line:{color:'rgba(140,133,122,.8)',width:3},name:'余项 r(h)·h'},
+      {type:'scatter',mode:'markers',x:[mu],y:[g(mu)],marker:{color:C.ink,size:8},name:'展开点 μ'}
+    ],baseLayout({showlegend:true,xaxis:{title:'x（μ 的邻域）'},yaxis:{title:'g(x)'}}),CONF);
+    if(info)info.textContent='最大余项 |r(h)·h| ≈ '+maxr.toFixed(4)+'（h='+h.toFixed(2)+'）—— h 减半，余项约按 h² 缩小';
+  }
+  hEl.addEventListener('input',draw);draw();
+}
+
+function plotDelta2(){
+  var elDiv=document.getElementById('p-delta2');if(!elDiv)return;
+  var nEl=document.getElementById('d2-n'),nv=document.getElementById('d2-n-v');
+  function draw(){
+    var n=+nEl.value;nv.textContent=n;
+    var M=5000,vals=[],i,j;
+    for(i=0;i<M;i++){var s=0;for(j=0;j<n;j++)s+=randn();var mb=s/n;vals.push(n*mb*mb);}
+    var xs=lin(0.001,6,160),ys=xs.map(chi1Pdf);
+    Plotly.react(elDiv,[
+      histTrace(vals,46,0,6,'rgba(31,107,102,.6)','n·X̄ₙ² 抽样分布'),
+      lineTrace(xs,ys,C.rust,'χ²₁ 密度（正确）',2.6),
+      lineTrace(lin(-1,6,80),lin(-1,6,80).map(function(x){return normPdf(x,1,Math.sqrt(2));}),C.faint,'一阶Delta误以为的正态',1.8,'dot')
+    ],baseLayout({showlegend:true,barmode:'overlay',xaxis:{range:[-0.5,6],title:'n·X̄ₙ²'},yaxis:{title:'密度'}}),CONF);
+  }
+  nEl.addEventListener('input',draw);
+  var rb=document.getElementById('d2-resample');if(rb)rb.addEventListener('click',draw);
+  draw();
+}
+
+/* ============================================================ PLOTS: PART II */
+function plotModel(){
+  var elDiv=document.getElementById('p-model');if(!elDiv)return;
+  var muEl=document.getElementById('md-mu'),muv=document.getElementById('md-mu-v'),sEl=document.getElementById('md-s'),sv=document.getElementById('md-s-v');
+  function draw(){
+    var mu=+muEl.value,s=+sEl.value;muv.textContent=mu.toFixed(1);sv.textContent=s.toFixed(1);
+    var xs=lin(-6,6,200);
+    var ghosts=[[-1.5,0.7],[0,1.6],[1.8,0.9]].map(function(p){
+      return lineTrace(xs,xs.map(function(x){return normPdf(x,p[0],p[1]);}),'rgba(140,133,122,.35)','',1.3);});
+    var cur=lineTrace(xs,xs.map(function(x){return normPdf(x,mu,s);}),C.accent,'当前 f(x; μ,σ)',3);
+    Plotly.react(elDiv,ghosts.concat([cur]),baseLayout({showlegend:true,xaxis:{range:[-6,6],title:'x'},yaxis:{title:'密度',rangemode:'tozero'}}),CONF);
+  }
+  muEl.addEventListener('input',draw);sEl.addEventListener('input',draw);draw();
+}
+
+function plotBias(){
+  var elDiv=document.getElementById('p-bias');if(!elDiv)return;
+  var bEl=document.getElementById('bs-b'),bv=document.getElementById('bs-b-v'),sEl=document.getElementById('bs-s'),sv=document.getElementById('bs-s-v'),info=document.getElementById('bs-info');
+  function draw(){
+    var b=+bEl.value,s=+sEl.value;bv.textContent=b.toFixed(1);sv.textContent=s.toFixed(2);
+    var N=260,xs=[],ys=[],i;for(i=0;i<N;i++){xs.push(b+s*randn());ys.push(s*randn());}
+    var mx=mean(xs),my=mean(ys),bias2=mx*mx+my*my,vr=variance(xs)+variance(ys);
+    var msq=0;for(i=0;i<N;i++)msq+=xs[i]*xs[i]+ys[i]*ys[i];msq/=N;
+    var circles=[],r;var rings=[0.5,1,1.5,2,2.5];
+    var shapes=rings.map(function(r){return{type:'circle',xref:'x',yref:'y',x0:-r,y0:-r,x1:r,y1:r,line:{color:'rgba(140,133,122,.35)',width:1}};});
+    shapes.push({type:'line',x0:-3,y0:0,x1:3,y1:0,line:{color:C.line,width:1}});
+    shapes.push({type:'line',x0:0,y0:-3,x1:0,y1:3,line:{color:C.line,width:1}});
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'markers',x:xs,y:ys,marker:{color:'rgba(138,58,102,.55)',size:6,line:{color:'#fff',width:0.4}},name:'每次实验的估计'},
+      {type:'scatter',mode:'markers',x:[0],y:[0],marker:{color:C.rust,size:13,symbol:'x',line:{width:2}},name:'真值 θ（靶心）'},
+      {type:'scatter',mode:'markers',x:[mx],y:[my],marker:{color:C.gold,size:12,symbol:'diamond'},name:'估计的平均位置'}
+    ],baseLayout({showlegend:true,shapes:shapes,xaxis:{range:[-3.2,3.2],title:'',zeroline:false,scaleanchor:'y',scaleratio:1},yaxis:{range:[-3.2,3.2],zeroline:false}}),CONF);
+    if(info)info.textContent='偏差² ≈ '+bias2.toFixed(3)+' ＋ 方差(两轴之和) ≈ '+vr.toFixed(3)+' ＝ MSE ≈ '+msq.toFixed(3);
+  }
+  bEl.addEventListener('input',draw);sEl.addEventListener('input',draw);
+  var rb=document.getElementById('bs-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotSampSurf(){
+  var elDiv=document.getElementById('p-sampsurf');if(!elDiv)return;
+  var ns=[],i;for(i=2;i<=120;i+=4)ns.push(i);
+  var xs=lin(-3,3,70);
+  var z=ns.map(function(n){var sd=1/Math.sqrt(n);return xs.map(function(x){return normPdf(x,0,sd);});});
+  Plotly.react(elDiv,[{type:'surface',x:xs,y:ns,z:z,colorscale:PURPLE_SCALE,showscale:false,
+     contours:{z:{show:true,usecolormap:true,project:{z:false}}},opacity:0.95}],
+    {paper_bgcolor:'rgba(0,0,0,0)',font:FONT,margin:{l:0,r:0,t:0,b:0},
+     scene:scene3d({xaxis:{title:'估计值'},yaxis:{title:'样本量 n'},zaxis:{title:'密度'},camera:{eye:{x:1.7,y:-1.5,z:1.1}}})},CONF);
+}
+
+function plotBiasVar(){
+  var elDiv=document.getElementById('p-biasvar');if(!elDiv)return;
+  var cEl=document.getElementById('bv-c'),cv=document.getElementById('bv-c-v'),info=document.getElementById('bv-info');
+  var cs=lin(0.02,0.98,120);
+  function b2(c){return 1.0*(1-c)*(1-c)+0.02;}
+  function vr(c){return 1.0*c*c+0.04;}
+  function draw(){
+    var c=+cEl.value;cv.textContent=c.toFixed(2);
+    var yb=cs.map(b2),yv=cs.map(vr),ym=cs.map(function(x){return b2(x)+vr(x);});
+    var cstar=1.0/(1.0+1.0);
+    Plotly.react(elDiv,[
+      lineTrace(cs,yb,C.gold,'偏差²',2.4),
+      lineTrace(cs,yv,C.teal,'方差',2.4),
+      lineTrace(cs,ym,C.accent,'MSE = 偏差²＋方差',3.2),
+      {type:'scatter',mode:'markers',x:[cstar],y:[b2(cstar)+vr(cstar)],marker:{color:C.accent,size:10},name:'MSE 最优点'}
+    ],baseLayout({showlegend:true,shapes:[{type:'line',x0:c,x1:c,y0:0,y1:1.3,line:{color:C.ink,width:1.6,dash:'dash'}}],
+      xaxis:{title:'← 强假设（低复杂度）　　　弱假设（高复杂度）→',range:[0,1]},yaxis:{title:'误差',range:[0,1.3]}}),CONF);
+    if(info)info.textContent='偏差² ≈ '+b2(c).toFixed(3)+' ｜ 方差 ≈ '+vr(c).toFixed(3)+' ｜ MSE ≈ '+(b2(c)+vr(c)).toFixed(3);
+  }
+  cEl.addEventListener('input',draw);draw();
+}
+
+/* ============================================================ PLOTS: PART III */
+function cdfFun(name){
+  if(name==='exp')return{F:function(x){return x<0?0:1-Math.exp(-x);},lo:-0.2,hi:6,sample:function(n){return sampleExp(n,1);}};
+  if(name==='bi')return{F:function(x){return 0.5*normCdf(x,-1.6,0.6)+0.5*normCdf(x,1.6,0.6);},lo:-4,hi:4,sample:function(n){return sampleBi(n);}};
+  return{F:function(x){return normCdf(x,0,1);},lo:-3.6,hi:3.6,sample:function(n){return sampleNorm(n,0,1);}};
+}
+function stepFromSample(sorted,lo,hi){
+  var xs=[lo],ys=[0],i,n=sorted.length;
+  for(i=0;i<n;i++){xs.push(sorted[i]);ys.push(i/n);xs.push(sorted[i]);ys.push((i+1)/n);}
+  xs.push(hi);ys.push(1);return{xs:xs,ys:ys};
+}
+function plotEdf(){
+  var elDiv=document.getElementById('p-edf');if(!elDiv)return;
+  var nEl=document.getElementById('edf-n'),nv=document.getElementById('edf-n-v');var cur='norm';
+  function draw(){
+    var n=+nEl.value;nv.textContent=n;var D=cdfFun(cur);
+    var samp=D.sample(n).sort(function(a,b){return a-b;});
+    var st=stepFromSample(samp,D.lo,D.hi);
+    var xs=lin(D.lo,D.hi,200),ys=xs.map(D.F);
+    Plotly.react(elDiv,[
+      lineTrace(xs,ys,C.ink,'真 CDF F(x)',2.6),
+      {type:'scatter',mode:'lines',x:st.xs,y:st.ys,line:{color:C.accent,width:2.2,shape:'hv'},name:'经验 CDF F̂ₙ'},
+      {type:'scatter',mode:'markers',x:samp,y:samp.map(function(){return 0;}),marker:{color:'rgba(138,58,102,.7)',size:6,symbol:'line-ns-open'},name:'样本点'}
+    ],baseLayout({showlegend:true,xaxis:{range:[D.lo,D.hi],title:'x'},yaxis:{range:[-0.03,1.03],title:'累积概率'}}),CONF);
+  }
+  seg('edf-seg',function(){cur=document.querySelector('#edf-seg button.on').getAttribute('data-d');draw();});
+  nEl.addEventListener('input',draw);var rb=document.getElementById('edf-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotBand(){
+  var elDiv=document.getElementById('p-band');if(!elDiv)return;
+  var nEl=document.getElementById('bd-n'),nv=document.getElementById('bd-n-v'),aEl=document.getElementById('bd-a'),av=document.getElementById('bd-a-v'),info=document.getElementById('bd-info');
+  function draw(){
+    var n=+nEl.value,al=+aEl.value;nv.textContent=n;av.textContent=al.toFixed(2);
+    var lo=-3.6,hi=3.6,F=function(x){return normCdf(x);};
+    var samp=sampleNorm(n,0,1).sort(function(a,b){return a-b;});
+    var eps=Math.sqrt(Math.log(2/al)/(2*n));
+    var xs=lin(lo,hi,260),i;
+    var ehat=xs.map(function(x){var c=0,k;for(k=0;k<n;k++)if(samp[k]<=x)c++;return c/n;});
+    var L=ehat.map(function(v){return Math.max(v-eps,0);}),U=ehat.map(function(v){return Math.min(v+eps,1);});
+    var trueY=xs.map(F);
+    var covered=true;for(i=0;i<xs.length;i++){if(trueY[i]<L[i]-1e-9||trueY[i]>U[i]+1e-9){covered=false;break;}}
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'lines',x:xs,y:U,line:{width:0},showlegend:false,hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:xs,y:L,fill:'tonexty',fillcolor:'rgba(138,58,102,.16)',line:{width:0},name:'置信带 [L,U]'},
+      {type:'scatter',mode:'lines',x:xs,y:ehat,line:{color:C.accent,width:2,shape:'hv'},name:'经验 CDF'},
+      lineTrace(xs,trueY,C.ink,'真 CDF',2.4)
+    ],baseLayout({showlegend:true,xaxis:{range:[lo,hi],title:'x'},yaxis:{range:[-0.03,1.03],title:'累积概率'}}),CONF);
+    if(info)info.textContent='带宽 εₙ ≈ '+eps.toFixed(3)+' ｜ 本次真 CDF 是否整条在带内：'+(covered?'是 ✓':'否 ✗（这种失手的概率 ≤ α）');
+  }
+  nEl.addEventListener('input',draw);aEl.addEventListener('input',draw);var rb=document.getElementById('bd-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotBandCov(){
+  var elDiv=document.getElementById('p-bandcov');if(!elDiv)return;
+  var nEl=document.getElementById('bc-n'),nv=document.getElementById('bc-n-v'),info=document.getElementById('bc-info'),btn=document.getElementById('bc-run');
+  nEl.addEventListener('input',function(){nv.textContent=nEl.value;});nv.textContent=nEl.value;
+  function run(){
+    var n=+nEl.value,al=0.05,K=200,hit=0,t,i;
+    var eps=Math.sqrt(Math.log(2/al)/(2*n));
+    var grid=lin(-3.6,3.6,80);
+    for(t=0;t<K;t++){
+      var samp=sampleNorm(n,0,1).sort(function(a,b){return a-b;});var ok=true;
+      for(i=0;i<grid.length;i++){var x=grid[i],c=0,k;for(k=0;k<n;k++)if(samp[k]<=x)c++;var eh=c/n,tv=normCdf(x);
+        if(tv<eh-eps-1e-9||tv>eh+eps+1e-9){ok=false;break;}}
+      if(ok)hit++;
+    }
+    var cov=hit/K;var col=cov>=0.95?C.green:C.rust;
+    Plotly.react(elDiv,[{type:'bar',orientation:'h',y:['整体覆盖率'],x:[cov],marker:{color:col},width:0.5,
+      text:[(cov*100).toFixed(1)+'%'],textposition:'auto',textfont:{color:'#fff'}}],
+      baseLayout({margin:{l:90,r:16,t:8,b:30},shapes:[{type:'line',x0:0.95,x1:0.95,y0:-0.5,y1:0.5,line:{color:C.ink,width:2,dash:'dash'}}],
+        xaxis:{range:[0,1.02],title:'整条被覆盖的比例（黑虚线=目标 0.95）'},yaxis:{}}),CONF);
+    if(info)info.textContent='跑了 '+K+' 次实验，'+hit+' 次"真 CDF 整条落在带内" → 覆盖率 '+(cov*100).toFixed(1)+'%（应当 ≥ 95%）。εₙ≈'+eps.toFixed(3);
+  }
+  if(btn)btn.addEventListener('click',run);
+}
+
+function plotMvcdf(){
+  var elDiv=document.getElementById('p-mvcdf');if(!elDiv)return;
+  var nEl=document.getElementById('mv-n'),nv=document.getElementById('mv-n-v'),rEl=document.getElementById('mv-r'),rv=document.getElementById('mv-r-v');
+  var X=[],Y=[];
+  function regen(n,rho){X=[];Y=[];var i;for(i=0;i<n;i++){var z1=randn(),z2=randn();X.push(z1);Y.push(rho*z1+Math.sqrt(1-rho*rho)*z2);}}
+  function draw(regenFlag){
+    var n=+nEl.value,rho=+rEl.value;nv.textContent=n;rv.textContent=rho.toFixed(2);
+    if(regenFlag||X.length!==n)regen(n,rho);else{regen(n,rho);}
+    var gx=lin(-3,3,26),gy=lin(-3,3,26),i,j,k;
+    var z=gy.map(function(yy){return gx.map(function(xx){var c=0;for(k=0;k<X.length;k++)if(X[k]<=xx&&Y[k]<=yy)c++;return c/X.length;});});
+    Plotly.react(elDiv,[{type:'surface',x:gx,y:gy,z:z,colorscale:TEAL_SCALE,showscale:false,opacity:0.96}],
+      {paper_bgcolor:'rgba(0,0,0,0)',font:FONT,margin:{l:0,r:0,t:0,b:0},
+       scene:scene3d({xaxis:{title:'x'},yaxis:{title:'y'},zaxis:{title:'F̂ₙ(x,y)',range:[0,1]},camera:{eye:{x:-1.6,y:-1.6,z:1.2}}})},CONF);
+  }
+  nEl.addEventListener('input',function(){draw(true);});rEl.addEventListener('input',function(){draw(true);});
+  var rb=document.getElementById('mv-resample');if(rb)rb.addEventListener('click',function(){draw(true);});
+  draw(true);
+}
+
+/* ============================================================ PLOTS: PART IV */
+function plotFunc(){
+  var elDiv=document.getElementById('p-func');if(!elDiv)return;
+  var skEl=document.getElementById('fn-sk'),skv=document.getElementById('fn-sk-v'),qEl=document.getElementById('fn-q'),qv=document.getElementById('fn-q-v');
+  function draw(){
+    var sk=+skEl.value,q=+qEl.value;skv.textContent=sk.toFixed(1);qv.textContent=q.toFixed(2);
+    var sig=0.05+sk*1.15;
+    var hi=Math.exp(sig*3.2)+0.4;
+    var xs=lin(0.001,hi,260),ys=xs.map(function(x){return x>0?normPdf(Math.log(x),0,sig)/x:0;});
+    var mn=Math.exp(sig*sig/2),md=1,qq=Math.exp(sig*normInv(q));
+    var ymax=Math.max.apply(null,ys);
+    function vline(xv,col,nm){return{type:'scatter',mode:'lines',x:[xv,xv],y:[0,ymax*1.04],line:{color:col,width:2.4},name:nm};}
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'lines',x:xs,y:ys,line:{color:C.faint,width:2},fill:'tozeroy',fillcolor:'rgba(140,133,122,.12)',name:'分布密度'},
+      vline(mn,C.accent,'均值 ∫x dF'),vline(md,C.teal,'中位数 (q=0.5)'),vline(qq,C.gold,'q='+q.toFixed(2)+' 分位')
+    ],baseLayout({showlegend:true,xaxis:{range:[0,hi],title:'x'},yaxis:{title:'密度',rangemode:'tozero'}}),CONF);
+  }
+  skEl.addEventListener('input',draw);qEl.addEventListener('input',draw);draw();
+}
+
+function plotPlugin(){
+  var elDiv=document.getElementById('p-plugin');if(!elDiv)return;
+  var nEl=document.getElementById('pg-n'),nv=document.getElementById('pg-n-v');var cur='mean';
+  var bigSample=[];
+  function regen(N){bigSample=sampleExp(N,1);}
+  function draw(regenFlag){
+    var N=+nEl.value;nv.textContent=N;
+    if(regenFlag||bigSample.length<N)regen(N);
+    var truth=(cur==='mean')?1:(cur==='var'?1:Math.LN2);
+    var checks=[],i,start=5,stepc=Math.max(1,Math.round((N-start)/70));
+    for(i=start;i<=N;i+=stepc)checks.push(i);
+    if(checks.length===0||checks[checks.length-1]!==N)checks.push(N);
+    var est=checks.map(function(k){var pre=bigSample.slice(0,k);
+      if(cur==='mean')return mean(pre);if(cur==='var')return variance(pre,0);return median(pre);});
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'lines+markers',x:checks,y:est,line:{color:C.accent,width:1.8},marker:{size:3,color:C.accent},name:'插件估计 T(F̂ₙ)'},
+      {type:'scatter',mode:'lines',x:[start,N],y:[truth,truth],line:{color:C.ink,width:2,dash:'dash'},name:'真值 T(F)'}
+    ],baseLayout({showlegend:true,xaxis:{title:'样本量 n（对数轴）',type:'log'},yaxis:{title:'估计值'}}),CONF);
+  }
+  seg('pg-seg',function(){cur=document.querySelector('#pg-seg button.on').getAttribute('data-t');draw(false);});
+  nEl.addEventListener('input',function(){draw(false);});
+  var rb=document.getElementById('pg-resample');if(rb)rb.addEventListener('click',function(){draw(true);});
+  draw(true);
+}
+
+/* ============================================================ PLOTS: PART V */
+function plotBoot(){
+  var elDiv=document.getElementById('p-boot');if(!elDiv)return;
+  var bEl=document.getElementById('bw-B'),bv=document.getElementById('bw-B-v');var cur='mean';
+  var orig=[],n0=45;
+  function stat(arr){if(cur==='mean')return mean(arr);if(cur==='med')return median(arr);return quantile(arr,0.9);}
+  function regenOrig(){orig=sampleExp(n0,1);}
+  function draw(){
+    var B=+bEl.value;bv.textContent=B;
+    var boots=[],b,i;for(b=0;b<B;b++){var r=[];for(i=0;i<n0;i++)r.push(orig[(Math.random()*n0)|0]);boots.push(stat(r));}
+    var se=sd(boots),m=mean(boots);
+    var lo=Math.min.apply(null,boots),hi=Math.max.apply(null,boots);
+    Plotly.react(elDiv,[
+      histTrace(boots,42,lo,hi,'rgba(138,58,102,.6)','Bootstrap 分布 T*'),
+      {type:'scatter',mode:'markers',x:orig,y:orig.map(function(){return 0;}),yaxis:'y2',marker:{color:'rgba(90,84,75,.6)',size:7,symbol:'line-ns-open'},name:'原始样本（须状）'}
+    ],baseLayout({showlegend:true,barmode:'overlay',
+      xaxis:{title:'统计量 T* 的取值'},yaxis:{title:'密度',domain:[0,1]},
+      yaxis2:{overlaying:'y',side:'right',range:[-0.5,8],showticklabels:false,showgrid:false},
+      annotations:[{x:m,y:1,yref:'paper',text:'标准误 SE ≈ '+se.toFixed(3),showarrow:false,font:{size:12,color:C.accent},bgcolor:'rgba(255,253,248,.8)'}]}),CONF);
+  }
+  seg('bw-seg',function(){cur=document.querySelector('#bw-seg button.on').getAttribute('data-t');draw();});
+  bEl.addEventListener('input',draw);
+  var rb=document.getElementById('bw-resample');if(rb)rb.addEventListener('click',function(){regenOrig();draw();});
+  regenOrig();draw();
+}
+
+function plotBoot2(){
+  var elDiv=document.getElementById('p-boot2');if(!elDiv)return;
+  var ns=[],bs=[],i;for(i=5;i<=200;i+=14)ns.push(i);for(i=20;i<=520;i+=34)bs.push(i);
+  var z=bs.map(function(B){return ns.map(function(n){
+    var jitter=(0.5/Math.sqrt(B))*Math.sin(2.1*n+0.7)*Math.cos(0.045*B+n*0.3);
+    return 1*(1-1/n)+jitter;});});
+  var plane=bs.map(function(){return ns.map(function(){return 1;});});
+  Plotly.react(elDiv,[
+    {type:'surface',x:ns,y:bs,z:z,colorscale:PURPLE_SCALE,showscale:false,opacity:0.95},
+    {type:'surface',x:ns,y:bs,z:plane,showscale:false,opacity:0.22,colorscale:[[0,C.rust],[1,C.rust]]}
+  ],{paper_bgcolor:'rgba(0,0,0,0)',font:FONT,margin:{l:0,r:0,t:0,b:0},
+     scene:scene3d({xaxis:{title:'原始样本量 n'},yaxis:{title:'重采样次数 B'},zaxis:{title:'v_boot',range:[0.6,1.25]},camera:{eye:{x:1.7,y:-1.6,z:0.9}}})},CONF);
+}
+
+function plotBootCi(){
+  var elDiv=document.getElementById('p-bootci');if(!elDiv)return;
+  var skEl=document.getElementById('bc2-sk'),skv=document.getElementById('bc2-sk-v'),aEl=document.getElementById('bc2-a'),av=document.getElementById('bc2-a-v');
+  function draw(){
+    var sk=+skEl.value,conf=+aEl.value;skv.textContent=sk.toFixed(2);av.textContent=conf.toFixed(2);
+    var al=1-conf,B=5000,vals=[],i;
+    for(i=0;i<B;i++){vals.push((1-sk)*randn()+sk*(rexp(1)-1));}
+    var that=mean(vals);
+    var sorted=vals.slice().sort(function(a,b){return a-b;});
+    var qa=qSorted(sorted,al/2),qb=qSorted(sorted,1-al/2);
+    var perc=[qa,qb],piv=[2*that-qb,2*that-qa];
+    var lo=Math.min(qa,piv[0])-0.3,hi=Math.max(qb,piv[1])+0.3;
+    Plotly.react(elDiv,[
+      histTrace(vals,46,lo,hi,'rgba(138,58,102,.5)','Bootstrap 分布'),
+      {type:'scatter',mode:'lines+markers',x:perc,y:[-0.04,-0.04],line:{color:C.teal,width:5},marker:{size:10,color:C.teal,symbol:'line-ns'},name:'百分位区间'},
+      {type:'scatter',mode:'lines+markers',x:piv,y:[-0.10,-0.10],line:{color:C.accent,width:5},marker:{size:10,color:C.accent,symbol:'line-ns'},name:'枢轴区间（反射）'}
+    ],baseLayout({showlegend:true,shapes:[{type:'line',x0:that,x1:that,y0:-0.14,y1:0.55,line:{color:C.ink,width:1.8,dash:'dash'}}],
+      xaxis:{range:[lo,hi],title:'θ 的取值（黑虚线 = 点估计 θ̂）'},yaxis:{title:'密度',range:[-0.16,0.55]}}),CONF);
+  }
+  skEl.addEventListener('input',draw);aEl.addEventListener('input',draw);draw();
+}
+
+/* ============================================================ PLOTS: PART VI */
+function targ(name){
+  if(name==='norm')return{F:function(x){return normCdf(x);},Fi:function(u){return normInv(u);},f:function(x){return normPdf(x);},lo:-3.5,hi:3.5};
+  if(name==='tri')return{F:function(x){if(x<=0)return 0;if(x>=2)return 1;return x<1?x*x/2:1-(2-x)*(2-x)/2;},
+     Fi:function(u){return u<0.5?Math.sqrt(2*u):2-Math.sqrt(2*(1-u));},f:function(x){return (x>=0&&x<=1)?x:((x>1&&x<=2)?2-x:0);},lo:0,hi:2};
+  return{F:function(x){return x<0?0:1-Math.exp(-x);},Fi:function(u){return -Math.log(1-u);},f:function(x){return x<0?0:Math.exp(-x);},lo:0,hi:5};
+}
+function plotInverse(){
+  var elDiv=document.getElementById('p-inverse');if(!elDiv)return;
+  var nEl=document.getElementById('iv-n'),nv=document.getElementById('iv-n-v');var cur='exp';
+  function draw(){
+    var N=+nEl.value;nv.textContent=N;var T=targ(cur);
+    var us=[],xs=[],i;for(i=0;i<N;i++){var u=Math.random();us.push(u);xs.push(T.Fi(u));}
+    var cx=lin(T.lo,T.hi,200),cy=cx.map(T.F);
+    var demoN=Math.min(6,N),mx=[],my=[];for(i=0;i<demoN;i++){var u=us[i],x=xs[i];mx.push(T.lo,x,x,null);my.push(u,u,0,null);}
+    var showU=us.slice(0,Math.min(80,N));
+    var fx=lin(T.lo,T.hi,200),fy=fx.map(T.f);
+    Plotly.react(elDiv,[
+      lineTrace(cx,cy,C.ink,'目标 CDF F(x)',2.6),
+      {type:'scatter',mode:'lines',x:mx,y:my,line:{color:'rgba(140,133,122,.55)',width:1},showlegend:false,hoverinfo:'skip'},
+      {type:'scatter',mode:'markers',x:showU.map(function(){return T.lo;}),y:showU,marker:{color:'rgba(138,58,102,.7)',size:5},name:'纵轴上的均匀点 U'},
+      {type:'histogram',x:xs,histnorm:'probability density',yaxis:'y2',marker:{color:'rgba(138,58,102,.5)'},name:'生成的 X 直方图',xbins:{start:T.lo,end:T.hi,size:(T.hi-T.lo)/34}},
+      {type:'scatter',mode:'lines',x:fx,y:fy,yaxis:'y2',line:{color:C.rust,width:2.4},name:'目标密度 f(x)'}
+    ],baseLayout({showlegend:true,xaxis:{range:[T.lo,T.hi],title:'x'},
+      yaxis:{domain:[0.4,1],title:'F(x) / U',range:[0,1]},yaxis2:{domain:[0,0.32],title:'密度',rangemode:'tozero'}}),CONF);
+  }
+  seg('iv-seg',function(){cur=document.querySelector('#iv-seg button.on').getAttribute('data-d');draw();});
+  nEl.addEventListener('input',draw);var rb=document.getElementById('iv-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotReject(){
+  var elDiv=document.getElementById('p-reject');if(!elDiv)return;
+  var mEl=document.getElementById('rj-M'),mv=document.getElementById('rj-M-v'),nEl=document.getElementById('rj-n'),nv=document.getElementById('rj-n-v'),info=document.getElementById('rj-info');
+  var f=function(x){return x>0?x*Math.exp(-x):0;},g=function(x){return 0.5*Math.exp(-0.5*x);};
+  function draw(){
+    var M=+mEl.value,N=+nEl.value;mv.textContent=M.toFixed(2);nv.textContent=N;
+    var ax=[],ay=[],rx=[],ry=[],acc=0,i;
+    for(i=0;i<N;i++){var x=rexp(0.5),top=M*g(x),u=Math.random()*top;
+      if(u<=f(x)){acc++;ax.push(x);ay.push(u);}else{rx.push(x);ry.push(u);}}
+    var cx=lin(0,12,200);
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'markers',x:rx,y:ry,marker:{color:'rgba(176,68,43,.45)',size:4},name:'拒绝'},
+      {type:'scatter',mode:'markers',x:ax,y:ay,marker:{color:'rgba(31,107,102,.6)',size:4},name:'接受'},
+      lineTrace(cx,cx.map(f),C.rust,'目标密度 f',2.8),
+      lineTrace(cx,cx.map(function(x){return M*g(x);}),C.accent,'包络 M·g（帐篷）',2.4,'dash')
+    ],baseLayout({showlegend:true,xaxis:{range:[0,12],title:'x'},yaxis:{title:'高度',rangemode:'tozero'}}),CONF);
+    if(info)info.textContent='接受率 ≈ '+(acc/N*100).toFixed(1)+'% ｜ 理论上限 1/M ≈ '+(100/M).toFixed(1)+'%（M 越接近最紧值 ≈1.47，浪费越少）';
+  }
+  mEl.addEventListener('input',draw);nEl.addEventListener('input',draw);var rb=document.getElementById('rj-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotBm2(){
+  var elDiv=document.getElementById('p-bm2');if(!elDiv)return;
+  var nEl=document.getElementById('bm-n'),nv=document.getElementById('bm-n-v');
+  function draw(){
+    var N=+nEl.value;nv.textContent=N;
+    var u1=[],u2=[],z1=[],z2=[],R=[],TH=[],i;
+    for(i=0;i<N;i++){var a=Math.random(),b=Math.random(),r=Math.sqrt(-2*Math.log(a)),th=2*Math.PI*b;
+      u1.push(a);u2.push(b);z1.push(r*Math.cos(th));z2.push(r*Math.sin(th));R.push(r);TH.push(th);}
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'markers',x:u1,y:u2,xaxis:'x',yaxis:'y',marker:{color:TH,colorscale:'Rainbow',size:4,showscale:false}},
+      {type:'scatter',mode:'markers',x:z1,y:z2,xaxis:'x2',yaxis:'y2',marker:{color:TH,colorscale:'Rainbow',size:4,showscale:false}},
+      {type:'histogram',x:R,xaxis:'x3',yaxis:'y3',marker:{color:'rgba(138,58,102,.6)'},nbinsx:30},
+      {type:'histogram',x:TH,xaxis:'x4',yaxis:'y4',marker:{color:'rgba(31,107,102,.6)'},nbinsx:30}
+    ],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,showlegend:false,margin:{l:36,r:12,t:24,b:30},
+      xaxis:{domain:[0,0.46],anchor:'y',gridcolor:C.line,title:'U₁'},yaxis:{domain:[0.56,1],anchor:'x',gridcolor:C.line,title:'U₂'},
+      xaxis2:{domain:[0.54,1],anchor:'y2',gridcolor:C.line,title:'Z₁',range:[-3.5,3.5]},yaxis2:{domain:[0.56,1],anchor:'x2',gridcolor:C.line,range:[-3.5,3.5]},
+      xaxis3:{domain:[0,0.46],anchor:'y3',gridcolor:C.line,title:'半径 R'},yaxis3:{domain:[0,0.40],anchor:'x3',gridcolor:C.line},
+      xaxis4:{domain:[0.54,1],anchor:'y4',gridcolor:C.line,title:'角度 θ'},yaxis4:{domain:[0,0.40],anchor:'x4',gridcolor:C.line},
+      annotations:[{x:0.23,y:1.0,xref:'paper',yref:'paper',text:'输入：均匀方块',showarrow:false,font:{size:11,color:C.inkSoft}},
+        {x:0.78,y:1.0,xref:'paper',yref:'paper',text:'输出：正态云（按角度着色）',showarrow:false,font:{size:11,color:C.inkSoft}}]},CONF);
+  }
+  nEl.addEventListener('input',draw);var rb=document.getElementById('bm-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+function plotBm3(){
+  var elDiv=document.getElementById('p-bm3');if(!elDiv)return;
+  var xs=lin(-3,3,55),ys=lin(-3,3,55);
+  var z=ys.map(function(y){return xs.map(function(x){return normPdf(x)*normPdf(y);});});
+  Plotly.react(elDiv,[{type:'surface',x:xs,y:ys,z:z,colorscale:PURPLE_SCALE,showscale:false,
+    contours:{z:{show:true,usecolormap:true,project:{z:false}}},opacity:0.96}],
+    {paper_bgcolor:'rgba(0,0,0,0)',font:FONT,margin:{l:0,r:0,t:0,b:0},
+     scene:scene3d({xaxis:{title:'Z₁'},yaxis:{title:'Z₂'},zaxis:{title:'密度'},camera:{eye:{x:1.6,y:1.6,z:1.0}}})},CONF);
+}
+
+function plotIndep(){
+  var elDiv=document.getElementById('p-indep');if(!elDiv)return;
+  var kEl=document.getElementById('id-k'),kv=document.getElementById('id-k-v'),info=document.getElementById('id-info');
+  function draw(){
+    var k=+kEl.value;kv.textContent=k.toFixed(2);
+    var N=600,X=[],Y=[],i;for(i=0;i<N;i++){var x=randn(),ystr=(x*x-1)/Math.SQRT2;X.push(x);Y.push(k*ystr+Math.sqrt(1-k*k)*randn());}
+    var mx=mean(X),my=mean(Y),cov=0,vx=0,vy=0;for(i=0;i<N;i++){cov+=(X[i]-mx)*(Y[i]-my);vx+=(X[i]-mx)*(X[i]-mx);vy+=(Y[i]-my)*(Y[i]-my);}
+    var rho=cov/Math.sqrt(vx*vy);
+    Plotly.react(elDiv,[{type:'scatter',mode:'markers',x:X,y:Y,marker:{color:'rgba(138,58,102,.5)',size:5}}],
+      baseLayout({xaxis:{range:[-3.4,3.4],title:'X'},yaxis:{range:[-3.4,3.4],title:'Y'}}),CONF);
+    if(info)info.textContent='测得相关系数 ρ̂ ≈ '+rho.toFixed(3)+'（≈0）—— 但 Y 明显被 X 决定：不相关 ≠ 独立';
+  }
+  kEl.addEventListener('input',draw);var rb=document.getElementById('id-resample');if(rb)rb.addEventListener('click',draw);draw();
+}
+
+/* ============================================================ PLOTS: PART VII */
+function plotTest(){
+  var elDiv=document.getElementById('p-test');if(!elDiv)return;
+  var cEl=document.getElementById('ts-c'),cv=document.getElementById('ts-c-v'),dEl=document.getElementById('ts-d'),dv=document.getElementById('ts-d-v'),nEl=document.getElementById('ts-n'),nv=document.getElementById('ts-n-v'),info=document.getElementById('ts-info');
+  function draw(){
+    var c=+cEl.value,d=+dEl.value,n=+nEl.value;cv.textContent=c.toFixed(2);dv.textContent=d.toFixed(1);nv.textContent=n;
+    var s=2/Math.sqrt(n);
+    var lo=Math.min(-3*s,-1),hi=Math.max(d+3*s,c+0.5)+0.3;
+    var xs=lin(lo,hi,260);
+    var n0=xs.map(function(x){return normPdf(x,0,s);}),n1=xs.map(function(x){return normPdf(x,d,s);});
+    var xR=xs.filter(function(x){return x>=c;}),yR=xR.map(function(x){return normPdf(x,0,s);});
+    var xB=xs.filter(function(x){return x<=c;}),yB=xB.map(function(x){return normPdf(x,d,s);});
+    var alpha=1-normCdf(c,0,s),beta=normCdf(c,d,s),pow=1-beta;
+    Plotly.react(elDiv,[
+      {type:'scatter',mode:'lines',x:xR,y:yR,fill:'tozeroy',fillcolor:'rgba(176,68,43,.35)',line:{width:0},name:'α 弃真'},
+      {type:'scatter',mode:'lines',x:xB,y:yB,fill:'tozeroy',fillcolor:'rgba(183,137,42,.35)',line:{width:0},name:'β 取伪'},
+      lineTrace(xs,n0,C.inkSoft,'H₀ 下分布',2.4),
+      lineTrace(xs,n1,C.accent,'H₁ 下分布',2.6)
+    ],baseLayout({showlegend:true,shapes:[{type:'line',x0:c,x1:c,y0:0,y1:Math.max.apply(null,n0)*1.1,line:{color:C.ink,width:1.8,dash:'dash'}}],
+      xaxis:{range:[lo,hi],title:'检验统计量 τ（竖线=临界值，右侧为拒绝域）'},yaxis:{title:'密度',rangemode:'tozero'}}),CONF);
+    if(info)info.textContent='α ≈ '+(alpha*100).toFixed(1)+'% ｜ β ≈ '+(beta*100).toFixed(1)+'% ｜ 功效 = 1−β ≈ '+(pow*100).toFixed(1)+'%';
+  }
+  cEl.addEventListener('input',draw);dEl.addEventListener('input',draw);nEl.addEventListener('input',draw);draw();
+}
+
+function plotPower(){
+  var elDiv=document.getElementById('p-power');if(!elDiv)return;
+  var ds=lin(0,5,42),ns=[],i;for(i=2;i<=120;i+=3)ns.push(i);
+  var z=ns.map(function(n){var s=2/Math.sqrt(n),c=1.6449*s;return ds.map(function(d){return 1-normCdf(c,d,s);});});
+  Plotly.react(elDiv,[{type:'surface',x:ds,y:ns,z:z,colorscale:TEAL_SCALE,showscale:false,opacity:0.96}],
+    {paper_bgcolor:'rgba(0,0,0,0)',font:FONT,margin:{l:0,r:0,t:0,b:0},
+     scene:scene3d({xaxis:{title:'效应量 δ'},yaxis:{title:'样本量 n'},zaxis:{title:'功效 = 1−β',range:[0,1]},camera:{eye:{x:-1.7,y:-1.5,z:1.0}}})},CONF);
+}
+
+function plotLocscale(){
+  var elDiv=document.getElementById('p-locscale');if(!elDiv)return;
+  var muEl=document.getElementById('ls-mu'),muv=document.getElementById('ls-mu-v'),sEl=document.getElementById('ls-s'),sv=document.getElementById('ls-s-v');
+  var base=[];
+  function regen(){base=sampleNorm(500,0,1);}
+  function draw(regenFlag){
+    var mu=+muEl.value,s=+sEl.value;muv.textContent=mu.toFixed(1);sv.textContent=s.toFixed(1);
+    if(regenFlag||base.length===0)regen();
+    var raw=base.map(function(z){return mu+s*z;});
+    var m=mean(raw),st=sd(raw,1);
+    var stud=raw.map(function(x){return (x-m)/st;});
+    var rlo=mu-4*s,rhi=mu+4*s;
+    var cx=lin(-3.6,3.6,160),cy=cx.map(function(x){return normPdf(x);});
+    Plotly.react(elDiv,[
+      {type:'histogram',x:raw,histnorm:'probability density',xaxis:'x',yaxis:'y',marker:{color:'rgba(138,58,102,.55)'},
+        xbins:{start:rlo,end:rhi,size:(rhi-rlo)/34},name:'原始 X'},
+      {type:'histogram',x:stud,histnorm:'probability density',xaxis:'x2',yaxis:'y2',marker:{color:'rgba(31,107,102,.55)'},
+        xbins:{start:-3.6,end:3.6,size:7.2/34},name:'学生化 Y'},
+      {type:'scatter',mode:'lines',x:cx,y:cy,xaxis:'x2',yaxis:'y2',line:{color:C.ink,width:2.2},name:'N(0,1)'}
+    ],{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,showlegend:false,margin:{l:46,r:14,t:26,b:34},
+      xaxis:{domain:[0,1],anchor:'y',gridcolor:C.line,title:'原始数据 X = μ + σ·Z（随滑块平移、缩放）',range:[rlo,rhi]},
+      yaxis:{domain:[0.56,1],anchor:'x',gridcolor:C.line,rangemode:'tozero'},
+      xaxis2:{domain:[0,1],anchor:'y2',gridcolor:C.line,title:'学生化 Y = (X−X̄)/S（无论 μ,σ 都塌到同一形状）',range:[-3.6,3.6]},
+      yaxis2:{domain:[0,0.44],anchor:'x2',gridcolor:C.line,rangemode:'tozero'},
+      annotations:[{x:0.5,y:1.0,xref:'paper',yref:'paper',text:'上：原始直方图（各异）',showarrow:false,font:{size:11,color:C.inkSoft}},
+        {x:0.5,y:0.46,xref:'paper',yref:'paper',text:'下：学生化后（重合）',showarrow:false,font:{size:11,color:C.inkSoft}}]},CONF);
+  }
+  muEl.addEventListener('input',function(){draw(false);});sEl.addEventListener('input',function(){draw(false);});
+  var rb=document.getElementById('ls-resample');if(rb)rb.addEventListener('click',function(){draw(true);});
+  draw(true);
+}
+
+/* ===================== INIT ===================== */
+function initPlots(){
+  var fns=[plotCltRecap,plotDelta,plotDelta3,plotDeltaProof,plotDelta2,
+    plotModel,plotBias,plotSampSurf,plotBiasVar,
+    plotEdf,plotBand,plotBandCov,plotMvcdf,
+    plotFunc,plotPlugin,
+    plotBoot,plotBoot2,plotBootCi,
+    plotInverse,plotReject,plotBm2,plotBm3,plotIndep,
+    plotTest,plotPower,plotLocscale];
+  fns.forEach(function(f){try{f();}catch(e){if(window.console)console.error('plot error in '+(f.name||'?')+':',e);}});
+}
+function boot(){
+  try{renderMath();}catch(e){}
+  try{buildMap();}catch(e){if(window.console)console.error('map error:',e);}
+  try{wireSliderFill();}catch(e){}
+  try{wireNav();}catch(e){}
+  if(typeof Plotly!=='undefined'){initPlots();}
+  else{var tries=0;var iv=setInterval(function(){tries++;
+    if(typeof Plotly!=='undefined'){clearInterval(iv);initPlots();}
+    else if(tries>50){clearInterval(iv);}
+  },150);}
+}
+if(document.readyState==='complete'||document.readyState==='interactive'){setTimeout(boot,60);}
+else{window.addEventListener('load',boot);}
+})();
+</script>
+</body>
+</html>

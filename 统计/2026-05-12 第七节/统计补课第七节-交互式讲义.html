@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第七节 · Ch6 p1–10：贝叶斯推断 — 把"未知"当成有分布的信念，再用数据更新）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly (仅用于 2D；3D 全部由本页内置的 Canvas 引擎绘制，绝不调用 WebGL) -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F3EEE2;
+  --card:#FFFDF8;
+  --ink:#1E1C18;
+  --ink-soft:#574F46;
+  --ink-faint:#8C857A;
+  --line:#E4D8C2;
+  --line-strong:#D2C2A4;
+  --accent:#8E2F5A;        /* 第七节主色：勃艮第紫红（贝叶斯 — 信念的更新、后验的"暖光"、把不确定性点亮） */
+  --accent-soft:#F2DCE9;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(40,30,15,.05), 0 8px 30px rgba(40,30,15,.06);
+  --shadow-lg:0 10px 50px rgba(40,30,15,.12);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #F2DCE9 0%, rgba(242,220,233,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1320px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,60px) 56px; max-width:980px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:312px; flex:0 0 312px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:312px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(20,15,8,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:66ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#FAF2F6)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* prose bullet list inside mod cards */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline WebGL caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#FBEEE9; border:1px solid #E7C3B6; border-left:3px solid var(--rust);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--rust)}
+
+/* plot containers */
+.plot{width:100%; height:360px}
+.plot.tall{height:430px}
+.plot.d3{height:480px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #DEB6CC; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(210,194,164,.16) 27px, rgba(210,194,164,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:980px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.04)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+/* inverse-probability bars */
+.ip-bars{display:flex; flex-direction:column; gap:9px; margin:6px 0 2px}
+.ip-row{display:grid; grid-template-columns:130px 1fr; gap:10px; align-items:center; font-size:13.5px}
+.ip-row .lab{font-family:"Fraunces"; color:var(--ink-soft); text-align:right; line-height:1.2}
+.ip-track{height:24px; background:var(--paper-2); border:1px solid var(--line); border-radius:7px; overflow:hidden; position:relative}
+.ip-fill{height:100%; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; color:#fff; font-family:"Fraunces"; font-variant-numeric:tabular-nums; font-size:12.5px; white-space:nowrap; transition:width .25s ease}
+
+.footer{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:13.5px}
+.foot{margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:13.5px}
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(142,47,90,.03))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:80ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-meta{font-size:12.5px; color:var(--ink-faint); margin-top:6px}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第七节<small>贝叶斯推断 — Ch6 p1–10 · point estimation</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图</a>
+    <a href="#spine"><span class="num">0</span>本节主线（承接频率派）</a>
+    <a class="trap-link" href="#audit"><span class="num">0</span>先给 AI 纪要挑刺 ⚠</a>
+
+    <h4>Ⅰ · 两种世界观</h4>
+    <a class="sub" href="#t-belief"><span class="num">1.1</span>信念 vs 频率：谁是随机的</a>
+    <a class="sub trap-link" href="#t-inverse"><span class="num">1.2</span>逆概率与基础率 ⚠（抽烟·硬币）</a>
+
+    <h4>Ⅱ · 贝叶斯三件套与公式</h4>
+    <a class="sub" href="#t-trio"><span class="num">2.1</span>先验 · 似然 · 后验</a>
+    <a class="sub" href="#t-formula"><span class="num">2.2</span>贝叶斯公式（连续/离散）</a>
+    <a class="sub" href="#t-propto"><span class="num">2.3</span>后验 ∝ 似然 × 先验 · 归一化常数</a>
+
+    <h4>Ⅲ · 共轭先验</h4>
+    <a class="sub" href="#t-conj"><span class="num">3.1</span>共轭：会自我繁殖的分布</a>
+    <a class="sub" href="#t-beta"><span class="num">3.2</span>Beta–二项（主例 · 交互 · 3D）</a>
+    <a class="sub" href="#t-others"><span class="num">3.3</span>Gamma–泊松 / 正态–正态（收缩 · 3D）</a>
+
+    <h4>Ⅳ · 从后验到决策</h4>
+    <a class="sub" href="#t-loss"><span class="num">4.1</span>损失函数与风险</a>
+    <a class="sub" href="#t-point"><span class="num">4.2</span>均值/中位数/众数（三种损失）</a>
+    <a class="sub trap-link" href="#t-ci"><span class="num">4.3</span>可信区间 vs 置信区间 ⚠</a>
+
+    <h4>收尾</h4>
+    <a href="#closing"><span class="num">∎</span>总览 · 通向回归与因果</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <!-- ============================================================ HERO -->
+  <p class="h-eyebrow">用数据说话 · 直觉式交互讲义 · 第七节</p>
+  <h1 class="title cjk">贝叶斯推断：把"未知"<br>当成有分布的信念，再用数据更新它</h1>
+  <p class="lead cjk">第六章 <i>Bayesian inference</i>（p1–10，The Bayesian method: point estimation）。频率派把参数 \(\theta\) 看成<b>固定但未知的常数</b>，用样本去逼近它；贝叶斯派换一套世界观——把 \(\theta\) 当成<b>随机变量</b>，先给它一个<b>先验</b>，再用数据把它更新成<b>后验</b>。一句话贯穿全节：<b class="kw">后验 ∝ 似然 × 先验</b>。本节每个知识点都配齐六个表达通道：<b>直觉 · 公式 · 案例 · 2D 图 · 3D 图 · 交互</b>，并标出知识点之间的<b>继承 / 推广 / 互补 / 工具 / 盲点</b>关系。</p>
+
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>用一句大白话先把"为什么"说透</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>把直觉钉成可计算的式子</p></div>
+    <div class="gchip case"><div class="ic">✦</div><h5>案例</h5><p>抽烟·硬币·专家先验·验病</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5>2D 图</h5><p>先验/似然/后验三条曲线</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>后验"山脊"随数据收窄（Canvas）</p></div>
+    <div class="gchip live"><div class="ic">⊙</div><h5>交互</h5><p>拖动先验与数据，看后验实时变</p></div>
+    <div class="gchip flow"><div class="ic">⟶</div><h5>推导</h5><p>三步走：写到正比 → 认分布</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>对照教材原文，给 AI 纪要挑刺</p></div>
+  </div>
+
+  <!-- ============================================================ MAP -->
+  <section class="topic-block" id="map">
+    <h3 class="topic cjk">0 · 知识全景地图：本节的概念怎样长在一起</h3>
+    <p class="topic-en">A map of the whole lecture — how every idea connects, inherits, and feeds the next.</p>
+    <p class="cjk">先看骨架再填血肉。左边是你已经熟的<b>频率派</b>（第四/五章：θ 固定、用 MLE 点估、用置信区间框范围）；本节从它<b>分叉</b>出去，换一套世界观，最后又<b>绕回</b>来通向第七章的回归与你关心的因果。点任意节点可跳到对应小节。</p>
+    <div class="mapwrap">
+      <svg id="conceptmap" viewBox="0 0 1300 720" role="img" aria-label="第七节知识全景地图">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#B7AB98"></path>
+          </marker>
+        </defs>
+        <g id="edges" fill="none" stroke-width="1.8"></g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+    <div class="legend cjk">
+      <span><i style="border-color:#3E7C4E"></i>推导 / 步骤</span>
+      <span><i style="border-color:#8E2F5A"></i>推广 / 换世界观</span>
+      <span><i style="border-color:#574AA6"></i>提供工具</span>
+      <span><i style="border-color:#B7892A; border-top-style:dashed"></i>补充 / 强化</span>
+      <span><i style="border-color:#B0442B; border-top-style:dashed"></i>盲点警告</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ SPINE -->
+  <section class="topic-block" id="spine">
+    <h3 class="topic cjk">0 · 本节主线：同一个"未知 θ"，频率派把它钉死，贝叶斯派给它一条分布</h3>
+    <p class="topic-en">Same unknown θ — the frequentist nails it down as a constant; the Bayesian gives it a distribution and lets data reshape it.</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一句话主线</div>
+      <p>第五章你一直站在<b>频率派</b>这边：参数 \(\theta\)（比如硬币正面概率、总体均值）是一个<b>固定但我们不知道</b>的数，数据是随机的，于是我们用 <a class="inlink" href="#t-belief">MLE</a> 去"猜"这个固定值、用置信区间去"框"它。贝叶斯派只改了<b>一件事</b>，却改得很彻底：把 \(\theta\) <b>本身</b>当成一个<b>随机变量</b>——不是说硬币的物理概率会变，而是说<b>"我们对它的认识"是不确定的，用一条概率分布来记账</b>。</p>
+      <p style="margin-bottom:0">于是整章只有<b>一条流水线</b>：先把"分析前已知的东西"写成<a class="inlink" href="#t-trio">先验 \(f(\theta)\)</a>；数据怎么由 \(\theta\) 生成，写成<a class="inlink" href="#t-trio">似然 \(L(\theta)\)</a>（这一步贝叶斯和频率派<b>完全一致</b>）；两者用<a class="inlink" href="#t-formula">贝叶斯公式</a>一乘、再归一化，得到<a class="inlink" href="#t-trio">后验 \(f(\theta\mid x)\)</a>——也就是<b class="kw"><a class="inlink" href="#t-propto">后验 ∝ 似然 × 先验</a></b>。挑对了<a class="inlink" href="#t-conj">共轭先验</a>，这一乘还能让后验和先验<b>同族</b>，省掉积分；最后从后验里<a class="inlink" href="#t-point">总结出一个点</a>（均值/中位数/众数，取决于你怕犯哪种错——<a class="inlink" href="#t-loss">损失函数</a>），或<a class="inlink" href="#t-ci">框一个可信区间</a>。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>推导 · 本节逻辑链（先看骨架，再填血肉）</div>
+      <p style="margin-bottom:0" class="cjk">换世界观：\(\theta\) 视为随机变量（<a class="inlink" href="#t-belief">信念度</a>）<b>→</b> 三件套：先验 \(f(\theta)\)、似然 \(L(\theta)=\kappa f(x^{(n)}\mid\theta)\)、后验 \(f(\theta\mid x^{(n)})\)（<a class="inlink" href="#t-trio">2.1</a>）<b>→</b> 贝叶斯公式 \(f(\theta\mid x)=\dfrac{f(x\mid\theta)f(\theta)}{\int f(x\mid\theta)f(\theta)\,d\theta}\)（连续）/ 求和（离散）（<a class="inlink" href="#t-formula">2.2</a>）<b>→</b> 分母只是<b>归一化常数</b>，与 \(\theta\) 无关 ⟹ \(f(\theta\mid x)\propto L(\theta)f(\theta)\)（<a class="inlink" href="#t-propto">2.3</a>，三步走：写到正比→认分布→定常数）<b>┄┄</b> 若 \(f(\theta)\) 取<b>共轭族</b>，后验仍在同族，只需<b>更新超参数</b>（<a class="inlink" href="#t-conj">3.1</a>）：Bernoulli×Beta→Beta（<a class="inlink" href="#t-beta">3.2</a>）、Poisson×Gamma→Gamma、Normal×Normal→Normal（<a class="inlink" href="#t-others">3.3</a>，后验均值是先验与数据的<b>精度加权平均</b>=收缩）<b>→</b> 从后验取点：定义<b>损失</b> \(\mathcal L(\theta,\tilde\theta)\)、最小化<b>后验期望损失（风险）</b>（<a class="inlink" href="#t-loss">4.1</a>）⟹ 平方损失→<b>后验均值</b>（Thm 6.1）、绝对损失→<b>中位数</b>（Thm 6.2）、0–1 损失→<b>众数/MAP</b>（<a class="inlink" href="#t-point">4.2</a>）；或框<b>可信区间</b>（<a class="inlink" href="#t-ci">4.3</a>，与置信区间含义不同）<b>┄┄</b> <span style="color:var(--accent)">回扣上一节：MLE = 均匀先验下的 MAP；正态共轭 = 岭回归的贝叶斯解释 → 通向第七章回归与因果</span>。</p>
+    </div>
+    <div class="xander">
+      <p class="who"><span>🎙</span>写在前面 · 给爱较真的你</p>
+      <p>你一再说"没有认识是百分百对的，总会有盲点"。我照例<b>先把这句话用在你自己上传的那两份会议纪要上</b>（AI 纪要 docx + 转写纪要 txt）。它们主干抓得不错，思维导图那张图大体也对，但<b>转写文字里有 4 处</b>经不起推敲，而且全踩在贝叶斯<b>最容易绕晕的概念缝隙</b>上：全概率公式和贝叶斯公式谁推谁、"频率派认为概率会变"是不是说反了、抽烟例子里到底在算哪个条件概率、"众数 = 0–1 损失最优"严不严格。下面专开一节<a class="inlink" href="#audit">⚠ 给 AI 纪要挑刺</a>，逐条对照教材 \(p1\!-\!10\) 原文。</p>
+      <p style="margin-bottom:0">对你做<b>因果推断</b>和<b>建模预测</b>，本节有两件东西会反复出现：① <b>先验 = 正则化</b>——你在岭回归、Lasso 里加的惩罚项，本质就是给系数安了一个先验，<a class="inlink" href="#t-others">正态先验↔岭回归</a>、拉普拉斯先验↔Lasso；② <b>后验 = 把不确定性整条带走</b>——不是只报一个点估计，而是报一整条分布，这在你做<b>处理效应</b>的区间、<b>预测分布</b>时比单点值诚实得多。把"信念如何随证据更新"这件事的几何看清楚，比背公式值钱。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUDIT -->
+  <section class="topic-block" id="audit">
+    <h3 class="topic cjk">0 · 先给那两份 AI 会议纪要挑刺（逐条对照 Ch6 p1–10）</h3>
+    <p class="topic-en">Auditing the auto-generated minutes against the textbook — exactly where Bayesian reasoning trips people up.</p>
+    <div class="rels">
+      <span class="rel warn"><span class="dot"></span>盲点预演：本节后面每个 ⚠ 都对应这里一条</span>
+      <span class="rel general"><span class="dot"></span>对应教材 <a href="#t-formula">p4–p7</a>、<a href="#t-belief">p2</a>、<a href="#t-point">p9–p10</a></span>
+    </div>
+    <p class="cjk">你这次上传了两份纪要（"AI 纪要 docx"和"转写纪要 txt"）。两份都抓住了"后验 ∝ 似然 × 先验"这条主干，思维导图那张图也基本到位。但<b>转写文字</b>把几处本就微妙、或被语音听岔了的地方<b>固化成了"知识点"</b>。下面四条，建议你边读本节边核对——尤其前两条，方向是<b>反的</b>。</p>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 1 · "全概率公式是由贝叶斯公式推导而来的"——方向反了</p>
+      <p>转写纪要写："贝叶斯公式是一种描述相关性的方法……<b>全概率公式是由贝叶斯公式推导而来的</b>。"这把因果（推导方向）说颠倒了。</p>
+      <p style="margin-bottom:0">真相：<b>两者都是"条件概率定义"的直接推论</b>，谁也不是从对方推出来的；而且在依赖关系上，恰恰是<b>全概率公式被嵌在贝叶斯公式的分母里</b>。贝叶斯公式 \(f(\theta\mid x)=\dfrac{f(x\mid\theta)f(\theta)}{f(x)}\) 的分母 \(f(x)=\int f(x\mid\theta)f(\theta)\,d\theta\)（连续）或 \(\sum_\theta f(x\mid\theta)f(\theta)\)（离散）——这<b>就是</b>全概率公式。所以是"贝叶斯<b>用到</b>了全概率"，不是"全概率<b>来自</b>贝叶斯"。教材 \(p4\)、\(p5\) 把分母明明白白写成这个积分/求和。见 <a class="inlink" href="#t-formula">2.2</a>。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 2 · "贝叶斯认为概率不变、频率派认为概率会变"——整段说反了</p>
+      <p>转写纪要写："贝叶斯学派认为概率是不变的，但不知道其具体值；<b>而频率学派则认为概率是变化的</b>。"这是语音转写把两派<b>对调</b>了，结论恰好相反。</p>
+      <p>教材 \(p2\) 白纸黑字：在<b>频率派</b>里 "\(\theta\) is an unknown but <b>fixed</b> quantity"（未知但<b>固定</b>的常数，不能用分布描述）；在<b>贝叶斯</b>里 "\(\theta\) … is an <b>unobservable random variable</b>"（不可观测的<b>随机变量</b>，用分布描述）。所以"把参数当固定常数"的是<b>频率派</b>，"给参数一条分布、让它随数据流动"的是<b>贝叶斯</b>。</p>
+      <p style="margin-bottom:0">你的 AI 纪要 docx 在 5.1 节其实自己<b>澄清</b>对了（"贝叶斯认为客观概率固定但未知，我们用分布描述的是对它的信念程度"），思维导图也标对了。只是<b>转写正文那一句</b>把主语对调了——这正是该用"回到一手定义核对"的地方。见 <a class="inlink" href="#t-belief">1.1</a>。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 3 · 抽烟例子："从肺癌患者里抽烟的比例，反推抽烟者患癌的频率"——这两个数不能直接互换</p>
+      <p>两份纪要都把抽烟–肺癌讲成："通过现有数据（<b>肺癌患者中抽烟者的比例</b>）反向推断<b>抽烟者患肺癌的频率</b>。"听起来顺，但它把 \(P(\text{抽烟}\mid\text{肺癌})\) 直接当成了 \(P(\text{肺癌}\mid\text{抽烟})\)。</p>
+      <p style="margin-bottom:0">这<b>正是你纪要后面自己警惕的那个错</b>（"家暴者是男性" ≠ "男性会家暴"；"坐飞机出空难" ≠ "空难致死"）。两个方向的条件概率由贝叶斯<b>串起来但并不相等</b>：\(P(\text{癌}\mid\text{烟})=P(\text{烟}\mid\text{癌})\cdot\dfrac{P(\text{癌})}{P(\text{烟})}\)。要从"癌里有多少烟民"翻到"烟民里有多少得癌"，<b>必须乘上基础率比 \(P(\text{癌})/P(\text{烟})\)</b>——而癌的基础率很低、烟民比例很高，这一翻数值会差出一大截。结论的方向（烟民患癌频率更高）没错，但"直接反推那个比例"的说法漏了基础率。这条就是 <a class="inlink" href="#t-inverse">1.2 逆概率与基础率</a> 的主题，下面有可拖动的演示。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who"><span>⚠</span>挑刺 4 · "后验众数 = 0–1 损失下的最优估计"——结论对，但对连续参数要加一句话才成立</p>
+      <p>思维导图与 AI 纪要把三种点估计配三种损失："均值↔平方损失、中位数↔绝对损失、<b>众数(MAP)↔0–1 损失</b>"。前两条教材 \(p10\!-\!12\)（Thm 6.1 / 6.2）<b>严格证明</b>了；第三条对连续参数<b>需要一个极限说明</b>，否则不成立。</p>
+      <p style="margin-bottom:0">问题在于：对<b>连续</b>的 \(\theta\)，严格的 0–1 损失 \(\mathcal L=\mathbf 1\{\tilde\theta\neq\theta\}\) 的后验期望<b>恒等于 1</b>（因为"恰好猜中一个点"的概率是 0），于是<b>任何</b> \(\tilde\theta\) 风险都一样，根本选不出众数。正确说法是：取<b>"\(\varepsilon\)-容差"损失</b> \(\mathcal L_\varepsilon=\mathbf 1\{|\tilde\theta-\theta|>\varepsilon\}\)，其风险 \(\approx 1-2\varepsilon\,f(\tilde\theta\mid x)\) 在<b>后验密度最大处</b>最小；<b>令 \(\varepsilon\to 0\)</b> 的极限才把"最优点"逼到<b>众数</b>。所以"众数=0–1损失最优"是<b>离散情形直接成立、连续情形是 \(\varepsilon\to0\) 的极限</b>。下面 <a class="inlink" href="#t-point">4.2</a> 的交互图会把这三条损失的风险曲线画出来，让你亲眼看到三个最小值点落在均值/中位数/众数。</p>
+    </div>
+
+    <div class="note cjk"><b>一句话总结这四条：</b>越是顺口、像"知识点"的句子，越要回到<b>一手定义</b>核对——尤其是<b>条件概率的方向</b>（挑刺 1、3）和<b>谁是随机的</b>（挑刺 2）。这正是贝叶斯最值钱、也最容易翻车的地方。</div>
+  </section>
+
+  <!-- ============================================================ PART I -->
+  <header class="part-head" id="part1">
+    <div class="pk">Ⅰ</div>
+    <h2 class="cjk">两种世界观：同一个未知 θ，到底"谁"是随机的</h2>
+    <p>贝叶斯和频率派吵了一百年，争的不是公式对错，而是<b>"概率"这个词指什么</b>、以及<b>未知参数能不能用分布来描述</b>。把这点想清楚，后面所有式子都只是它的自然结果。然后我们用一个最常被讲错的案例——条件概率的<b>方向</b>——把"逆概率"和"基础率"这两件贝叶斯的看家本领立起来。</p>
+  </header>
+
+  <!-- 1.1 belief vs frequency -->
+  <section class="topic-block" id="t-belief">
+    <h3 class="topic cjk">1.1 信念 vs 频率：把"概率"和"参数"重新定义一遍</h3>
+    <p class="topic-en">Probability as a long-run frequency, or as a degree of belief — and whether θ may carry a distribution.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>推广自 <a href="#spine">频率派（第四/五章）</a></span>
+      <span class="rel tool"><span class="dot"></span>为 <a href="#t-formula">贝叶斯公式</a> 提供合法性</span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 2</a>（转写把两派说反了）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 两句话各自的"概率"是什么</div>
+      <p><b>频率派（Frequentist）</b>说："概率是<b>大量重复</b>里某事发生的<b>频率极限</b>。"硬币正面概率 \(=0.5\)，意思是抛无穷多次、正面占比趋于 \(0.5\)。在这套话语里，参数 \(\theta\)（那个真实的 \(0.5\)）是<b>客观存在、固定不变、但我们不知道</b>的常数——它<b>不能</b>有分布，因为"一个固定的数"谈不上分布。随机的是<b>数据</b>和<b>估计量</b>。</p>
+      <p><b>贝叶斯派（Bayesian）</b>说："概率是对某件事<b>相信程度</b>（degree of belief）的量化。"它不要求"可重复"——"明天下雨的概率 70%""这位嫌疑人有罪的概率"都说得通。关键一步：既然我对 \(\theta\) 的<b>认识</b>是不确定的，就把这份不确定<b>用一条概率分布记下来</b>。注意<b>不是说硬币的物理概率会变</b>，而是说<b>"我对这个固定值的信念"是一条分布</b>，看到数据后它会更新。</p>
+      <p style="margin-bottom:0"><b>一个让两派握手的特例：</b>当证据来自大量可重复实验时，贝叶斯的"信念度"会和频率派的"频率"<b>重合</b>——这时频率派可看成贝叶斯的一个特例（教材 \(p2\)：频率解释"can be viewed as a special case of degree of belief"）。所以别把它们当成"对错之争"，而是<b>两种记账方式</b>，贝叶斯的账本更大。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 一张对照表（这是本节最该背下来的一张）</div>
+      <div class="scrollx"><table class="tab cjk">
+        <tr><th>维度</th><th>频率派 Frequentist</th><th>贝叶斯派 Bayesian</th></tr>
+        <tr><td class="lbl">"概率"指</td><td>重复实验的频率极限（客观）</td><td>相信程度 degree of belief（主观/逻辑）</td></tr>
+        <tr><td class="lbl">参数 \(\theta\)</td><td><b>固定</b>未知常数，无分布</td><td><b>随机变量</b>，有先验/后验分布</td></tr>
+        <tr><td class="lbl">什么是随机的</td><td>数据、估计量 \(\tau(X^{(n)})\)</td><td>给定数据后，\(\theta\) 是随机的</td></tr>
+        <tr><td class="lbl">数据生成模型</td><td>\(f(x^{(n)};\theta)\)</td><td>\(f(x^{(n)}\mid\theta)\)（含义<b>相同</b>，记号换成条件）</td></tr>
+        <tr><td class="lbl">点估计</td><td>MLE、矩估计</td><td>后验均值 / 中位数 / 众数</td></tr>
+        <tr><td class="lbl">区间</td><td>置信区间（"区间随机、参数固定"）</td><td>可信区间（"参数随机、给定数据"）</td></tr>
+        <tr><td class="lbl">先验</td><td>不引入</td><td>必须把"分析前的信息"写成 \(f(\theta)\)</td></tr>
+      </table></div>
+      <p class="cap"><b>记号的小心机：</b>频率派写 \(f(x^{(n)};\theta)\)（分号，\(\theta\) 是参数），贝叶斯写 \(f(x^{(n)}\mid\theta)\)（竖线，\(\theta\) 是被条件的随机变量）。<b>同一个函数</b>，只因对 \(\theta\) 的态度不同换了标点——教材 \(p4\) 专门强调这一点。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊙</span>交互 + 2D · 切换两种视角，看"谁在动"</div>
+      <p class="cjk">同一枚硬币、同一批数据（\(n\) 次抛掷里 \(\dot x\) 次正面）。切换视角，看<b>哪条曲线代表"随机的东西"</b>：频率派下随机的是<b>估计量 \(\hat\theta\) 的抽样分布</b>（参数 \(\theta_0\) 是钉死的竖线）；贝叶斯下随机的是<b>给定这批数据后 \(\theta\) 的后验</b>（数据反倒是钉死的）。拖动 \(n\)：两者都随数据增多而收窄，但"收窄的是谁"含义截然不同。</p>
+      <div class="controls cjk">
+        <div class="ctrl" style="flex:1 1 240px">
+          <label>视角</label>
+          <div class="seg" id="belief-seg">
+            <button class="on" data-mode="freq">频率派：θ 固定，估计量随机</button>
+            <button data-mode="bayes">贝叶斯：数据固定，θ 随机</button>
+          </div>
+        </div>
+        <div class="ctrl"><label>样本量 n <span class="val" id="belief-n-v">20</span></label><input type="range" id="belief-n" min="4" max="400" step="1" value="20"></div>
+        <div class="ctrl"><label>真实/观测正面率 <span class="val" id="belief-p-v">0.60</span></label><input type="range" id="belief-p" min="0.05" max="0.95" step="0.01" value="0.60"></div>
+      </div>
+      <div class="plotwrap"><div id="p-belief" class="plot"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="belief-info"></p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✦</span>案例 · 一枚硬币，两种"它是公平的吗"</div>
+      <p style="margin-bottom:0" class="cjk">抛 10 次得 7 次正面。<b>频率派</b>问："如果它真是公平的（\(\theta_0=0.5\)），出现'≥7 次正面'有多罕见？"——这是<b>p 值</b>的思路，参数被假设固定。<b>贝叶斯</b>问："看到 7/10 之后，\(\theta\) 落在 \([0.5,1]\) 的概率是多少？"——直接对<b>参数</b>下概率断言。注意贝叶斯那句话在频率派里<b>根本不合法</b>（固定的数怎么会"落在某区间的概率"？），这正是两套世界观的分水岭。后面 <a class="inlink" href="#t-ci">4.3</a> 会把这点讲透。</p>
+    </div>
+  </section>
+
+  <!-- 1.2 inverse probability & base rate -->
+  <section class="topic-block" id="t-inverse">
+    <h3 class="topic cjk">1.2 逆概率与基础率：条件概率的"方向"不能随手掉头 ⚠</h3>
+    <p class="topic-en">P(A|B) is not P(B|A) — flipping the condition needs the base rates, and that is exactly what Bayes' rule does.</p>
+    <div class="rels">
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 3</a>（抽烟例子把方向掉头了）</span>
+      <span class="rel tool"><span class="dot"></span>就是 <a href="#t-formula">贝叶斯公式</a> 在"事件"上的版本</span>
+      <span class="rel limit"><span class="dot"></span>强化 <a href="#t-belief">1.1</a>：贝叶斯=由果推因的合法工具</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · "癌里有多少烟民" ≠ "烟民里有多少得癌"</div>
+      <p>你纪要里的抽烟例子说"从<b>肺癌患者中抽烟的比例</b>，反推<b>抽烟者患肺癌的频率</b>"。这两个数听着像一回事，其实是<b>方向相反</b>的两个条件概率：\(P(\text{烟}\mid\text{癌})\) 和 \(P(\text{癌}\mid\text{烟})\)。它们由贝叶斯公式<b>串起来，但不相等</b>：</p>
+      <p style="margin-bottom:0">要把"癌患者里的烟民比例"翻成"烟民里的患癌率"，必须乘上<b>基础率之比</b> \(P(\text{癌})/P(\text{烟})\)。而<b>癌的基础率很低、烟民比例不低</b>，这一乘会让数值差出一大截——这就是著名的<b class="kw">基础率谬误（base rate fallacy）</b>。它和你纪要里另外两个警惕（"坐飞机出空难"≠"空难致死率"、"家暴者是男性"≠"男性会家暴"）是<b>同一个坑的不同入口</b>。贝叶斯的价值，恰恰是给"由果推因（由观测反推原因）"提供了<b>带基础率的正确换算</b>。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 事件版贝叶斯（先验=基础率，后验=翻转后的概率）</div>
+      <div class="form">
+        \[ P(D\mid +)=\frac{P(+\mid D)\,P(D)}{P(+)}=\frac{P(+\mid D)\,P(D)}{P(+\mid D)\,P(D)+P(+\mid D^c)\,P(D^c)} \]
+      </div>
+      <p class="cap cjk">把 \(D\)= "有病/患癌"、\(+\)="检测阳性/是烟民"。分子里 \(P(D)\) 就是<b>基础率（先验）</b>；分母用了<b>全概率公式</b>（挑刺 1 说的那个，它是贝叶斯的<b>分母</b>）。你直觉里以为的"准确率"往往是 \(P(+\mid D)\)（敏感度），而真正想要的是 \(P(D\mid +)\)——两者隔着基础率。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊙</span>交互 + 2D · 拨动基础率，看"翻转"差多远</div>
+      <p class="cjk">一个验病的例子（抽烟–肺癌结构完全一样）。即使检测<b>很准</b>（敏感度、特异度都很高），只要<b>基础率低</b>，"阳性里真有病的比例" \(P(D\mid+)\) 也可能低得反直觉。拖动三个滑块，对比你<b>直觉以为的</b> \(P(+\mid D)\) 和<b>真相</b> \(P(D\mid +)\)。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>基础率 P(有病) <span class="val" id="inv-base-v">1%</span></label><input type="range" id="inv-base" min="0.001" max="0.5" step="0.001" value="0.01"></div>
+        <div class="ctrl"><label>敏感度 P(+|病) <span class="val" id="inv-sens-v">95%</span></label><input type="range" id="inv-sens" min="0.5" max="0.999" step="0.001" value="0.95"></div>
+        <div class="ctrl"><label>特异度 P(−|无病) <span class="val" id="inv-spec-v">90%</span></label><input type="range" id="inv-spec" min="0.5" max="0.999" step="0.001" value="0.90"></div>
+      </div>
+      <div class="plotwrap"><div id="p-inverse" class="plot" style="height:300px"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="inverse-info"></p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>盲点 · 三个"听起来一样"的方向反例</div>
+      <p style="margin-bottom:0" class="cjk">把它们并排记住，以后看任何"由数据反推"的论断都先问一句"<b>这是 P(A|B) 还是 P(B|A)？</b>"：<br>① <b>空难</b>：\(P(\text{出事}\mid\text{坐飞机})\) 极低，但 \(P(\text{死}\mid\text{出空难})\) 很高——媒体放大的是后者，吓人的也是后者，但你关心的应是前者（坐一次飞机的风险）。<br>② <b>家暴</b>：\(P(\text{男}\mid\text{施暴者})\) 很高，不等于 \(P(\text{施暴}\mid\text{男})\) 高——后者其实很低。把前者当后者就是污名化。<br>③ <b>抽烟</b>：\(P(\text{烟}\mid\text{癌})\) 高，要翻成 \(P(\text{癌}\mid\text{烟})\) 必须乘基础率比。结论方向没错，但"直接反推比例"漏了这一步。<b>科学表述必须公式化</b>，正是为了堵住这种语言歧义（你纪要里这句话说得很好）。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ PART II -->
+  <header class="part-head" id="part2">
+    <div class="pk">Ⅱ</div>
+    <h2 class="cjk">贝叶斯三件套与公式：先验 × 似然 → 后验</h2>
+    <p>世界观定了，接下来只是把它写成可计算的式子。整套机器就<b>三个零件</b>（先验、似然、后验）和<b>一个公式</b>（贝叶斯公式）。最值钱的领悟是：公式分母只是个"归一化常数"，可以先<b>忽略</b>，于是问题塌缩成一句口诀——<b class="kw">后验 ∝ 似然 × 先验</b>，再认出它长得像哪个分布。</p>
+  </header>
+
+  <!-- 2.1 the trio -->
+  <section class="topic-block" id="t-trio">
+    <h3 class="topic cjk">2.1 三件套：先验 \(f(\theta)\)、似然 \(L(\theta)\)、后验 \(f(\theta\mid x)\)</h3>
+    <p class="topic-en">Prior, likelihood, posterior — the three nouns the whole chapter is made of.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>似然继承自 <a href="#t-belief">频率派（含义相同）</a></span>
+      <span class="rel tool"><span class="dot"></span>三者由 <a href="#t-formula">贝叶斯公式</a> 串成一条流水线</span>
+      <span class="rel limit"><span class="dot"></span>后验 = 下一轮的 <a href="#t-conj">先验</a>（可迭代）</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 三句话各管一段</div>
+      <p><b>先验 Prior \(f(\theta)\)：</b>看数据<b>之前</b>，你对 \(\theta\) 的认识。可能来自历史数据、专家意见，也可能"我什么都不知道"（那就用一个尽量平的先验）。它把"分析前的信息"<b>翻译成一条 θ 的分布</b>（教材 \(p3\)：initial / a priori information 必须 translated into a probability model）。</p>
+      <p><b>似然 Likelihood \(L(\theta)=\kappa\,f(x^{(n)}\mid\theta)\)：</b>给定某个 \(\theta\)，<b>这批观测数据出现的概率</b>。注意它是 \(\theta\) 的函数（数据固定、\(\theta\) 变），衡量"哪些 \(\theta\) 更能解释我看到的数据"。<b>这一步贝叶斯和频率派完全一致</b>——你写 MLE 时最大化的就是它。前面的 \(\kappa>0\) 是任意不依赖 \(\theta\) 的常数（见 <a class="inlink" href="#t-formula">2.2</a> 的妙用）。</p>
+      <p style="margin-bottom:0"><b>后验 Posterior \(f(\theta\mid x^{(n)})\)：</b>看完数据<b>之后</b>，你对 \(\theta\) 的<b>更新认识</b>。它<b>融合</b>了先验与数据两份信息。贝叶斯统计的<b>一切推断</b>（点估计、区间、检验）都从后验里读出来（教材 \(p4\)：all inferences are based on the posterior）。<b>信息越多，后验越窄</b>——你对 θ 的把握越大。而且它能<b>迭代</b>：今天的后验，就是明天再来数据时的先验。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✦</span>案例 · "先验"不是玄学，是把已知写进去</div>
+      <p style="margin-bottom:0" class="cjk">造一批螺丝、估次品率 \(\theta\)。如果<b>历史上</b>这条产线次品率常在 2% 上下波动，你就不该假装"完全无知"——把先验设成一个<b>集中在 0.02 附近</b>的分布（比如 \(\mathrm{Beta}(2,98)\)，均值正好 0.02）。这样小样本下后验不会被几个偶然次品带跑偏。反过来，若你<b>真的一无所知</b>，用接近均匀的 \(\mathrm{Beta}(1,1)\)，让数据说话。<b>先验的强弱 = 你愿意让数据多大程度推翻你的成见</b>——这在小样本、因果识别里是把双刃剑，下面 <a class="inlink" href="#t-beta">3.2</a> 可以拖动感受。</p>
+    </div>
+  </section>
+
+  <!-- 2.2 Bayes formula -->
+  <section class="topic-block" id="t-formula">
+    <h3 class="topic cjk">2.2 贝叶斯公式：连续要积分、离散要求和，分母只是个归一化常数</h3>
+    <p class="topic-en">The theorem itself — integrate (continuous) or sum (discrete); the denominator is just a normalizer.</p>
+    <div class="rels">
+      <span class="rel tool"><span class="dot"></span>把 <a href="#t-trio">三件套</a> 拼成一台机器</span>
+      <span class="rel warn"><span class="dot"></span>对应 <a href="#audit">挑刺 1</a>：分母里的全概率不是"被贝叶斯推出来的"</span>
+      <span class="rel general"><span class="dot"></span>推出口诀 <a href="#t-propto">后验 ∝ 似然 × 先验</a></span>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 四种组合，分母随之换形</div>
+      <p class="cjk"><b>连续 \(\theta\) + 连续/离散数据</b>（教材 \(p4\)，式(1)）：</p>
+      <div class="form">
+        \[ f\!\left(\theta\mid x^{(n)}\right)=\frac{f\!\left(x^{(n)}\mid\theta\right)f(\theta)}{\displaystyle\int_{\Theta} f\!\left(x^{(n)}\mid\theta\right)f(\theta)\,d\theta} \]
+      </div>
+      <p class="cjk"><b>离散 \(\theta\)</b>（教材 \(p5\)，式(2)）——把积分换成对参数空间求和：</p>
+      <div class="form">
+        \[ f\!\left(\theta\mid x^{(n)}\right)=\frac{f\!\left(x^{(n)}\mid\theta\right)f(\theta)}{\displaystyle\sum_{\theta'\in\Theta} f\!\left(x^{(n)}\mid\theta'\right)f(\theta')} \]
+      </div>
+      <p class="cap cjk"><b>分母 \(f(x^{(n)})\) 就是全概率公式</b>（边际似然 / 证据 evidence）。它<b>不含 \(\theta\)</b>（积分/求和已经把 \(\theta\) "积掉/加掉"了），所以对 \(\theta\) 而言只是个<b>常数</b>，只起"把面积/总和归一到 1"的作用。先验必须在参数空间 \(\Theta\) 上积分（或求和）等于 1：连续 \(\int_\Theta f(\theta)\,d\theta=1\)、离散 \(\sum_{\theta\in\Theta} f(\theta)=1\)（教材 \(p5\)）。</p>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · "先验 → 后验"就是按似然给信念重新加权</div>
+      <p style="margin-bottom:0">把先验想成<b>一开始的赌注分布</b>：你把 1 块钱的"信任"按 \(f(\theta)\) 摊在各个 \(\theta\) 上。数据来了，似然 \(L(\theta)\) 告诉你"哪些 \(\theta\) 更能解释这批数据"——于是你<b>按似然把每份信任重新加权</b>（乘上去），再把总量缩放回 1 块钱（除以分母）。能解释数据的 \(\theta\) 信任变多，不能的变少。<b>这就是贝叶斯更新的全部</b>——所谓"学习"，就是这一次次的重新加权。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>妙用 · 似然可以"吸收"任意正常数 κ（这是简化计算的钥匙）</div>
+      <p style="margin-bottom:0" class="cjk">教材 \(p6\) 的关键技巧：式中的 \(f(x^{(n)}\mid\theta)\) 可以替换成<b>似然 \(L(\theta)=\kappa\,f(x^{(n)}\mid\theta)\)</b>，其中 \(\kappa>0\) 是<b>任何不依赖 \(\theta\)</b>（可以依赖数据 \(x^{(n)}\)）的正常数。<b>为什么不影响结果？</b>因为这个 \(\kappa\) 在分子、分母里<b>同时出现，约掉了</b>。这意味着：凡是<b>不含 \(\theta\) 的乘法因子</b>（比如二项系数 \(\binom{n}{\dot x}\)、\(1/n!\) 之类），统统可以<b>扔掉</b>不写——这就是下一节"写到正比"为什么能省那么多事。对 iid 数据，\(f(x^{(n)}\mid\theta)=\prod_{i=1}^n f(x_i\mid\theta)\)，似然就是各项相乘。</p>
+    </div>
+  </section>
+
+  <!-- 2.3 posterior proportional to likelihood times prior -->
+  <section class="topic-block" id="t-propto">
+    <h3 class="topic cjk">2.3 口诀 + 三步走：后验 ∝ 似然 × 先验</h3>
+    <p class="topic-en">Drop the constant, recognize the shape — the working recipe for every posterior in this chapter.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>由 <a href="#t-formula">贝叶斯公式</a> 扔掉分母而来</span>
+      <span class="rel tool"><span class="dot"></span>是 <a href="#t-conj">共轭先验</a> 的操作方法</span>
+      <span class="rel limit"><span class="dot"></span>"充分统计量"让似然写到最短</span>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 正比号把分母藏起来</div>
+      <div class="form">
+        \[ f\!\left(\theta\mid x^{(n)}\right)\;\propto\; f\!\left(x^{(n)}\mid\theta\right)f(\theta)\;\propto\; L(\theta)\,f(\theta) \]
+        \[ \text{且}\quad f\!\left(\theta\mid x^{(n)}\right)=c\,L(\theta)f(\theta),\qquad c=\frac{1}{\int_\Theta L(\theta)f(\theta)\,d\theta}\ \text{(连续)} \]
+      </div>
+      <p class="cap cjk">"\(\propto\)"（正比于）的意思是"差一个不含 \(\theta\) 的常数"。常数 \(c\) 由"密度积分=1"<b>唯一确定</b>（教材 \(p7\)、\(p8\)）。所以推导时<b>先不管 \(c\)</b>，只盯着分子 \(L(\theta)f(\theta)\) 作为 \(\theta\) 的函数长什么样；认出它是哪个已知分布，常数自然就对上了。</p>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>推导 · 求后验的"三步走"（教材 p8）</div>
+      <ol class="steps cjk">
+        <li><b>写到正比。</b>把先验 \(f(\theta)\) 和似然 \(L(\theta)\) 都<b>只保留含 \(\theta\) 的部分</b>（不含 \(\theta\) 的乘法因子全扔），两者相乘，得到后验的<b>正比形式</b> \(f(\theta\mid x)\propto q(\theta)\)。</li>
+        <li><b>认分布。</b>盯着 \(q(\theta)\) 这个"形状"，看它和哪个标准分布的密度核（kernel）对得上——比如 \(\theta^{a-1}(1-\theta)^{b-1}\) 就是 Beta、\(\theta^{a-1}e^{-\theta/b}\) 就是 Gamma。写出<b>分布名 + 参数</b>。有时需要对 \(q(\theta)\) 再配方/整理一下。</li>
+        <li><b>定常数（通常不用算）。</b>因为后验由 \(q(\theta)\) <b>唯一确定</b>（归一化常数被"积分=1"锁死），认出分布后参数就齐了，<b>根本不必显式算 \(c\)</b>。需要时才用 \(c=1/\int q\)。</li>
+      </ol>
+      <p class="cap cjk"><b>充分统计量（sufficient statistic）让第 1 步更省：</b>教材 \(p8\) 建议把似然写成 \(L(\theta)=e\!\left(t(x^{(n)}),\theta\right)\) 的形式，其中 \(t(x^{(n)})\) 是<b>维度最小</b>的充分统计量——它把"数据里关于 \(\theta\) 的全部信息"<b>压缩成几个数</b>（如伯努利里的"正面总数 \(\dot x=\sum x_i\)"）。一旦抓到充分统计量，后验只通过它依赖数据，计算和记号都最干净。这是第五章充分性概念在贝叶斯里的直接复用。</p>
+    </div>
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊙</span>交互 + 2D · 更新引擎：先验 × 似然 → 后验（Beta–二项）</div>
+      <p class="cjk">这是本节的<b>核心交互</b>，也是"后验 ∝ 似然 × 先验"的活演示。设硬币正面率 \(\theta\)，先验取 \(\mathrm{Beta}(a,b)\)（拖 \(a,b\) 调"成见"的位置与强度），数据是 \(n\) 次抛掷里 \(\dot x\) 次正面。三条曲线：<b style="color:var(--ink-faint)">先验</b>、<b style="color:var(--teal)">归一化似然</b>、<b style="color:var(--accent)">后验</b>。亲眼看后验<b>夹在先验与似然之间</b>，并随数据增多被似然<b>拽过去、变更窄</b>。试试：① 先验设强（a=b=20）vs 弱（a=b=1），看数据要多少才能"扳动"成见；② 把 \(\dot x/n\) 调到和先验均值冲突，看后验如何折中。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>先验 a <span class="val" id="up-a-v">2</span></label><input type="range" id="up-a" min="0.5" max="40" step="0.5" value="2"></div>
+        <div class="ctrl"><label>先验 b <span class="val" id="up-b-v">2</span></label><input type="range" id="up-b" min="0.5" max="40" step="0.5" value="2"></div>
+        <div class="ctrl"><label>抛掷次数 n <span class="val" id="up-n-v">20</span></label><input type="range" id="up-n" min="0" max="200" step="1" value="20"></div>
+        <div class="ctrl"><label>其中正面数 ẋ <span class="val" id="up-h-v">14</span></label><input type="range" id="up-h" min="0" max="200" step="1" value="14"></div>
+      </div>
+      <div class="plotwrap"><div id="p-update" class="plot tall"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="up-info"></p>
+    </div>
+  </section>
+  <!-- ============ PART III ============ -->
+  <header class="part-head" id="part3">
+    <div class="pk">Ⅲ</div>
+    <h2 class="cjk">共轭先验：让"更新"退化成"改几个数"</h2>
+    <p>"后验 ∝ 似然 × 先验"原则上要算积分。但若先验选得<b>巧</b>，后验会落回<b>同一个分布族</b>，更新就只剩"把先验参数加上数据里的几个数"。这就是<b class="kw">共轭先验</b>——也是为什么贝叶斯在工程里"能算得动"。本部分把三大经典共轭对讲透，并用一个会动的"后验山脊"看它随数据逐次更新。</p>
+  </header>
+
+  <!-- 3.1 共轭定义 -->
+  <section class="topic-block" id="t-conj">
+    <h3 class="topic cjk">3.1 什么是共轭先验，以及为什么我们偏爱它</h3>
+    <p class="topic-en">Conjugate priors — when the posterior stays in the same family the prior came from.</p>
+    <div class="rels">
+      <span class="rel tool"><span class="dot"></span>工具：共轭把"积分"变"代数"</span>
+      <span class="rel inherit"><span class="dot"></span>继承：复用 §2.3 的"认分布"三步</span>
+      <span class="rel limit"><span class="dot"></span>补充：不共轭时才需 MCMC 等数值法</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>理念 · 一句话定义</div>
+      <p class="cjk">给定一个似然（数据模型），如果某个<b>先验分布族 \(\mathcal{P}\)</b> 满足：<b>先验属于 \(\mathcal{P}\) ⟹ 后验仍属于 \(\mathcal{P}\)</b>（教材 \(p13\) 称 \(\mathcal{P}\) 在该抽样模型下<b>封闭</b>），就把 \(\mathcal{P}\) 叫做这个似然的<b>自然共轭先验族（natural conjugate prior）</b>。直白说：<b>先验和后验长成同一种分布</b>，只是参数被数据更新了。</p>
+      <p class="cjk">它为什么重要，对你（要做实证、要迭代估计的人）尤其实在：</p>
+      <ul class="ul cjk">
+        <li><b>不用算积分。</b>归一化常数 \(c=1/\int L f\) 那个积分，往往是贝叶斯里最难啃的部分。共轭让你<b>直接认出</b>后验是谁、参数是几，积分自动配平（接 §2.3 三步走的第 3 步"通常不用算"）。</li>
+        <li><b>更新=做加法。</b>新数据来了，<b>把后验当新先验</b>，参数继续累加即可，分布形式永不变。这对<b>在线学习 / 流式数据 / 序贯实验</b>极友好（下面 3D 山脊就是逐条喂数据的实拍）。</li>
+        <li><b>可解释。</b>共轭先验的参数常有"<b>伪计数（pseudo-count）</b>"含义——相当于"我开局就假装已经看过这么多条数据"，强弱一目了然。</li>
+      </ul>
+      <p class="cap cjk"><b>别神化它：</b>共轭是<b>为了计算方便</b>而选的先验族，不是"正确"的先验。若你的真实先验信息长得不像共轭族，强行套共轭就是<b>为了好算而扭曲信念</b>——这是盲点，后面 §3.2 的案例和挑刺会点到。</p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✦</span>案例 · 三大经典共轭对（先记住"形状对得上"这件事）</div>
+      <p class="cjk">教材与课堂反复出现的三组，<b>建议直接背下来、查文献优先选用</b>（这也呼应纪要里"别盲目自创先验"的建议）：</p>
+      <table class="tab cjk">
+        <thead><tr><th>数据 / 似然</th><th>共轭先验</th><th>后验（更新规则）</th><th>典型场景</th></tr></thead>
+        <tbody>
+          <tr><td>伯努利 / 二项 \(\;X_i\!\sim\!\mathrm{Bern}(\theta)\)</td><td>\(\mathrm{Beta}(a,b)\)</td><td>\(\mathrm{Beta}(a+\dot x,\; b+n-\dot x)\)<br><span class="cap">\(\dot x=\sum x_i=\) 正面/成功数</span></td><td>转化率、点击率、A/B 测试、合格率</td></tr>
+          <tr><td>泊松 \(\;X_i\!\sim\!\mathrm{Pois}(\theta)\)</td><td>\(\mathrm{Gamma}(a,b)\)</td><td>\(\mathrm{Gamma}\!\left(a+\textstyle\sum x_i,\; b+n\right)\)<br><span class="cap">（形状+计数，率+样本量）</span></td><td>计数数据：到店人次、事故数、缺陷数</td></tr>
+          <tr><td>正态（方差已知）\(\;X_i\!\sim\!\mathcal{N}(\theta,\sigma^2)\)</td><td>\(\mathcal{N}(m_0,s_0^2)\)</td><td>\(\mathcal{N}(m_n,s_n^2)\)，<b>精度相加</b><br><span class="cap">\(1/s_n^2=1/s_0^2+n/\sigma^2\)</span></td><td>测量均值、传感器融合、效应量估计</td></tr>
+        </tbody>
+      </table>
+      <p class="cap cjk">注意三者的<b>共同节奏</b>：后验参数 = <b>先验参数 + 数据的充分统计量</b>（成功数、计数和、精度与精度×均值）。这不是巧合，是指数族 + 共轭的一般结论——你只要抓住"加法更新"这个直觉即可。下面分别用<b>交互</b>把 Beta–二项和正态–正态"看活"。</p>
+    </div>
+  </section>
+
+  <!-- 3.2 Beta-二项 + 3D -->
+  <section class="topic-block" id="t-beta">
+    <h3 class="topic cjk">3.2 Beta–二项：把"后验更新"做成一座会长高的山脊</h3>
+    <p class="topic-en">The Beta–Binomial pair, watched updating one datapoint at a time.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：§2.3 更新引擎的 3D 版</span>
+      <span class="rel tool"><span class="dot"></span>工具：Beta 是 \([0,1]\) 上比例的"万能先验"</span>
+      <span class="rel general"><span class="dot"></span>推广：序贯更新 = 在线学习的雏形</span>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 一行推完共轭（教材 p14）</div>
+      <div class="form">
+        \[ \underbrace{L(\theta)=\theta^{\dot x}(1-\theta)^{n-\dot x}}_{\text{伯努利似然},\ \dot x=\sum x_i}\quad\times\quad \underbrace{f(\theta)\propto\theta^{a-1}(1-\theta)^{b-1}}_{\mathrm{Beta}(a,b)\ \text{先验}} \]
+        \[ \Longrightarrow\ f(\theta\mid x)\propto \theta^{(\dot x+a)-1}(1-\theta)^{(n-\dot x+b)-1}\ \Longrightarrow\ \boxed{\,\theta\mid x\ \sim\ \mathrm{Beta}(\dot x+a,\ n-\dot x+b)\,} \]
+      </div>
+      <p class="cap cjk">看第 1 步到第 2 步：似然和先验<b>都是"\(\theta\) 的幂 × \((1-\theta)\) 的幂"</b>，相乘只是<b>指数相加</b>，形状没变——这就是共轭。所以后验还是 Beta，参数从 \((a,b)\) 变成 \((a+\dot x,\ b+n-\dot x)\)：<b>把"成功数"加到 \(a\)、"失败数"加到 \(b\)</b>。\(a,b\) 因此可读成"<b>伪先验中的成功/失败次数</b>"。Beta 的三个总结量（下图会标）：均值 \(\frac{a}{a+b}\)、众数 \(\frac{a-1}{a+b-2}\)（\(a,b>1\)）、方差 \(\frac{ab}{(a+b)^2(a+b+1)}\)。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D + 交互 · Beta 分布"形状图鉴"：先认识这块积木</div>
+      <p class="cjk">在玩 3D 之前，先用拖杆感受 \(\mathrm{Beta}(a,b)\) 能长成哪些样子——它是后验的"零件"。规律：\(a,b\) 都\(>1\) 时是<b>单峰</b>，峰偏向较大的那个参数；\(a=b\) 时<b>对称</b>（\(a=b=1\) 退化成均匀分布，即"无信息先验"）；某个参数\(<1\) 时会在端点<b>翘起</b>。\(a+b\) 越大，分布越<b>窄</b>（信念越强）。把它和上面的更新公式对照：数据越多 → \(a+b\) 越大 → 后验越窄越确定。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>a <span class="val" id="bs-a-v">2</span></label><input type="range" id="bs-a" min="0.3" max="30" step="0.1" value="2"></div>
+        <div class="ctrl"><label>b <span class="val" id="bs-b-v">5</span></label><input type="range" id="bs-b" min="0.3" max="30" step="0.1" value="5"></div>
+      </div>
+      <div class="plotwrap"><div id="p-beta-shapes" class="plot"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="bs-info"></p>
+    </div>
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">◈</span>3D + 交互 · 后验山脊：每喂一条数据，山就更新一次（纯 Canvas 绘制，不用 WebGL）</div>
+      <p class="cjk">这是把"序贯更新"立起来看的图。<b>横轴 \(\theta\in[0,1]\)</b>（硬币正面率），<b>纵深方向是"已观测条数 \(m\)"</b>（从先验 \(m=0\) 往后逐条加入伯努利观测），<b>高度是该步后验 \(\mathrm{Beta}\) 的密度</b>。于是你看到一条从后往前推进的<b>山脊</b>：开局（最远处）是平缓的先验，每来一条数据，山峰<b>更新一次</b>——逐渐<b>变高、变窄，并漂移到真实 \(\theta^\*\) 附近</b>。脊线上的暖色轨迹是<b>后验均值的移动路径</b>，地面那条竖线标的是<b>真值 \(\theta^\*\)</b>。拖动可旋转、滚轮缩放。试着把先验调强、或把 \(\theta^\*\) 设到 0.5 以外，看山脊"爬"过去要多少步。</p>
+      <p class="warn-inline cjk">⚠ 这正是你之前遇到的 <b>"WebGL is not supported"</b> 的场景——但本页所有 3D 都是用 2D 画布做透视投影<b>手绘</b>的，不依赖 WebGL，所以一定能转。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>真值 θ* <span class="val" id="b3-t-v">0.70</span></label><input type="range" id="b3-t" min="0.05" max="0.95" step="0.01" value="0.70"></div>
+        <div class="ctrl"><label>先验伪计数 a₀=b₀ <span class="val" id="b3-k-v">1</span></label><input type="range" id="b3-k" min="0.5" max="20" step="0.5" value="1"></div>
+        <div class="ctrl"><label>观测总条数 <span class="val" id="b3-n-v">40</span></label><input type="range" id="b3-n" min="4" max="80" step="1" value="40"></div>
+        <button class="btn" id="b3-reroll">↻ 重新抽一组数据</button>
+      </div>
+      <div class="plotwrap"><div id="p-beta-3d" class="plot d3"></div></div>
+      <p class="cap" id="b3-info"></p>
+    </div>
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">✦</span>案例 · 把"专家口中的均值和方差"翻译成先验参数（教材 p16）</div>
+      <p class="cjk">现实里你常拿到的不是"\(a,b\) 等于几"，而是领域专家的一句话："我觉得这个比例<b>大约在 0.5 左右，但很不确定</b>。"教材 \(p16\) 把它量化为 \(E[\theta]=0.5,\ \mathrm{Var}[\theta]=0.1\)，再用 Beta 的矩反解：</p>
+      <div class="form">\[ E[\theta]=\frac{a}{a+b}=0.5\ \Rightarrow\ a=b;\qquad \mathrm{Var}=\frac{ab}{(a+b)^2(a+b+1)}=\frac{1}{4(2a+1)}=0.1\ \Rightarrow\ a=b=0.75 \]</div>
+      <p class="cjk">于是先验取 \(\mathrm{Beta}(0.75,0.75)\)——一个<b>轻轻偏向两端、但整体很散</b>的弱先验（在上面"形状图鉴"里把 \(a=b=0.75\) 拖出来看看它的样子）。这就是<b>把主观信念落地成数</b>的标准手法：<b>先定均值（峰在哪），再定方差（多自信），反解参数</b>。</p>
+      <p class="cap cjk"><b>批判地看：</b>"均值 0.5、方差 0.1"本身是专家拍的，不同专家给的先验不同、后验也就不同——这正是频率派批评贝叶斯"<b>主观</b>"的点。务实的回应是：① 先验影响会随数据增多而<b>被冲淡</b>（大样本下后验主要由似然决定）；② 做<b>先验敏感性分析</b>（换几组先验看结论稳不稳）。这两条以后做实证时务必养成习惯。</p>
+    </div>
+  </section>
+
+  <!-- 3.3 Gamma-Poisson + Normal-Normal -->
+  <section class="topic-block" id="t-others">
+    <h3 class="topic cjk">3.3 另外两对：计数用 Gamma–泊松，均值用正态–正态（顺带看"收缩"）</h3>
+    <p class="topic-en">Gamma–Poisson for counts; Normal–Normal for means — and the birth of shrinkage.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：同一套"加法更新"节奏</span>
+      <span class="rel general"><span class="dot"></span>推广：正态后验均值 = 精度加权平均</span>
+      <span class="rel tool"><span class="dot"></span>工具：收缩(shrinkage)直通岭回归/分层模型</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>理念 · Gamma–泊松：计数数据的标配（教材 p17）</div>
+      <p class="cjk">当数据是<b>非负整数计数</b>（单位时间到店人数、某区域月度事故数、代码缺陷数），自然用<b>泊松似然</b> \(X_i\mid\theta\sim\mathrm{Pois}(\theta)\)，其率参数 \(\theta>0\)。它的共轭先验是 <b>Gamma\((a,b)\)</b>（恰好支撑在 \(\theta>0\) 上）。更新规则同样是加法：</p>
+      <div class="form">\[ \theta\sim\mathrm{Gamma}(a,b)\ \xrightarrow{\ \text{观测}\ x_1,\dots,x_n\ }\ \theta\mid x\sim\mathrm{Gamma}\!\Big(a+\textstyle\sum_i x_i,\ \ b+n\Big) \]</div>
+      <p class="cap cjk">读法：把<b>观测到的事件总数 \(\sum x_i\)</b> 加到形状参数 \(a\) 上，把<b>观测的时间/样本量 \(n\)</b> 加到率参数 \(b\) 上。后验均值 \(\frac{a+\sum x_i}{b+n}\) 正是"<b>带先验的平均事件率</b>"，可读成"(先验事件数 + 实际事件数) / (先验时长 + 实际时长)"。推导走的还是 §2.3 三步：写到正比 \(\propto\theta^{a+\sum x_i-1}e^{-(b+n)\theta}\)，一眼认出是 Gamma 的核。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D + 交互 · 正态–正态：后验 = 先验与数据的"精度加权平均"</div>
+      <p class="cjk">这是三对里和你<b>未来做回归/因果最相关</b>的一对。设要估一个均值 \(\theta\)，数据 \(X_i\sim\mathcal{N}(\theta,\sigma^2)\)（\(\sigma\) 已知），先验 \(\theta\sim\mathcal{N}(m_0,s_0^2)\)。关键概念是<b>精度（precision）= 方差的倒数</b>，越大代表越"笃定"。结论极漂亮：</p>
+      <div class="form">\[ \underbrace{\frac{1}{s_n^2}}_{\text{后验精度}}=\underbrace{\frac{1}{s_0^2}}_{\text{先验精度}}+\underbrace{\frac{n}{\sigma^2}}_{\text{数据精度}},\qquad m_n=s_n^2\!\left(\frac{m_0}{s_0^2}+\frac{n\bar x}{\sigma^2}\right)=\text{两者按精度加权的平均} \]</div>
+      <p class="cjk">三条曲线：<b style="color:var(--ink-faint)">先验</b>、<b style="color:var(--teal)">似然（数据）</b>、<b style="color:var(--accent)">后验</b>。看两件事：① <b>精度相加</b>——后验总比先验和似然都<b>更窄</b>（信息叠加）；② <b>收缩（shrinkage）</b>——后验均值 \(m_n\) 被从样本均值 \(\bar x\) 往先验均值 \(m_0\) 方向<b>拉了一点</b>，数据越多（\(n\) 越大）拉得越少。把 \(n\) 拖大，看后验如何<b>压向数据、并变尖</b>。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>样本量 n <span class="val" id="nm-n-v">5</span></label><input type="range" id="nm-n" min="0" max="120" step="1" value="5"></div>
+        <div class="ctrl"><label>先验标准差 s₀ <span class="val" id="nm-s-v">1.0</span></label><input type="range" id="nm-s" min="0.2" max="4" step="0.1" value="1.0"></div>
+        <div class="ctrl"><label>样本均值 x̄ <span class="val" id="nm-x-v">2.0</span></label><input type="range" id="nm-x" min="-3" max="5" step="0.1" value="2.0"></div>
+      </div>
+      <div class="plotwrap"><div id="p-normal" class="plot tall"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="nm-info"></p>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>理念 · 为什么这条值得你记一辈子：它就是岭回归 / 分层模型的种子</div>
+      <p class="cjk">"<b>后验均值 = 数据估计向先验收缩</b>"这一句，是贝叶斯通往你研究的桥：</p>
+      <ul class="ul cjk">
+        <li><b>正态先验 + 正态似然的 MAP，等价于带 \(L_2\) 惩罚的最小二乘——也就是岭回归（ridge）。</b>先验越强（\(s_0\) 越小）⇔ 惩罚越重 ⇔ 系数被往 0 收得越狠。你以后调 ridge 的 \(\lambda\)，本质上是在<b>调一个高斯先验的方差</b>。</li>
+        <li><b>把"先验参数本身再赋一个分布"</b>，就得到<b>分层 / 多层贝叶斯模型（hierarchical model）</b>——纪要里"参数随时间变化可分层建模"说的就是这件事。它能让不同组之间<b>互相借力（partial pooling）</b>，在小样本组上自动收缩，是面板数据、个体异质性、因果里随机效应的统一语言。</li>
+        <li><b>对因果：</b>把"处理效应 \(\tau\)"当成带先验的参数，后验直接给出 \(\tau\) 的<b>整条不确定性分布</b>，而不是一个点 + 一个置信区间——下一节（§4）的点估计与可信区间正是从这里收口。</li>
+      </ul>
+      <p class="cap cjk">所以三对共轭别只当"计算技巧"背：Beta–二项给你<b>比例</b>的直觉，Gamma–泊松给你<b>计数</b>的直觉，正态–正态给你<b>收缩/正则化</b>的直觉——最后一条会一路用到你毕业。</p>
+    </div>
+  </section>
+  <!-- ============ PART IV ============ -->
+  <header class="part-head" id="part4">
+    <div class="pk">Ⅳ</div>
+    <h2 class="cjk">从后验到"一个数"：损失函数、点估计与可信区间</h2>
+    <p>后验是<b>一整条分布</b>，但人们常要一个汇报数字、一个区间。贝叶斯不靠"无偏/一致"这类频率派性质去挑估计量，而是先<b>声明你怕犯什么错（损失函数）</b>，再选<b>让后验期望损失最小</b>的那个数。三种常见损失恰好对应后验的<b class="kw">均值、中位数、众数</b>——这一节把它们一次看全，并顺手纠正纪要里"众数=0-1损失"那条不严谨的说法。</p>
+  </header>
+
+  <!-- 4.1 loss & risk -->
+  <section class="topic-block" id="t-loss">
+    <h3 class="topic cjk">4.1 损失与风险：先说"怕错成什么样"，再决定报哪个数</h3>
+    <p class="topic-en">Loss and posterior risk — point estimation as a decision, not a property.</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span>推广：点估计 = 极小化后验期望损失</span>
+      <span class="rel inherit"><span class="dot"></span>继承：对比 §1.1 频率派的无偏/一致</span>
+      <span class="rel tool"><span class="dot"></span>工具：损失的选择即"后验总结方式"</span>
+    </div>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>理念 · 把"估计"当成一次决策（教材 p10）</div>
+      <p class="cjk">给定后验 \(f(\theta\mid x^{(n)})\)，你要交出一个点估计 \(\tilde\theta\)。贝叶斯的逻辑是：先定一个<b>损失函数 \(L(\theta,\tilde\theta)\)</b>（"真值是 \(\theta\) 而我报了 \(\tilde\theta\)，这个错误有多疼"），再算它在后验下的<b>期望</b>——称为<b>后验风险（posterior risk）</b>：</p>
+      <div class="form">\[ R(\tilde\theta\mid x^{(n)})\;=\;\mathbb{E}\!\left[\,L(\theta,\tilde\theta)\mid x^{(n)}\right]\;=\;\int_\Theta L(\theta,\tilde\theta)\,f(\theta\mid x^{(n)})\,d\theta \]</div>
+      <p class="cjk">然后选<b>让 \(R\) 最小</b>的 \(\tilde\theta\) 作为估计。关键转念：<b>损失函数不是配角，它决定了你从后验里取哪个数。</b>同一条后验，怕"大错"（平方损失，重罚离群）→ 取<b>均值</b>；想要"一半在左一半在右"的稳健中点（绝对值损失）→ 取<b>中位数</b>；只在乎"猜没猜中最可能的值"（近似 0-1 损失）→ 取<b>众数/MAP</b>。下一小节用一张图把这三件事<b>叠在一起</b>看。</p>
+      <p class="cap cjk">对照 §1.1：频率派挑估计量看<b>无偏、一致</b>等"长期重复"性质；贝叶斯这里<b>不预设</b>这些，而是从"<b>这一次、给定我手上的数据，我最怕什么</b>"出发。两套哲学的差别在点估计上又一次显形。（一致性贝叶斯也有：样本→∞ 时后验集中到真值，估计随之收敛，纪要末尾提到的 consistency 即此。）</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 两条可严格证明的定理（教材 Thm 6.1 / 6.2）</div>
+      <div class="form">
+        \[ \textbf{Thm 6.1：}\quad L(\theta,\tilde\theta)=(\tilde\theta-\theta)^2\ \Longrightarrow\ \arg\min_{\tilde\theta} R(\tilde\theta\mid x)=\mathbb{E}[\theta\mid x]\ \ (\textbf{后验均值}) \]
+        \[ \textbf{Thm 6.2：}\quad L(\theta,\tilde\theta)=|\tilde\theta-\theta|\ \Longrightarrow\ \arg\min_{\tilde\theta} R(\tilde\theta\mid x)=\mathrm{median}(\theta\mid x)\ \ (\textbf{后验中位数}) \]
+      </div>
+      <p class="cap cjk"><b>Thm 6.1 的直觉（一行）：</b>对任意常数 \(\tilde\theta\)，\(\mathbb{E}[(\tilde\theta-\theta)^2\mid x]=\mathrm{Var}(\theta\mid x)+(\tilde\theta-\mathbb{E}[\theta\mid x])^2\)；前一项与 \(\tilde\theta\) 无关，后一项在 \(\tilde\theta=\mathbb{E}[\theta\mid x]\) 时取 0——所以均值最优。这就是"方差 + 偏移平方"的分解，和你在 MSE = 方差 + 偏差² 里见过的是同一招。<b>Thm 6.2</b> 用对 \(\tilde\theta\) 求导（莱布尼茨法则）令导数为 0，得到"两侧概率各占一半"，即中位数。两条都是<b>严格</b>的。</p>
+    </div>
+  </section>
+
+  <!-- 4.2 point estimates -->
+  <section class="topic-block" id="t-point">
+    <h3 class="topic cjk">4.2 均值 / 中位数 / 众数：在一条偏斜后验上同时看清三者</h3>
+    <p class="topic-en">Mean, median, mode — three summaries, three risk curves, three minimizers.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：§4.1 的三条损失</span>
+      <span class="rel warn"><span class="dot"></span>盲点：众数=0-1损失只是"极限"说法</span>
+      <span class="rel tool"><span class="dot"></span>工具：偏斜后验下三数会明显分开</span>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D + 交互 · 上图后验三标记，下图三条风险曲线各自的最低点</div>
+      <p class="cjk">用一条<b>可调偏斜度的 Beta 后验</b>把 §4.1 全部讲完。<b>上图</b>画后验密度，竖线标出<b style="color:var(--accent)">均值</b>、<b style="color:var(--teal)">中位数</b>、<b style="color:var(--gold)">众数</b>——对称时三者重合，越偏斜分得越开（这正是为什么"报哪个数"会影响结论）。<b>下图</b>把三种损失对应的<b>后验风险曲线 \(R(\tilde\theta)\)</b> 各自<b>归一化</b>后叠在一起：你会看到<span style="color:var(--accent)">平方损失风险</span>的谷底落在<b>均值</b>、<span style="color:var(--teal)">绝对值损失</span>的谷底落在<b>中位数</b>、<span style="color:var(--gold)">近似 0-1（ε-邻域）损失</span>的谷底落在<b>众数</b>——三条定理一眼坐实。把 \(a,b\) 拖成很不对称（如 \(a=2,b=8\)），三个谷底就明显错开。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>后验 Beta 的 a <span class="val" id="ls-a-v">2</span></label><input type="range" id="ls-a" min="1.1" max="14" step="0.1" value="2"></div>
+        <div class="ctrl"><label>后验 Beta 的 b <span class="val" id="ls-b-v">6</span></label><input type="range" id="ls-b" min="1.1" max="14" step="0.1" value="6"></div>
+      </div>
+      <div class="plotwrap"><div id="p-loss" class="plot tall"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="ls-info"></p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>挑刺 4 · "后验众数 = 0-1 损失下最优"——这句要打个星号</div>
+      <p class="cjk">纪要（和思维导图 3.1）把三者并列为"平方↔均值、绝对值↔中位数、<b>0-1↔众数</b>"。前两条对连续参数是<b>严格定理</b>；但<b>第三条对连续 \(\theta\) 不能照字面成立</b>：严格的 0-1 损失 \(L=\mathbf{1}\{\tilde\theta\neq\theta\}\) 在连续分布下，<b>任何单点 \(\tilde\theta\) 被精确命中的概率都是 0</b>，于是风险恒等于 1、处处一样，<b>根本选不出众数</b>。</p>
+      <p class="cjk">正确的说法要走<b>极限</b>：用"<b>ε-邻域损失</b>" \(L_\varepsilon=\mathbf{1}\{|\tilde\theta-\theta|>\varepsilon\}\)（猜进真值的 ε 范围内就算对）。它的风险 \(R_\varepsilon(\tilde\theta)=1-\Pr(|\theta-\tilde\theta|\le\varepsilon\mid x)\approx 1-2\varepsilon\,f(\tilde\theta\mid x)\)，要让它最小就得让<b>后验密度 \(f(\tilde\theta\mid x)\) 最大</b>——也就是<b>众数</b>。再令 \(\varepsilon\to 0\)，极限意义下"0-1 损失 → 众数（MAP）"才成立。（上面的交互正是用一个<b>很小的 ε</b> 画那条金色风险曲线，所以谷底会落在众数；这也直观解释了为什么它只是"近似/极限"。）</p>
+      <p class="cap cjk"><b>为什么值得较真：</b>MAP（后验众数）在机器学习里就是"带正则的极大似然"（§3.3 已点）。把它的损失依据说成"严格 0-1 损失"，会让你误以为它和均值/中位数是"同级别的严格最优"。其实它的最优性<b>更脆</b>（依赖密度峰、对参数化敏感——换个变量替换峰会移动），实务上能用均值/中位数时往往更稳。记住这个星号，胜过死记口诀。</p>
+    </div>
+  </section>
+
+  <!-- 4.3 credible interval -->
+  <section class="topic-block" id="t-ci">
+    <h3 class="topic cjk">4.3 可信区间：说出口的就是"参数有 95% 概率落在这里"</h3>
+    <p class="topic-en">Credible vs confidence — the interval you can finally read the obvious way.</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span>继承：直接切后验的两端分位数</span>
+      <span class="rel warn"><span class="dot"></span>盲点：别和频率派置信区间混为一谈</span>
+      <span class="rel general"><span class="dot"></span>推广：向量参数取边际后验逐分量做</span>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label"><span class="ic">▦</span>2D + 交互 · 等尾 95% 可信区间：把后验两端各切掉 2.5%</div>
+      <p class="cjk">可信区间（credible interval）的造法朴素到不可思议：在后验上<b>两端各切掉 \(\alpha/2\)</b> 的概率，留中间。教材 \(p9\) 的<b>等尾区间</b>就是 \([\tilde\theta_{\alpha/2},\,\tilde\theta_{1-\alpha/2}]\)——取后验的 2.5% 与 97.5% <b>分位数</b>作两端。下图阴影就是这块 95% 的后验质量；竖线是两端分位数。拖 \(a,b\) 让后验偏斜，你会看到区间<b>自动变得不对称</b>（左右尾不等长）——这正是它比对称置信区间更贴合真实不确定性的地方。</p>
+      <div class="controls cjk">
+        <div class="ctrl"><label>后验 Beta 的 a <span class="val" id="ci-a-v">8</span></label><input type="range" id="ci-a" min="1.1" max="40" step="0.1" value="8"></div>
+        <div class="ctrl"><label>后验 Beta 的 b <span class="val" id="ci-b-v">3</span></label><input type="range" id="ci-b" min="1.1" max="40" step="0.1" value="3"></div>
+        <div class="seg" id="ci-seg" data-key="lvl" style="margin-left:6px">
+          <button data-v="0.90">90%</button><button class="on" data-v="0.95">95%</button><button data-v="0.99">99%</button>
+        </div>
+      </div>
+      <div class="plotwrap"><div id="p-ci" class="plot tall"><div class="loading">绘制中…</div></div></div>
+      <p class="cap" id="ci-info"></p>
+    </div>
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>挑刺 / 易混 · 可信区间 ≠ 置信区间（这是面试和审稿的高频坑）</div>
+      <p class="cjk">两者数值有时接近，<b>解释却根本不同</b>，纪要里只说了"贝叶斯依赖后验、频率派依赖抽样分布"，这里把差别钉死：</p>
+      <table class="tab cjk">
+        <thead><tr><th></th><th>贝叶斯 · 可信区间</th><th>频率派 · 置信区间</th></tr></thead>
+        <tbody>
+          <tr><td>随机的是谁</td><td><b>参数 \(\theta\)</b>（区间固定）</td><td><b>区间</b>（参数固定未知）</td></tr>
+          <tr><td>正确读法</td><td>"给定数据，\(\theta\) 有 95% 概率落在此区间"<b>（可以这么说）</b></td><td>"此构造法重复无数次，95% 的区间会盖住真值"——<b>不能</b>说"这一个区间有 95% 概率含真值"</td></tr>
+          <tr><td>依赖</td><td>后验分布（含先验）</td><td>抽样分布（不含先验）</td></tr>
+          <tr><td>形状</td><td>可<b>非对称</b>，贴合后验</td><td>常对称（如 \(\hat\theta\pm z\,\mathrm{se}\)）</td></tr>
+        </tbody>
+      </table>
+      <p class="cap cjk">一句话记忆：<b>置信区间的"95%"是对"造区间这套流程"的长期承诺，不是对眼前这一条区间的概率断言；可信区间的"95%"才是你直觉想要的那个"参数在里面的概率"。</b>把可信区间的读法套到置信区间上，是统计里最常见的错误之一——你来挑刺时可以专挑这个。<b>向量参数</b>时（教材 p9）：对想要的分量取<b>边际后验</b>，再在边际上做同样的等尾切割即可。</p>
+    </div>
+  </section>
+
+  <!-- ============ CLOSING ============ -->
+  <section class="topic-block" id="closing">
+    <h3 class="topic cjk">收束 · 这一节如何接上你的回归与因果</h3>
+    <p class="topic-en">Where this chapter quietly turns into regression and causal inference.</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>理念 · 一页话总结 p1–10</div>
+      <ul class="ul cjk">
+        <li><b>世界观（§1）：</b>贝叶斯把未知参数 \(\theta\) 当成<b>有分布的随机变量</b>，用"信念程度"度量不确定性；频率派把 \(\theta\) 当<b>固定未知常数</b>。频率解释是信念解释的特例。</li>
+        <li><b>机器（§2）：</b>三件套（先验 \(f(\theta)\)、似然 \(L(\theta)\)、后验 \(f(\theta\mid x)\)）+ 一个公式。口诀 <b>后验 ∝ 似然 × 先验</b>，分母只是归一化常数；三步走：写到正比 → 认分布 → 常数自动定。</li>
+        <li><b>算得动（§3）：</b>选共轭先验，后验落回同族，更新退化成<b>参数加法</b>。Beta–二项管比例、Gamma–泊松管计数、正态–正态给出<b>精度加权 / 收缩</b>。</li>
+        <li><b>出数（§4）：</b>点估计 = 极小化后验期望损失——平方↔均值、绝对值↔中位数、（极限意义的）0-1↔众数；可信区间直接切后验分位数，读法就是你想要的那个"概率"。</li>
+      </ul>
+    </div>
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">⟶</span>承接 · 三条通往第七章（回归）与因果的暗线</div>
+      <ol class="steps cjk">
+        <li><b>MLE 是"均匀先验下的 MAP"。</b>把先验取成常数（无信息），后验 \(\propto\) 似然，众数就落在<b>极大似然估计</b>上。频率派的 MLE 因此是贝叶斯的一个<b>退化特例</b>——你以后看回归的 OLS/MLE，可以都放进这张图里。</li>
+        <li><b>正态共轭 = 岭回归。</b>系数上放高斯先验、做 MAP，等价于<b>带 \(L_2\) 惩罚的最小二乘（ridge）</b>；先验方差 ↔ 正则强度 \(\lambda\)。Lasso 则对应拉普拉斯先验。正则化在贝叶斯眼里<b>就是先验</b>。</li>
+        <li><b>后验给的是"整条不确定性"。</b>把处理效应 \(\tau\) 当带先验的参数，后验直接产出 \(\tau\) 的<b>完整分布</b>与可信区间，而非一个点 + 一个易被误读的置信区间——这对你做<b>因果推断</b>时量化、传播不确定性（含分层/随机效应）是天然顺手的语言。</li>
+      </ol>
+    </div>
+    <div class="mod xander">
+      <p class="who"><span>✦</span>给 Xander 的话</p>
+      <p class="cjk">你统计底子还在补，所以这一节我把每个公式都配了"<b>能拖动看的图</b>"和"<b>一句话直觉</b>"，就是想让"后验 ∝ 似然 × 先验"从符号变成肌肉记忆。三个我希望你带走的<b>批判性钩子</b>：①<b>先验是主观的</b>——务必做敏感性分析，别让结论被先验绑架；②<b>"众数=0-1损失"是极限说法不是严格定理</b>——MAP 的最优性比均值/中位数脆；③<b>可信区间 ≠ 置信区间</b>——99% 的人会读错置信区间，你不要。这三点恰好是你最爱的"找盲点"——把它们记牢，比记住任何一个共轭公式都值钱。下一节进回归时，回头看这页的三条暗线，你会发现贝叶斯一直在底下托着。</p>
+    </div>
+  </section>
+
+  </main>
+  </div><!-- /.layout : 关闭横向 flex 容器，让 footer 成为整宽底栏，而非被挤到右侧细列 -->
+
+  <footer>
+    <div class="foot-wrap cjk">
+      <p class="foot-title">统计补课 · 第七节 — 贝叶斯推断（Chapter 6, p1–10：点估计）</p>
+      <p>配套：第七节课程视频 · 思维导图 · 两份 AI 会议纪要（已逐条对照挑刺）。本页所有图形均为<b>独立内联</b>实现：2D 用 Plotly 的 SVG 轨迹，<b>3D 全部由本页内置的 Canvas 引擎手绘透视投影，绝不调用 WebGL</b>——这正是为绕开你遇到的"WebGL is not supported by your browser"而做的设计，因此在任何浏览器都应能正常显示与交互。</p>
+      <p class="foot-meta">交互式讲义 · 文字 / 案例 / 2D / 3D / 交互 五种模态 · 概念间标注了继承·推广·工具·对偶·补充·盲点六类关系。公式以 KaTeX 渲染。</p>
+    </div>
+  </footer>
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1E1C18',inkSoft:'#574F46',faint:'#8C857A',line:'#E4D8C2',lineStrong:'#D2C2A4',
+  accent:'#8E2F5A',accentSoft:'#F2DCE9',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',goldSoft:'#F4E9CF',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:50,r:16,t:16,b:42},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.13,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var PURPLE_SCALE=[[0,'#F1DEEA'],[0.5,'#C77FA6'],[1,'#6E2A50']];
+var TEAL_SCALE=[[0,'#DCEDEB'],[0.5,'#5AA39D'],[1,'#1F6B66']];
+var BLUE_SCALE=[[0,'#E5F0F7'],[0.5,'#5C9BC4'],[1,'#0E4F73']];
+var GOLD_SCALE=[[0,'#F6ECD3'],[0.5,'#D9B25A'],[1,'#8A6A1F']];
+
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function variance(a,ddof){ddof=ddof||0;var m=mean(a),s=0,i;for(i=0;i<a.length;i++)s+=(a[i]-m)*(a[i]-m);return s/(a.length-ddof);}
+function sd(a,ddof){return Math.sqrt(variance(a,ddof));}
+
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normCdf(x,m,s){m=m||0;s=(s===undefined?1:s);return 0.5*(1+erf((x-m)/(s*Math.SQRT2)));}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+function lgamma(x){
+  var g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lgamma(1-x);
+  x-=1;var a=c[0],t=x+g+0.5,i;
+  for(i=1;i<g+2;i++)a+=c[i]/(x+i);
+  return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);
+}
+function gammaPdf(x,k,theta){if(x<=0)return 0;return Math.exp((k-1)*Math.log(x)-x/theta-k*Math.log(theta)-lgamma(k));}
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+
+/* ===== Beta / Poisson toolkit (added for Ch6) ===== */
+function lbeta(a,b){return lgamma(a)+lgamma(b)-lgamma(a+b);}
+function betaPdf(x,a,b){if(x<=0||x>=1)return 0;return Math.exp((a-1)*Math.log(x)+(b-1)*Math.log(1-x)-lbeta(a,b));}
+function betaMean(a,b){return a/(a+b);}
+function betaVar(a,b){return a*b/((a+b)*(a+b)*(a+b+1));}
+function betaMode(a,b){return (a>1&&b>1)?(a-1)/(a+b-2):(a<1&&b<1?NaN:(a<=1?0:1));}
+function betaGrid(a,b,N){N=N||1600;var xs=lin(1/(2*N),1-1/(2*N),N),pdf=[],i;
+  for(i=0;i<N;i++)pdf.push(betaPdf(xs[i],a,b));
+  var cdf=[0],area=0;for(i=1;i<N;i++){area+=0.5*(pdf[i]+pdf[i-1])*(xs[i]-xs[i-1]);cdf.push(area);}
+  var tot=cdf[N-1]||1;for(i=0;i<N;i++)cdf[i]/=tot;
+  return {xs:xs,pdf:pdf,cdf:cdf};}
+function quantileFromGrid(g,p){var xs=g.xs,cdf=g.cdf,i;
+  for(i=1;i<cdf.length;i++){if(cdf[i]>=p){var f=(p-cdf[i-1])/((cdf[i]-cdf[i-1])||1e-12);return xs[i-1]+f*(xs[i]-xs[i-1]);}}
+  return xs[xs.length-1];}
+function poissonPmf(k,lam){if(k<0)return 0;return Math.exp(k*Math.log(lam)-lam-lgamma(k+1));}
+
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],
+    throwOnError:false,strict:false});
+}
+
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={bridge:C.accentSoft,gen:'#F4E9CF',test:'#DFEDE2',tool:'#E5E1F2',warn:'#F3E0DA'};
+var NODE_STROKE={bridge:C.accent,gen:C.gold,test:C.green,tool:C.violet,warn:C.rust};
+var NODE_TXT={bridge:C.accent,gen:'#8a6a1f',test:C.green,tool:C.violet,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+ {id:'bridge',x:36,y:300,w:196,h:112,ty:'bridge',t:['前几章 · 频率派','θ 固定 / MLE / 置信区间'],sub:['参数是未知常数','概率=重复频率极限'],href:'#spine'},
+ {id:'belief',x:262,y:92,w:184,h:60,ty:'gen',t:['1.1 信念 vs 频率','θ → 随机变量'],href:'#t-belief'},
+ {id:'inverse',x:262,y:476,w:184,h:60,ty:'warn',t:['1.2 逆概率 / 基础率 ⚠','条件方向不能掉头'],href:'#t-inverse'},
+ {id:'trio',x:482,y:58,w:178,h:58,ty:'tool',t:['2.1 三件套','先验·似然·后验'],href:'#t-trio'},
+ {id:'formula',x:482,y:252,w:178,h:60,ty:'test',t:['2.2 贝叶斯公式','连续积分 / 离散求和'],href:'#t-formula'},
+ {id:'propto',x:482,y:458,w:178,h:64,ty:'tool',t:['2.3 后验∝似然×先验','三步走 + 常数 κ'],href:'#t-propto'},
+ {id:'conj',x:702,y:120,w:178,h:60,ty:'tool',t:['3.1 共轭先验','后验落回同族'],href:'#t-conj'},
+ {id:'beta',x:702,y:300,w:178,h:64,ty:'test',t:['3.2 Beta–二项','序贯更新山脊(3D)'],href:'#t-beta'},
+ {id:'others',x:702,y:500,w:178,h:64,ty:'gen',t:['3.3 正态–正态 / 泊松','精度加权 · 收缩'],href:'#t-others'},
+ {id:'loss',x:922,y:84,w:178,h:60,ty:'test',t:['4.1 损失 / 风险','极小化后验期望损失'],href:'#t-loss'},
+ {id:'point',x:922,y:272,w:178,h:64,ty:'warn',t:['4.2 均值/中位/众数 ⚠','三损失 ↔ 三总结'],href:'#t-point'},
+ {id:'ci',x:922,y:478,w:178,h:64,ty:'warn',t:['4.3 可信区间 ⚠','≠ 置信区间'],href:'#t-ci'},
+ {id:'bridge2',x:1132,y:262,w:152,h:132,ty:'bridge',t:['下一步','回归 / 因果'],sub:['MLE=均匀先验MAP','正态共轭=岭回归','后验=整条不确定性'],href:'#closing'}
+];
+var MAP_EDGES=[
+ ['bridge','belief','gen'],['bridge','inverse','warn'],
+ ['belief','trio','supply'],['belief','formula','supply'],['inverse','formula','tool'],
+ ['trio','propto','supply'],['formula','propto','derive'],
+ ['propto','conj','derive'],['propto','beta','tool'],
+ ['conj','beta','gen'],['conj','others','gen'],
+ ['beta','loss','derive'],['beta','point','tool'],['loss','point','derive'],
+ ['point','ci','gen'],['point','bridge2','gen'],['ci','bridge2','gen'],['others','bridge2','supply']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong;
+    var p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(a.x>b.x+b.w-2){p1=anchor(a,'l');p2=anchor(b,'r');}
+    else if(Math.abs(b.x-a.x)<14){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+(n.sub?26:n.h/2+5);
+    n.t.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':13.5,'font-weight':600,fill:NODE_TXT[n.ty]});
+      tx.textContent=line;g.appendChild(tx);
+    });
+    if(n.sub){n.sub.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:n.y+60+i*17,'text-anchor':'middle','font-size':11.5,fill:C.inkSoft});
+      tx.textContent=line;g.appendChild(tx);
+    });}
+    N.appendChild(g);
+  });
+}
+
+/* ===================== nav + sliders ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){
+  var rs=document.querySelectorAll('input[type=range]'),i;
+  for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}
+}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+function seg(id,cb){var box=document.getElementById(id);if(!box)return;
+  box.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('button'):null;if(!b||!box.contains(b))return;
+    var bs=box.querySelectorAll('button'),i;for(i=0;i<bs.length;i++)bs[i].classList.remove('on');b.classList.add('on');if(cb)cb();});}
+function segData(id,key){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute('data-'+key):null;}
+
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      }});
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else{ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function ed(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',ed);cv.addEventListener('pointercancel',ed);cv.addEventListener('pointerleave',ed);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+
+/* ============================================================ PART I */
+function plotBelief(){
+  var div=document.getElementById('p-belief');if(!div)return;
+  var nE=document.getElementById('belief-n'),pE=document.getElementById('belief-p'),
+      nv=document.getElementById('belief-n-v'),pv=document.getElementById('belief-p-v'),
+      info=document.getElementById('belief-info');
+  function run(){
+    var n=+nE.value,p=+pE.value,mode=segData('belief-seg','mode')||'freq';
+    nv.textContent=n;pv.textContent=p.toFixed(2);
+    var xs=lin(0.001,0.999,260);
+    if(mode==='freq'){
+      var seD=Math.sqrt(p*(1-p)/n);
+      var ys=xs.map(function(x){return normPdf(x,p,seD);});
+      var pk=Math.max.apply(null,ys);
+      Plotly.react(div,[
+        {type:'scatter',mode:'lines',x:xs,y:ys,line:{color:C.teal,width:2.6},fill:'tozeroy',fillcolor:'rgba(31,107,102,0.12)',name:'估计量 θ̂ 的抽样分布'}
+      ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:11.5}},
+        xaxis:{title:{text:'θ（取值）',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+        yaxis:{title:{text:'密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong},
+        shapes:[{type:'line',x0:p,x1:p,y0:0,y1:pk*1.06,line:{color:C.accent,width:2.4}}],
+        annotations:[{x:p,y:pk*1.06,text:'固定真值 θ₀（不随机）',showarrow:false,yanchor:'bottom',font:{size:11.5,color:C.accent}}]
+      }),CONF);
+      if(info)info.innerHTML='<b>频率派视角：</b>θ 是 <b style="color:'+C.accent+'">一条竖线</b>——客观固定的真值 θ₀='+p.toFixed(2)+'，<b>没有分布</b>。随机的是<b style="color:'+C.teal+'">数据 / 估计量 θ̂</b>：每抽 n='+n+' 次就得到一个 θ̂，它们围着 θ₀ 抖动，标准误 ≈ '+Math.sqrt(p*(1-p)/n).toFixed(3)+'。n 越大钟越窄（估计越准），但 θ₀ 这条线<b>纹丝不动</b>。';
+    }else{
+      var h=p*n,a=h+1,b=(n-h)+1;
+      var ys2=xs.map(function(x){return betaPdf(x,a,b);});
+      var pk2=Math.max.apply(null,ys2),mn=betaMean(a,b);
+      Plotly.react(div,[
+        {type:'scatter',mode:'lines',x:xs,y:ys2,line:{color:C.accent,width:2.8},fill:'tozeroy',fillcolor:'rgba(142,47,90,0.12)',name:'θ 的后验分布（信念）'}
+      ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:11.5}},
+        xaxis:{title:{text:'θ（取值）',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+        yaxis:{title:{text:'后验密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong},
+        shapes:[{type:'line',x0:mn,x1:mn,y0:0,y1:pk2*1.04,line:{color:C.accent,width:1.6,dash:'dot'}}],
+        annotations:[{x:mn,y:pk2*1.04,text:'后验均值 '+mn.toFixed(2),showarrow:false,yanchor:'bottom',font:{size:11.5,color:C.accent}}]
+      }),CONF);
+      if(info)info.innerHTML='<b>贝叶斯视角：</b>数据固定（n='+n+' 次里约 '+Math.round(h)+' 次正面），<b style="color:'+C.accent+'">θ 本身是随机变量</b>——它有<b>一整条分布</b>（这里用均匀先验，后验=Beta('+a.toFixed(1)+', '+b.toFixed(1)+')）。不是说硬币物理概率在变，而是<b>我们对 θ 的信念用分布记账</b>。数据越多，这条信念分布越<b>集中</b>（方差 ≈ '+betaVar(a,b).toFixed(4)+'）。';
+    }
+  }
+  nE.addEventListener('input',run);pE.addEventListener('input',run);run();
+}
+
+function plotInverse(){
+  var div=document.getElementById('p-inverse');if(!div)return;
+  var bE=document.getElementById('inv-base'),sE=document.getElementById('inv-sens'),pE=document.getElementById('inv-spec'),
+      bv=document.getElementById('inv-base-v'),sv=document.getElementById('inv-sens-v'),pv=document.getElementById('inv-spec-v'),
+      info=document.getElementById('inverse-info');
+  function pct(x){return (x*100).toFixed(x<0.1?1:0)+'%';}
+  function run(){
+    var base=+bE.value,sens=+sE.value,spec=+pE.value;
+    bv.textContent=pct(base);sv.textContent=pct(sens);pv.textContent=pct(spec);
+    var post=sens*base/(sens*base+(1-spec)*(1-base));
+    var labels=['检出阳性后真患病<br>P(病 | +)','敏感度（检测灵）<br>P(+ | 病)','基础率（患病率）<br>P(病)'];
+    var vals=[post,sens,base],cols=[C.accent,C.teal,C.faint];
+    Plotly.react(div,[
+      {type:'bar',orientation:'h',x:vals,y:labels,marker:{color:cols},
+       text:vals.map(pct),textposition:'auto',textfont:{family:'Fraunces',size:13,color:'#fff'},hoverinfo:'x',width:0.62}
+    ],baseLayout({margin:{l:160,r:20,t:14,b:38},
+      xaxis:{title:{text:'概率',font:{size:12}},range:[0,1],tickformat:'.0%',gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{automargin:true,tickfont:{size:11.5}}
+    }),CONF);
+    if(info)info.innerHTML='检测<b>灵不灵</b>（敏感度 P(+|病)='+pct(sens)+'）和<b>查出阳性后到底有没有病</b>（P(病|+)=<b style="color:'+C.accent+'">'+pct(post)+'</b>）是<b>两个数</b>。当患病率只有 '+pct(base)+' 时，哪怕敏感度高达 '+pct(sens)+'，阳性里仍大多是<b>假阳性</b>（健康人基数太大）。把"敏感度≈患病概率"直接互换，正是 §1.2 那三个掉头错误（家暴/性别、空难/坐飞机）的同一个坑——换方向必须乘以基础率之比。';
+  }
+  bE.addEventListener('input',run);sE.addEventListener('input',run);pE.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART II */
+function plotUpdate(){
+  var div=document.getElementById('p-update');if(!div)return;
+  var aE=document.getElementById('up-a'),bE=document.getElementById('up-b'),nE=document.getElementById('up-n'),hE=document.getElementById('up-h'),
+      av=document.getElementById('up-a-v'),bv=document.getElementById('up-b-v'),nv=document.getElementById('up-n-v'),hv=document.getElementById('up-h-v'),
+      info=document.getElementById('up-info');
+  function run(){
+    var a=+aE.value,b=+bE.value,n=+nE.value,h=+hE.value;
+    if(h>n){h=n;hE.value=n;}
+    av.textContent=a;bv.textContent=b;nv.textContent=n;hv.textContent=h;
+    var xs=lin(0.001,0.999,300);
+    var prior=xs.map(function(x){return betaPdf(x,a,b);});
+    var lik=xs.map(function(x){return betaPdf(x,h+1,n-h+1);});
+    var post=xs.map(function(x){return betaPdf(x,a+h,b+n-h);});
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:xs,y:prior,line:{color:C.faint,width:2,dash:'dot'},name:'先验 Beta('+a+','+b+')'},
+      {type:'scatter',mode:'lines',x:xs,y:lik,line:{color:C.teal,width:2},name:'归一化似然（数据）'},
+      {type:'scatter',mode:'lines',x:xs,y:post,line:{color:C.accent,width:3},fill:'tozeroy',fillcolor:'rgba(142,47,90,0.10)',name:'后验 Beta('+(a+h)+','+(b+n-h)+')'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.14,x:0,font:{size:11}},
+      xaxis:{title:{text:'θ = 正面率',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    var pm=betaMean(a,b),postm=(a+h)/(a+b+n),datm=n>0?h/n:NaN;
+    if(info)info.innerHTML='先验均值 <b>'+pm.toFixed(3)+'</b> · 数据频率 <b style="color:'+C.teal+'">'+(n>0?datm.toFixed(3):'—')+'</b>（'+h+'/'+n+'） → 后验 <b style="color:'+C.accent+'">Beta('+(a+h)+', '+(b+n-h)+')</b>，均值 <b>'+postm.toFixed(3)+'</b>。后验均值正是先验与数据的<b>加权折中</b> (a+ẋ)/(a+b+n)。先验越强（a+b 越大）或数据越少，后验越靠先验；数据越多，后验越被似然<b>拽过去、变窄</b>。';
+  }
+  aE.addEventListener('input',run);bE.addEventListener('input',run);nE.addEventListener('input',run);hE.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART III */
+function plotBetaShapes(){
+  var div=document.getElementById('p-beta-shapes');if(!div)return;
+  var aE=document.getElementById('bs-a'),bE=document.getElementById('bs-b'),
+      av=document.getElementById('bs-a-v'),bv=document.getElementById('bs-b-v'),info=document.getElementById('bs-info');
+  function run(){
+    var a=+aE.value,b=+bE.value;av.textContent=a.toFixed(1);bv.textContent=b.toFixed(1);
+    var xs=lin(0.0008,0.9992,320),ys=xs.map(function(x){return betaPdf(x,a,b);});
+    var cap=Math.min(Math.max.apply(null,ys),14);
+    var mn=betaMean(a,b),md=betaMode(a,b);
+    var shapes=[{type:'line',x0:mn,x1:mn,y0:0,y1:cap,line:{color:C.accent,width:1.8,dash:'dot'}}];
+    var anns=[{x:mn,y:cap,text:'均值 '+mn.toFixed(2),showarrow:false,yanchor:'bottom',font:{size:11,color:C.accent}}];
+    if(!isNaN(md)&&md>0&&md<1){shapes.push({type:'line',x0:md,x1:md,y0:0,y1:cap,line:{color:C.gold,width:1.6,dash:'dash'}});anns.push({x:md,y:cap*0.86,text:'众数 '+md.toFixed(2),showarrow:false,yanchor:'bottom',xanchor:md<mn?'right':'left',font:{size:11,color:C.gold}});}
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:xs,y:ys,line:{color:C.accent,width:2.8},fill:'tozeroy',fillcolor:'rgba(142,47,90,0.10)',name:'Beta('+a.toFixed(1)+','+b.toFixed(1)+')'}
+    ],baseLayout({xaxis:{title:{text:'θ',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'密度',font:{size:12}},rangemode:'tozero',range:[0,cap*1.12],gridcolor:C.line,linecolor:C.lineStrong},
+      shapes:shapes,annotations:anns}),CONF);
+    var shape=(a<1&&b<1)?'两端翘起的 U 形（端点偏好）':(Math.abs(a-b)<0.05?'关于 0.5 对称':(a>b?'峰偏右（偏向 1）':'峰偏左（偏向 0）'));
+    if(info)info.innerHTML='Beta('+a.toFixed(1)+', '+b.toFixed(1)+')：均值 <b>'+mn.toFixed(3)+'</b>，方差 <b>'+betaVar(a,b).toFixed(4)+'</b>，众数 '+(isNaN(md)?'（无内点众数）':'<b>'+md.toFixed(3)+'</b>')+'。形状：<b>'+shape+'</b>。a+b='+(a+b).toFixed(1)+' 越大 → 分布越窄、信念越强。试 a=b=0.75 看专家先验，或 a=b=1 看均匀（无信息）先验。';
+  }
+  aE.addEventListener('input',run);bE.addEventListener('input',run);run();
+}
+
+function sceneBeta3D(){
+  var div=document.getElementById('p-beta-3d');if(!div)return;
+  var tE=document.getElementById('b3-t'),kE=document.getElementById('b3-k'),nE=document.getElementById('b3-n'),
+      tv=document.getElementById('b3-t-v'),kv=document.getElementById('b3-k-v'),nv=document.getElementById('b3-n-v'),
+      reroll=document.getElementById('b3-reroll'),info=document.getElementById('b3-info');
+  var MAXN=80,U=[];
+  function fresh(){U=[];for(var i=0;i<MAXN;i++)U.push(Math.random());}
+  fresh();
+  function build(){
+    var t=+tE.value,k=+kE.value,n=+nE.value;
+    tv.textContent=t.toFixed(2);kv.textContent=k.toFixed(1);nv.textContent=n;
+    var gx=lin(0.0015,0.9985,46);
+    var rows=[],step=Math.max(1,Math.ceil((n+1)/30)),m;
+    for(m=0;m<=n;m+=step){rows.push(m);} if(rows[rows.length-1]!==n)rows.push(n);
+    var succAt=function(mm){var s=0,j;for(j=0;j<mm;j++)if(U[j]<t)s++;return s;};
+    var lastSucc=succAt(n),aLast=k+lastSucc,bLast=k+(n-lastSucc);
+    var pk=betaMode(aLast,bLast);var zcap=Math.max(betaPdf(isNaN(pk)?0.5:pk,aLast,bLast)*1.12,2.2);
+    var Z=[],crest=[];
+    rows.forEach(function(mm){
+      var s=succAt(mm),a=k+s,b=k+(mm-s);
+      Z.push(gx.map(function(x){var d=betaPdf(x,a,b)/zcap;return d>1.08?1.08:d;}));
+      var meanm=a/(a+b);crest.push([meanm,mm,Math.min(betaPdf(meanm,a,b)/zcap,1.08)+0.012]);
+    });
+    var sc=Scene3D(div,{xr:[0,1],yr:[0,Math.max(n,4)],zr:[0,1.1],xlabel:'θ（正面率）',ylabel:'已观测条数 m',zlabel:'后验密度(归一)',yaw:-0.66,pitch:0.86});
+    if(sc)sc.setObjects([{type:'surface',X:gx,Y:rows,Z:Z,scale:PURPLE_SCALE,alpha:0.93,wire:true},
+      {type:'line',pts:crest,color:C.gold,width:3},
+      {type:'line',pts:[[t,0,0],[t,Math.max(n,4),0]],color:C.rust,width:3}]);
+    if(info)info.innerHTML='真值 θ*=<b style="color:'+C.rust+'">'+t.toFixed(2)+'</b>，先验 Beta('+k.toFixed(1)+', '+k.toFixed(1)+')。喂完 '+n+' 条数据（其中 '+lastSucc+' 次正面）后，后验=<b>Beta('+aLast.toFixed(1)+', '+bLast.toFixed(1)+')</b>，均值 <b>'+(aLast/(aLast+bLast)).toFixed(3)+'</b>。看<b style="color:'+C.gold+'">金色脊线</b>（后验均值轨迹）如何从先验中点出发、被逐条数据<b>拽向地面 θ* 红线</b>，山峰越长越<b>高而窄</b>——信息累积 → 信念收紧。拖动旋转、滚轮缩放。';
+  }
+  tE.addEventListener('input',build);kE.addEventListener('input',build);nE.addEventListener('input',build);
+  if(reroll)reroll.addEventListener('click',function(){fresh();build();});
+  build();
+}
+
+function plotNormal(){
+  var div=document.getElementById('p-normal');if(!div)return;
+  var nE=document.getElementById('nm-n'),sE=document.getElementById('nm-s'),xE=document.getElementById('nm-x'),
+      nv=document.getElementById('nm-n-v'),sv=document.getElementById('nm-s-v'),xv=document.getElementById('nm-x-v'),
+      info=document.getElementById('nm-info');
+  var m0=0,sigma=1;
+  function run(){
+    var n=+nE.value,s0=+sE.value,xbar=+xE.value;
+    nv.textContent=n;sv.textContent=s0.toFixed(1);xv.textContent=xbar.toFixed(1);
+    var priP=1/(s0*s0),datP=n/(sigma*sigma),postP=priP+datP,sn=Math.sqrt(1/postP),mn=(m0*priP+xbar*datP)/postP;
+    var sLik=n>0?sigma/Math.sqrt(n):null;
+    var lo=Math.min(m0-3.2*s0,xbar-(sLik?3.2*sLik:0),mn-3.2*sn)-0.4;
+    var hi=Math.max(m0+3.2*s0,xbar+(sLik?3.2*sLik:0),mn+3.2*sn)+0.4;
+    var xs=lin(lo,hi,320);
+    var prior=xs.map(function(x){return normPdf(x,m0,s0);});
+    var post=xs.map(function(x){return normPdf(x,mn,sn);});
+    var traces=[{type:'scatter',mode:'lines',x:xs,y:prior,line:{color:C.faint,width:2,dash:'dot'},name:'先验 N(0, '+(s0*s0).toFixed(2)+')'}];
+    if(n>0){var lik=xs.map(function(x){return normPdf(x,xbar,sLik);});
+      traces.push({type:'scatter',mode:'lines',x:xs,y:lik,line:{color:C.teal,width:2},name:'似然（数据 x̄='+xbar.toFixed(1)+'）'});}
+    traces.push({type:'scatter',mode:'lines',x:xs,y:post,line:{color:C.accent,width:3},fill:'tozeroy',fillcolor:'rgba(142,47,90,0.10)',name:'后验 N('+mn.toFixed(2)+', '+(sn*sn).toFixed(3)+')'});
+    var pkP=Math.max.apply(null,post);
+    var shapes=[{type:'line',x0:mn,x1:mn,y0:0,y1:pkP*1.05,line:{color:C.accent,width:1.6,dash:'dot'}}];
+    if(n>0)shapes.push({type:'line',x0:xbar,x1:xbar,y0:0,y1:pkP*1.05,line:{color:C.teal,width:1.4,dash:'dash'}});
+    Plotly.react(div,traces,baseLayout({showlegend:true,legend:{orientation:'h',y:1.14,x:0,font:{size:11}},
+      xaxis:{title:{text:'θ（待估均值）',font:{size:12}},range:[lo,hi],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'密度',font:{size:12}},rangemode:'tozero',gridcolor:C.line,linecolor:C.lineStrong},
+      shapes:shapes}),CONF);
+    if(n===0){if(info)info.innerHTML='<b>n=0：没有数据，后验 = 先验。</b>先验精度 1/s₀² = '+priP.toFixed(2)+'。拖动 n 加入数据，看后验如何被似然拽动并变窄。';}
+    else{var shrink=xbar-mn;
+      if(info)info.innerHTML='精度相加：后验精度 = 先验 '+priP.toFixed(2)+' + 数据 '+datP.toFixed(2)+' = <b>'+postP.toFixed(2)+'</b> → 后验标准差 <b>'+sn.toFixed(3)+'</b>（比先验和似然都窄）。<b>收缩：</b>样本均值 x̄='+xbar.toFixed(2)+' 被往先验 0 方向拉到后验均值 <b style="color:'+C.accent+'">'+mn.toFixed(3)+'</b>（收缩了 '+Math.abs(shrink).toFixed(3)+'）。n 越大数据精度越压倒先验，收缩越小、后验越贴 x̄。这条"收缩"就是岭回归/分层模型的种子。';}
+  }
+  nE.addEventListener('input',run);sE.addEventListener('input',run);xE.addEventListener('input',run);run();
+}
+
+/* ============================================================ PART IV */
+function plotLoss(){
+  var div=document.getElementById('p-loss');if(!div)return;
+  var aE=document.getElementById('ls-a'),bE=document.getElementById('ls-b'),
+      av=document.getElementById('ls-a-v'),bv=document.getElementById('ls-b-v'),info=document.getElementById('ls-info');
+  function argmin(arr){var mi=0,i;for(i=1;i<arr.length;i++)if(arr[i]<arr[mi])mi=i;return mi;}
+  function norm01(arr){var mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr),i,o=[];for(i=0;i<arr.length;i++)o.push((arr[i]-mn)/((mx-mn)||1));return o;}
+  function run(){
+    var a=+aE.value,b=+bE.value;av.textContent=a.toFixed(1);bv.textContent=b.toFixed(1);
+    var g=betaGrid(a,b,1400);
+    var mean=betaMean(a,b),vr=betaVar(a,b),median=quantileFromGrid(g,0.5),mode=betaMode(a,b);
+    var W=g.pdf,tot=0,i;for(i=0;i<W.length;i++)tot+=W[i];
+    var eps=0.02;
+    function cdfAt(x){if(x<=g.xs[0])return 0;if(x>=g.xs[g.xs.length-1])return 1;
+      var j;for(j=1;j<g.xs.length;j++){if(g.xs[j]>=x){var f=(x-g.xs[j-1])/((g.xs[j]-g.xs[j-1])||1e-12);return g.cdf[j-1]+f*(g.cdf[j]-g.cdf[j-1]);}}return 1;}
+    var T=lin(0.004,0.996,200);
+    var R2=T.map(function(t){return vr+(t-mean)*(t-mean);});
+    var R1=T.map(function(t){var s=0,k;for(k=0;k<g.xs.length;k++)s+=W[k]*Math.abs(t-g.xs[k]);return s/tot;});
+    var Re=T.map(function(t){return 1-(cdfAt(t+eps)-cdfAt(t-eps));});
+    var R2n=norm01(R2),R1n=norm01(R1),Ren=norm01(Re);
+    var t2=T[argmin(R2)],t1=T[argmin(R1)],te=T[argmin(Re)];
+    var pdfMax=Math.max.apply(null,g.pdf),pcap=Math.min(pdfMax,10);
+    var traces=[
+      {type:'scatter',mode:'lines',x:g.xs,y:g.pdf,yaxis:'y2',line:{color:C.inkSoft,width:2.2},fill:'tozeroy',fillcolor:'rgba(87,79,70,0.08)',name:'后验密度',showlegend:false},
+      {type:'scatter',mode:'lines',x:T,y:R2n,line:{color:C.accent,width:2.4},name:'平方损失 → 均值'},
+      {type:'scatter',mode:'lines',x:T,y:R1n,line:{color:C.teal,width:2.4},name:'绝对值损失 → 中位数'},
+      {type:'scatter',mode:'lines',x:T,y:Ren,line:{color:C.gold,width:2.4},name:'近似0-1(ε)损失 → 众数'},
+      {type:'scatter',mode:'markers',x:[t2,t1,te],y:[0,0,0],marker:{color:[C.accent,C.teal,C.gold],size:10,line:{color:'#fff',width:1.5}},showlegend:false,hoverinfo:'x'}
+    ];
+    var shapes=[
+      {type:'line',x0:mean,x1:mean,y0:0,y1:pcap*1.05,yref:'y2',line:{color:C.accent,width:2,dash:'dot'}},
+      {type:'line',x0:median,x1:median,y0:0,y1:pcap*1.05,yref:'y2',line:{color:C.teal,width:1.8,dash:'dash'}}
+    ];
+    if(!isNaN(mode)&&mode>0&&mode<1)shapes.push({type:'line',x0:mode,x1:mode,y0:0,y1:pcap*1.05,yref:'y2',line:{color:C.gold,width:1.8}});
+    var anns=[
+      {x:mean,y:pcap*1.05,yref:'y2',text:'均值',showarrow:false,yanchor:'bottom',font:{size:11,color:C.accent}},
+      {x:median,y:pcap*0.78,yref:'y2',text:'中位',showarrow:false,yanchor:'bottom',xanchor:median<mean?'right':'left',font:{size:11,color:C.teal}}
+    ];
+    if(!isNaN(mode)&&mode>0&&mode<1)anns.push({x:mode,y:pcap*0.55,yref:'y2',text:'众数',showarrow:false,yanchor:'bottom',xanchor:mode<mean?'right':'left',font:{size:11,color:C.gold}});
+    Plotly.react(div,traces,baseLayout({showlegend:true,legend:{orientation:'h',y:1.17,x:0,font:{size:10.5}},
+      margin:{l:50,r:16,t:32,b:40},
+      xaxis:{title:{text:'估计值 θ̃ / θ',font:{size:12}},range:[0,1],domain:[0,1],gridcolor:C.line,linecolor:C.lineStrong,anchor:'y'},
+      yaxis:{title:{text:'归一化风险',font:{size:11}},domain:[0,0.40],range:[-0.06,1.06],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis2:{title:{text:'后验密度',font:{size:11}},domain:[0.56,1],rangemode:'tozero',range:[0,pcap*1.2],gridcolor:C.line,linecolor:C.lineStrong,anchor:'x'},
+      shapes:shapes,annotations:anns}),CONF);
+    if(info)info.innerHTML='后验 Beta('+a.toFixed(1)+', '+b.toFixed(1)+')：均值 <b style="color:'+C.accent+'">'+mean.toFixed(3)+'</b>，中位数 <b style="color:'+C.teal+'">'+median.toFixed(3)+'</b>，众数 <b style="color:'+C.gold+'">'+(isNaN(mode)?'—':mode.toFixed(3))+'</b>。下图三条风险曲线的谷底（圆点）分别落在 '+t2.toFixed(3)+' / '+t1.toFixed(3)+' / '+te.toFixed(3)+'——正好对上均值/中位数/众数（Thm 6.1、6.2，及 0-1 的 ε-极限）。把 a、b 拖得越不对称，三者分得越开：这就是"报哪个数"会改变结论的根源。';
+  }
+  aE.addEventListener('input',run);bE.addEventListener('input',run);run();
+}
+
+function plotCI(){
+  var div=document.getElementById('p-ci');if(!div)return;
+  var aE=document.getElementById('ci-a'),bE=document.getElementById('ci-b'),
+      av=document.getElementById('ci-a-v'),bv=document.getElementById('ci-b-v'),info=document.getElementById('ci-info');
+  function run(){
+    var a=+aE.value,b=+bE.value,lvl=+(segData('ci-seg','v')||0.95);
+    av.textContent=a.toFixed(1);bv.textContent=b.toFixed(1);
+    var g=betaGrid(a,b,1600),alpha=1-lvl;
+    var lo=quantileFromGrid(g,alpha/2),hi=quantileFromGrid(g,1-alpha/2);
+    var xs=lin(0.0008,0.9992,340),ys=xs.map(function(x){return betaPdf(x,a,b);});
+    var sub=lin(lo,hi,160),suby=sub.map(function(x){return betaPdf(x,a,b);});
+    var cap=Math.min(Math.max.apply(null,ys),14);
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:sub,y:suby,line:{color:'rgba(0,0,0,0)'},fill:'tozeroy',fillcolor:'rgba(142,47,90,0.20)',name:(lvl*100).toFixed(0)+'% 可信区间',hoverinfo:'skip'},
+      {type:'scatter',mode:'lines',x:xs,y:ys,line:{color:C.accent,width:2.8},name:'后验密度'}
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.13,x:0,font:{size:11}},
+      xaxis:{title:{text:'θ',font:{size:12}},range:[0,1],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'后验密度',font:{size:12}},rangemode:'tozero',range:[0,cap*1.1],gridcolor:C.line,linecolor:C.lineStrong},
+      shapes:[
+        {type:'line',x0:lo,x1:lo,y0:0,y1:cap*1.05,line:{color:C.accent,width:1.8,dash:'dash'}},
+        {type:'line',x0:hi,x1:hi,y0:0,y1:cap*1.05,line:{color:C.accent,width:1.8,dash:'dash'}}
+      ],
+      annotations:[
+        {x:lo,y:cap*1.05,text:lo.toFixed(3),showarrow:false,yanchor:'bottom',xanchor:'right',font:{size:11,color:C.accent}},
+        {x:hi,y:cap*1.05,text:hi.toFixed(3),showarrow:false,yanchor:'bottom',xanchor:'left',font:{size:11,color:C.accent}}
+      ]}),CONF);
+    var med=quantileFromGrid(g,0.5),lt=med-lo,rt=hi-med;
+    if(info)info.innerHTML=(lvl*100).toFixed(0)+'% 等尾可信区间 = <b style="color:'+C.accent+'">['+lo.toFixed(3)+', '+hi.toFixed(3)+']</b>（两端各切掉 '+(alpha/2*100).toFixed(1)+'%）。可以直接读成"<b>给定数据，θ 有 '+(lvl*100).toFixed(0)+'% 概率落在此区间</b>"——这是置信区间<b>不能</b>有的读法。注意左右尾不等长（左 '+lt.toFixed(3)+' / 右 '+rt.toFixed(3)+'）：后验偏斜时区间自动<b>非对称</b>，比 θ̂±z·se 更贴合真实不确定性。';
+    if(window.renderMathInElement&&info)try{renderMathInElement(info,{delimiters:[{left:'\\(',right:'\\)',display:false}],throwOnError:false});}catch(_){}
+  }
+  aE.addEventListener('input',run);bE.addEventListener('input',run);run();
+}
+
+/* ============================================================ init */
+function init(){
+  renderMath();
+  buildMap();
+  wireSliderFill();
+  wireNav();
+  wireMenu();
+  plotBelief();plotInverse();plotUpdate();
+  plotBetaShapes();sceneBeta3D();plotNormal();
+  plotLoss();plotCI();
+  seg('belief-seg',plotBelief);
+  seg('ci-seg',plotCI);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+
+})();
+</script>
+</body>
+</html>

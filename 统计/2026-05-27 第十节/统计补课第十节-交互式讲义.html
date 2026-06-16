@@ -1,0 +1,1627 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用数据说话 · 直觉式交互讲义（第十节 · Ch6 p38–55：当积分算不出来——频率派 MSE、拉普拉斯正态近似、MCMC / Metropolis–Hastings 与 Gibbs 采样）</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly（仅用于 2D 的 SVG 轨迹；本页所有 3D 全部由内置 Canvas 引擎手绘透视投影，绝不调用 WebGL） -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F2EFE6;
+  --card:#FFFDF8;
+  --ink:#1B1A1F;
+  --ink-soft:#4C4A55;
+  --ink-faint:#86838F;
+  --line:#E2DECF;
+  --line-strong:#CFC9B6;
+  --accent:#2D4A82;        /* 第十节主色：靛蓝 / 墨水（当封闭公式失效，就让一条马尔可夫链像墨滴扩散一样"踏遍"后验——随机游走的足迹色） */
+  --accent-soft:#E1E6F2;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(25,22,40,.05), 0 8px 30px rgba(25,22,40,.06);
+  --shadow-lg:0 10px 50px rgba(25,22,40,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #E1E6F2 0%, rgba(225,230,242,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1680px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(18px,4vw,64px) 56px; max-width:1220px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.toc a.star-link .num{color:var(--accent)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(15,12,20,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:92ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+
+/* relationship badges row */
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F6F2E9)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+
+/* prose bullet list inside mod cards */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline WebGL caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#EEF1F8; border:1px solid #B9C3DC; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+
+/* plot containers */
+.plot{width:100%; height:360px}
+.plot.tall{height:430px}
+.plot.d3{height:500px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.readout{font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #B9C3DC; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+.code{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace; font-size:13px; background:#1C1B22; color:#E7E2EE;
+  border-radius:10px; padding:13px 15px; overflow-x:auto; line-height:1.55; margin:10px 0}
+.code .c{color:#928BA0} .code .k{color:#9BB4E0} .code .s{color:#9FC08A}
+
+/* concept map */
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(207,201,182,.16) 27px, rgba(207,201,182,.16) 28px),
+   var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:940px; height:auto}
+.node-card{cursor:pointer}
+.node-card:hover .node-box{filter:brightness(1.05)}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+/* small inline architecture diagram */
+.archwrap{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:10px; box-shadow:var(--shadow); overflow:auto; margin:10px 0}
+.archwrap svg{display:block; width:100%; min-width:560px; height:auto}
+
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(45,74,130,.04))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:80ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-meta{font-size:12.5px; color:var(--ink-faint); margin-top:6px}
+.foot-sub{font-style:italic; color:var(--ink-soft); margin-top:-4px !important}
+.foot-fine{font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+/* ---- session-10 additions ---- */
+.part-kicker{display:inline-block; font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:4px 11px; border-radius:999px}
+.btnrow{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 4px}
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+.closing-block{background:linear-gradient(180deg, rgba(45,74,130,.05), rgba(0,0,0,0)); border:1px solid var(--line); border-top:3px solid var(--accent)}
+::selection{background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#top">统计补课 · 第十节<small>当积分算不出来 — Ch6 p38–55 · MSE · 拉普拉斯近似 · MCMC/MH · Gibbs</small></a>
+  <nav class="toc cjk" id="toc">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">0</span>知识全景地图（六类关系）</a>
+    <a href="#spine"><span class="num">0</span>本节主线（承接第九节）</a>
+    <a class="trap-link" href="#audit"><span class="num">0</span>先给 AI 纪要挑刺 ⚠</a>
+
+    <h4>Ⅰ · 频率派检验台（实战）</h4>
+    <a class="sub" href="#t-pg"><span class="num">1.1</span>Poisson–Gamma 的 MSE：补上欠账</a>
+    <a class="sub star-link" href="#t-cross"><span class="num">1.2</span>Bayes vs MLE 谁的 MSE 低 ★ 2D</a>
+    <a class="sub star-link" href="#t-bv3d"><span class="num">1.3</span>偏差²+方差：两片面叠成 MSE ★ 3D</a>
+    <a class="sub" href="#t-nig"><span class="num">1.4</span>估方差也一样：Normal–InvGamma</a>
+
+    <h4>Ⅱ · 拉普拉斯正态近似</h4>
+    <a class="sub" href="#t-lap"><span class="num">2.1</span>核心：在峰顶做二阶泰勒展开</a>
+    <a class="sub" href="#t-lap-thm"><span class="num">2.2</span>定理 6.3：驻点 + 海森正定</a>
+    <a class="sub star-link" href="#t-pareto"><span class="num">2.3</span>帕累托实例：一路算到底 ★ 2D</a>
+    <a class="sub star-link" href="#t-lap3d"><span class="num">2.4</span>二维后验"描"成高斯钟 ★ 3D</a>
+    <a class="sub trap-link" href="#t-lap-trap"><span class="num">2.5</span>盲点：近似会漏到 θ&lt;0 ⚠</a>
+
+    <h4>Ⅲ · MCMC + Metropolis–Hastings</h4>
+    <a class="sub" href="#t-wall"><span class="num">3.1</span>那堵墙：归一化常数算不出</a>
+    <a class="sub" href="#t-mh"><span class="num">3.2</span>MH 算法：常数自动消掉</a>
+    <a class="sub star-link" href="#t-mhlive"><span class="num">3.3</span>看链走起来：步长的两难 ★ 交互</a>
+    <a class="sub star-link" href="#t-mh3d"><span class="num">3.4</span>双峰后验上的足迹 ★ 3D</a>
+    <a class="sub" href="#t-conv"><span class="num">3.5</span>收敛三件套 + 两种提议</a>
+
+    <h4>Ⅳ · Gibbs 采样</h4>
+    <a class="sub" href="#t-gibbs"><span class="num">4.1</span>full conditional：拆成一维</a>
+    <a class="sub star-link" href="#t-gibbs3d"><span class="num">4.2</span>二维正态上的"楼梯" ★ 3D</a>
+    <a class="sub" href="#t-gibbs-mh"><span class="num">4.3</span>Gibbs 是 MH 的特例（α=1）</a>
+
+    <h4>Ⅴ · 应用与批判</h4>
+    <a class="sub star-link" href="#t-gbm"><span class="num">5.1</span>金融预测：方差锥为何发散 ★ 2D</a>
+    <a class="sub" href="#t-roll"><span class="num">5.2</span>滚动更新 + 先验权重的主观刀</a>
+
+    <h4>收尾</h4>
+    <a href="#closing"><span class="num">∎</span>一页总图 · 全章脉络</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <!-- ============================================================ HERO -->
+  <p class="h-eyebrow">用数据说话 · 直觉式交互讲义 · 第十节</p>
+  <h1 class="title cjk">当积分算不出来：用正态近似"描峰"，<br>用随机游走"踏遍"后验</h1>
+  <p class="lead cjk">第六章 <i>Bayesian inference</i>（p38–55）。第八节把"后验 ∝ 似然 × 先验"装进了<b>能算的封闭公式</b>，第九节拿真实数字把那台机器<b>跑通</b>。但真实研究里后验往往<b>非共轭、高维</b>——封闭公式失效，连<b>归一化常数那个积分都算不出来</b>。这一节给你<b>三条出路</b>外加一笔欠账：<b class="kw">(0)</b> 先补上第九节欠你的账——用频率派的 <b>MSE</b> 把"贝叶斯到底好在哪"<b>量化</b>清楚（Poisson–Gamma 完整推导，亲眼看 Bayes 的风险曲线和 MLE 在哪一点交叉）；<b class="kw">(1)</b> <b>拉普拉斯正态近似</b>——在后验<b>峰顶</b>做二阶泰勒展开，把它"描"成一座高斯钟，瞬间拿到均值和方差；<b class="kw">(2)</b> <b>MCMC / Metropolis–Hastings</b>——造一条<b>马尔可夫链</b>，让它的足迹按后验密度<b>踏遍</b>整个参数空间，那个算不出的归一化常数在接受概率里<b>自动消掉</b>；<b class="kw">(3)</b> <b>Gibbs 采样</b>——把高维难题拆成一串<b>一维条件分布</b>，逐坐标轮替。每个知识点都配齐六个通道：<b>直觉 · 公式 · 案例 · 2D · 3D · 交互</b>，并标出彼此的<b>继承 / 推广 / 互补 / 工具 / 对偶 / 盲点</b>六类关系。结尾把同次会议的<b>金融预测偏差发散</b>（为什么预测越远越偏）也用一张可拨的方差锥讲透。</p>
+
+
+  <!-- reading guide -->
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◆</div><h5>直觉</h5><p>一句话说清"它到底在干嘛"。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>公式</h5><p>KaTeX 排版，关键步骤不跳步。</p></div>
+    <div class="gchip case"><div class="ic">▣</div><h5>案例</h5><p>课件原题 + 可落地的数字。</p></div>
+    <div class="gchip d2"><div class="ic">▤</div><h5>2D 图</h5><p>Plotly 曲线，随滑块实时变。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5>3D 图</h5><p>Canvas 手绘，可拖动旋转。</p></div>
+    <div class="gchip live"><div class="ic">⊕</div><h5>交互</h5><p>自己拨参数 / 让链跑起来。</p></div>
+    <div class="gchip flow"><div class="ic">→</div><h5>推导</h5><p>分步骤，看公式怎么"长出来"。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点</h5><p>容易错、纪要也错了的地方。</p></div>
+  </div>
+
+  <!-- ============================================================ CONCEPT MAP -->
+  <section id="map" class="topic-block">
+    <h3 class="topic cjk">知识全景地图</h3>
+    <p class="topic-en">How this lecture's ideas inherit, generalize, supply, dualize, and trap each other</p>
+    <p class="cjk">本节的骨架是<b>一笔欠账 + 两条出路 + 一个特例</b>。最左边是第九节的落点（<span class="kw">后验封闭公式</span>）。往右先<b>补账</b>：把贝叶斯估计量放上<b>频率派 MSE</b> 的天平称成色（Ⅰ）。然后正面回答"<b>后验算不出来怎么办</b>"——两条出路并排：<b>拉普拉斯近似</b>（Ⅱ，解析、快、近似）与 <b>MCMC</b>（Ⅲ，采样、慢、渐近精确）。<b>Gibbs</b>（Ⅳ）是 MCMC 里把高维拆成一维的特例，所以它<b>继承</b>自 MH。最右下角是同次会议的<b>应用与批判</b>（Ⅴ）。点任意节点可跳转；边的颜色代表六类关系。</p>
+    <div class="mapwrap"><svg id="conceptmap" viewBox="0 0 980 720" role="img" aria-label="第十节知识全景地图">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B7AB98"></path>
+        </marker>
+      </defs>
+      <g id="edges" fill="none" stroke-width="1.8"></g>
+      <g id="nodes"></g>
+    </svg></div>
+    <div class="legend cjk">
+      <span><i style="border-color:#3E7C4E"></i>继承（A 是 B 的特例 / B 直接用到 A）</span>
+      <span><i style="border-color:#2D4A82"></i>推广（B 是 A 的更一般版本）</span>
+      <span><i style="border-color:#574AA6"></i>工具（A 为 B 提供计算手段）</span>
+      <span><i style="border-color:#1F6B66"></i>对偶 / 对照（频率派 ↔ 贝叶斯）</span>
+      <span><i style="border-color:#B7892A"></i>互补 / 供给（A 喂给 B 一块零件）</span>
+      <span><i style="border-color:#B0442B"></i>盲点（易错 / 纪要出错处）</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ SPINE -->
+  <section id="spine" class="topic-block">
+    <h3 class="topic cjk">本节主线：从"会算封闭式"到"算不出也能办"</h3>
+    <p class="topic-en">The through-line: what to do when the posterior has no closed form</p>
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 一笔欠账 + 两条出路 + 一个特例</div>
+      <p class="cjk">前两节我们一直活在<b>共轭</b>的温室里——先验和似然门当户对，后验是个有名有姓的分布（伽马、逆伽马、t），均值方差查表就有。但温室外的世界是这样的：你写下 \(f(\theta\mid x^{(n)})\propto L(\theta)f(\theta)\)，<b>右边能写出来</b>，可那个让它积分到 1 的<b>归一化常数 \(\int L(\theta)f(\theta)\,d\theta\) 你算不出来</b>——尤其当 \(\theta\) 是几十维向量时，这个积分是<b>维度灾难</b>。没有归一化常数，你既画不出 PDF，也求不出后验均值或可信区间。这一节按下面的顺序破这个局：</p>
+      <ul class="ul cjk">
+        <li><b>第〇步（Ⅰ · 补账）：</b>第九节 §4 给了你"偏差–方差"的直觉，但把<b>完整的 Poisson–Gamma 推导留给了第十节</b>。这里先还这笔账：把贝叶斯后验均值当成一个<b>普通估计量</b>，在频率派的重复抽样下算它的 \(\text{MSE}=\text{偏差}^2+\text{方差}\)，再和 MLE 比。结论会化成一张<b>能拨参数的交叉图</b>：先验押对时贝叶斯完胜，押错时反被惩罚——这条分界线你会亲手摸到。</li>
+        <li><b>第一条出路（Ⅱ · 拉普拉斯）：</b>最省事的近似。把后验<b>取对数</b>写成 \(e^{-\psi(\theta)}\)，在它的<b>峰顶</b>（驻点 \(\theta^*\)）做<b>二阶泰勒展开</b>——二次型的指数正是高斯钟的核！于是后验 \(\approx N(\theta^*,[\psi''(\theta^*)]^{-1})\)。一次求导找峰、一次求二阶导定宽，<b>解析、瞬间、不用抽样</b>。代价：它只在 \(n\) 大、后验近似单峰对称时靠谱，而且——这是个大坑——<b>不保证把参数限制在合法范围内</b>。</li>
+        <li><b>第二条出路（Ⅲ · MCMC）：</b>最通用的杀器。既然算不出整张分布，那就<b>从它里面抽样</b>，用样本的直方图 / 均值代替真分布。<b>Metropolis–Hastings</b> 的魔法在于：它的接受概率是个<b>比值</b> \(\frac{L(\theta')f(\theta')}{L(\theta^{(t)})f(\theta^{(t)})}\times\dots\)，那个算不出的归一化常数在分子分母里<b>同时出现、当场消掉</b>。你只需要会算<b>没归一化的</b> \(L(\theta)f(\theta)\)，就能让一条链的足迹按后验密度踏遍参数空间。代价：要等它<b>收敛</b>（丢掉预热期），还要调提议分布的<b>步长</b>。</li>
+        <li><b>第三步（Ⅳ · Gibbs · MCMC 的特例）：</b>当 \(\theta\) 是高维向量、但每个分量的<b>条件分布</b>都好抽时，Gibbs 把"一次抽一个高维向量"拆成"<b>轮流抽每一个一维分量</b>"。它本质是<b>提议分布选成 full conditional 的 MH</b>，此时接受概率恒等于 1——<b>永不拒绝</b>。所以 Gibbs <b>继承</b>自 MH，是它最优雅的退化。</li>
+      </ul>
+    </div>
+    <div class="xander">
+      <p class="who cjk"><span>✎</span>给 Xander 的话（按你要的：直白 + 批判）</p>
+      <p class="cjk">你统计底子薄、又要做因果和预测，这一节有三个点请你<b>盯死</b>，它们决定你以后用这些工具会不会翻车：<br>① <b>拉普拉斯近似的"正态"是哄你的，别当真。</b>它在峰顶把后验<b>强行掰成</b>对称高斯钟。真后验若是偏的（帕累托那个就是右偏），近似在尾部会错得离谱；若参数有约束（\(\theta>0\)、概率 \(\in(0,1)\)），高斯钟的尾巴会<b>漏到非法区</b>给出"负的方差""大于 1 的概率"。§2.5 那张图会让你看见这条漏出去的尾巴。<b>n 大才救得回来</b>，因为大样本下后验本身趋于正态（这是 BvM 定理，留到以后）。<br>② <b>MCMC 不是"算"，是"逛"——而"逛够了没"是要你自己判断的，没有自动停。</b>很多人以为跑 MCMC 像调库函数、出个确定答案。不是。它是一条随机游走的链，你要看 <b>trace plot</b> 判断它有没有"逛进"高概率区（收敛）、丢掉前面那段<b>预热期</b>，还要担心它会不会卡在一个峰里出不来（§3.4 双峰那张图就是给你看这个的）。步长太小走不动、太大老被拒——§3.3 让你亲手拨这个两难。<br>③ <b>归一化常数消掉</b>是整节的<b>题眼</b>。为什么 MH 能绕开那个算不出的积分？因为接受概率是<b>比值</b>，常数上下一约就没了。理解了这一句，你就理解了为什么"只要会写出没归一化的 \(L\times f\)"就够了——这正是贝叶斯计算在 1990 年代突然"能用"了的根本原因。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ AUDIT -->
+  <section id="audit" class="topic-block">
+    <h3 class="topic cjk">先给 AI 纪要 / 思维导图挑刺 ⚠</h3>
+    <p class="topic-en">Reading the machine-generated notes critically — what they nailed, and five things to fix</p>
+    <p class="cjk">你上传的 AI 纪要、图文纪要、思维导图，<b>大方向抓得相当好</b>（大样本下两派一致、拉普拉斯把后验近似为正态、MCMC 靠马尔可夫链绕开归一化常数、burn-in、随机游走 vs 独立提议、金融预测方差随时间发散……骨架都对）。但有几处会把这一节<b>带偏</b>，按"越要命越靠前"排序。前两条直接影响你对本节两条出路的理解。</p>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 1（最要命）：把拉普拉斯近似的"条件"说反了——它不是"能写成 e^{−h}"，几乎任何东西都能</div>
+      <p class="cjk">纪要写"<b>核心条件：后验密度需能表示为指数上的负函数形式</b> \(\pi(\theta\mid x)\propto e^{-h(\theta)}\)"。这句话<b>等于没说</b>：任何<b>正</b>函数 \(g(\theta)>0\) 都能写成 \(e^{-h(\theta)}\)，只要令 \(h=-\log g\)。所以"能写成 \(e^{-\psi}\)"是<b>免费的</b>，不构成任何限制。</p>
+      <p class="cjk">真正的<b>条件</b>是课件 p43–44 讲的三件事：① \(\psi(\theta)\) 要<b>二阶连续可导</b>；② 它有一个<b>内部驻点</b> \(\theta^*\)（\(\nabla\psi(\theta^*)=0\)）；③ 在 \(\theta^*\) 处<b>海森矩阵 \(\mathcal H\psi(\theta^*)\) 正定</b>（保证是极小、是个"碗"而非"鞍"或"峰"）。再加上一条<b>隐含的精度条件</b>：二阶泰勒展开要<b>足够准</b>——这只有在 \(n\) 大、后验集中且近似对称时才成立。把"免费条件"当"核心条件"，会让你误以为拉普拉斯<b>到处能用</b>；实际上它在<b>小样本、偏态、多峰</b>后验上会失灵。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 2（题眼被漏掉）：纪要说 MCMC"无需知道归一化常数"，却没说清<b>为什么</b></div>
+      <p class="cjk">纪要反复强调"MCMC 仅需后验的核（未归一化密度）"——结论对，但<b>机制没点破</b>，而这恰恰是整节最该懂的一句。原因在 MH 的接受概率是个<b>比值</b>：</p>
+      <p>$$\alpha=\min\!\left\{\frac{\overbrace{L(\theta')f(\theta')}^{\text{未归一化}}\,q(\theta^{(t)}\mid\theta')}{\underbrace{L(\theta^{(t)})f(\theta^{(t)})}_{\text{未归一化}}\,q(\theta'\mid\theta^{(t)})},\;1\right\}$$</p>
+      <p class="cjk">真后验是 \(f(\theta\mid x)=\frac{L(\theta)f(\theta)}{Z}\)，其中 \(Z=\int L f\,d\theta\) 就是那个算不出的常数。但代进比值里，分子分母各有一个 \(Z\)，<b>当场约掉</b>。所以你<b>永远不需要知道 \(Z\)</b>。这不是 MCMC 的"附带优点"，是它<b>整个能成立的根本原因</b>。§3.2 会把这步约分单独框出来。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 3（术语/转写错）：几处把名字写串了</div>
+      <ul class="ul cjk">
+        <li>转写把"<b>遍历性定理</b>（ergodic theorem）"写成"<b>便利性定理</b>"——这是语音转写的错。它说的是：链跑够久，<b>时间平均 \(\frac1N\sum e(\theta^{(t)})\) 收敛到空间期望 \(\mathbb E(e(\theta)\mid x)\)</b>，这才是你能用样本算后验均值的依据。</li>
+        <li>转写有"<b>蒙特卡罗链</b>"的说法——准确叫<b>马尔可夫链</b>（Markov chain）。"蒙特卡罗"指的是用<b>随机模拟</b>算积分，"马尔可夫"指<b>下一步只依赖当前状态</b>；MCMC = 用马尔可夫链做蒙特卡罗，两个词各管一半。</li>
+        <li>转写把"多元<b>正态</b>"写成"多元<b>状态</b>"——同音错。拉普拉斯近似的产物是<b>多元正态</b> \(N_d(\theta^*,[\mathcal H\psi(\theta^*)]^{-1})\)。</li>
+      </ul>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 4（页码 / 范围）："到 p53 Gibbs sampling"——Gibbs 其实在 p54–55</div>
+      <p class="cjk">你给的课件范围写"到第 53 页 Gibbs sampling"，但课件 <b>p53 是 Binomial–Beta 的<u>独立</u> Metropolis–Hastings 例子</b>（用均匀分布当提议，拿 MCMC 样本的核密度估计去逼近真 Beta 后验）；<b>Gibbs sampling 在 p54（full conditional 定义）和 p55（算法）</b>。本讲已把范围补到 <b>p55</b>，确保 Gibbs 完整。这点不怪你——课件把 MH 例子和 Gibbs 排得很近，容易连看成一段。</p>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>错误 5（把话说太满）："独立提议适合多峰" / "随机游走适合单峰"——有条件，别背成口诀</div>
+      <p class="cjk">纪要（和课件 p52）给的对照大方向对：<b>随机游走</b>以当前点为中心小步挪，适合<b>单峰、集中</b>的后验；<b>独立提议</b>从一个固定分布抽，与当前点无关。但"<b>独立提议适合多峰</b>"这句要小心：独立 MH 好不好，<b>完全取决于那个固定提议分布像不像目标</b>。若提议是个能盖住所有峰的"大伞"，它确实能跨峰跳；但若提议和目标对不上（比如提议集中在一个峰、目标在另一处有质量），独立 MH 会<b>大面积被拒、卡死</b>，比随机游走还糟。所以正确说法是：<b>独立提议适合"你已经有一个不错的全局近似"的情形</b>（比如先用拉普拉斯近似当提议！这正好把 Ⅱ 和 Ⅲ 接上了），而不是无条件"适合多峰"。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>公允地说</p>
+      <p class="cjk">这些错误集中在<b>"条件"与"机制"的精度</b>上——纪要把<b>叙事和直觉</b>讲得不错，但<b>不能当公式手册或操作手册</b>。尤其拉普拉斯的真条件、MH 约掉常数的机制、独立提议的适用前提，是这一节"懂了大概、用时翻车"的三个高发区。下面每个量我都标注<b>用哪种参数化、对谁取期望、什么时候会失灵</b>，并把最值得"摸"的几处（MSE 交叉、近似漏到 θ&lt;0、链的步长两难、链卡在双峰、Gibbs 楼梯）做成可交互的图。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART I ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第一部分 · 一笔欠账（接第九节 §4）</span>
+    <h2 class="part-title cjk">用频率派的眼光，给贝叶斯估计量打分：MSE = 偏差² + 方差</h2>
+    <p class="part-lead cjk">第九节末尾埋了个钩子：贝叶斯后验均值 \(\bar\theta\) <b>本身就是样本的一个函数</b>。既然是样本的函数，我们就能戴上<b>频率派的眼镜</b>——假设有个固定的真值 \(\theta_0\)，让数据随机，问：这个估计量的<b>均方误差 \(\mathrm{MSE}_{\theta_0}(\bar\theta)\)</b> 是多少？再拿它和最大似然估计（MLE）比。结论会很微妙：<b>没有谁全程更好</b>，胜负取决于真值落在哪。</p>
+  </div>
+
+  <!-- 1.1 Poisson-Gamma MSE -->
+  <section id="t-pg" class="topic-block">
+    <h3 class="topic cjk">1.1　泊松–伽马：把贝叶斯估计量的 MSE 一项项拆出来</h3>
+    <p class="topic-en">Poisson likelihood, Gamma prior — derive the frequentist MSE of the posterior mean, piece by piece</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#spine">承接第九节：后验均值是样本的函数</a></span>
+      <span class="rel dual"><span class="dot"></span>对照：贝叶斯估计量 ↔ 频率派评分标准</span>
+      <span class="rel tool"><span class="dot"></span>工具：MSE = bias² + Var 分解</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 模型与后验（共轭，所以后验是闭式）</div>
+      <p class="cjk">保险/计数场景的经典模型：每次观测 \(X_i\mid\theta\sim\text{Poisson}(\theta)\)（如某客户一年的出险次数），共 \(n\) 个。先验取伽马分布，<b>用尺度（scale）参数化</b> \(b\)：</p>
+      <p>$$X_i\mid\theta\stackrel{\text{iid}}{\sim}\text{Poisson}(\theta),\qquad f(\theta)=\frac{\theta^{a-1}e^{-\theta/b}}{\Gamma(a)\,b^{a}}\quad(\theta>0).$$</p>
+      <p class="cjk">伽马是泊松的<b>共轭先验</b>，所以后验仍是伽马（记 \(\dot x=\sum_i x_i\)）：</p>
+      <p>$$\theta\mid x\;\sim\;\text{Gamma}\!\Big(\dot x+a,\ \tfrac{b}{nb+1}\Big),\qquad \mathbb E(\theta\mid x)=\frac{(\dot x+a)\,b}{nb+1}.$$</p>
+      <p class="cap cjk">平方损失下的贝叶斯估计量就是这个后验均值，记 \(\displaystyle\bar\theta=\frac{(\dot X+a)\,b}{nb+1}\)。注意它是 \(\dot X=\sum X_i\) 的<b>线性函数</b>——这是下一步能戴频率眼镜的关键。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>推导 · 戴上频率眼镜：固定真值 \(\theta_0\)，对随机数据求期望与方差</div>
+      <p class="cjk">现在<b>切换世界观</b>：假设真值是固定的 \(\theta_0\)，\(X_1,\dots,X_n\stackrel{\text{iid}}{\sim}\text{Poisson}(\theta_0)\) 是随机的。我们要算 \(\bar\theta\) 作为<b>随机变量</b>的期望和方差。用到泊松的两条事实：\(\mathbb E_{\theta_0}(\dot X)=n\theta_0\)，\(\mathrm{Var}_{\theta_0}(\dot X)=n\theta_0\)（泊松的均值=方差）。</p>
+      <ol class="steps cjk">
+        <li><b>期望。</b>$$\mathbb E_{\theta_0}(\bar\theta)=\frac{b}{nb+1}\big[\mathbb E_{\theta_0}(\dot X)+a\big]=\frac{(n\theta_0+a)\,b}{nb+1}.$$</li>
+        <li><b>偏差。</b>$$\mathrm{bias}=\mathbb E_{\theta_0}(\bar\theta)-\theta_0=\frac{(n\theta_0+a)b-\theta_0(nb+1)}{nb+1}=\frac{ab-\theta_0}{nb+1}.$$ 一眼看出：当 \(n\to\infty\)，分母炸成无穷，<b>偏差 → 0</b>。</li>
+        <li><b>方差。</b>常数倍的方差是平方倍：$$\mathrm{Var}_{\theta_0}(\bar\theta)=\Big(\frac{b}{nb+1}\Big)^2\mathrm{Var}_{\theta_0}(\dot X)=\frac{n\theta_0\,b^2}{(nb+1)^2}.$$ 分子 \(\sim n\)、分母 \(\sim n^2\)，所以<b>方差 \(\sim 1/n\to 0\)</b>。</li>
+        <li><b>合成 MSE。</b>$$\boxed{\ \mathrm{MSE}_{\theta_0}(\bar\theta)=\underbrace{\frac{(ab-\theta_0)^2}{(nb+1)^2}}_{\text{bias}^2}+\underbrace{\frac{n\theta_0 b^2}{(nb+1)^2}}_{\text{Var}}=\frac{(ab-\theta_0)^2+n\theta_0 b^2}{(nb+1)^2}\ }$$</li>
+      </ol>
+      <p class="cap cjk">两项都被 \((nb+1)^2\) 这个 \(\sim n^2\) 的分母压着，所以 <b>\(n\to\infty\) 时 \(\mathrm{MSE}\to 0\)</b>——贝叶斯估计量是<b>相合（consistent）</b>的。这就是第九节那句"大样本下两派趋于一致"的<b>频率派证据</b>。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 偏差从哪来？为什么不是先验的"错"</div>
+      <p class="cjk">偏差 \(\dfrac{ab-\theta_0}{nb+1}\) 里，分子 \(ab\) 正好是<b>先验均值</b> \(\mathbb E(\theta)=ab\)。所以偏差 \(\propto\)（先验均值 − 真值）：<b>先验把估计往自己的中心拽</b>，拽多远取决于先验中心离真值多远。这不是 bug，是先验的本职——它在用"历史经验"修正。代价是引入偏差；回报是（下一节会看到）在某些 \(\theta_0\) 上把方差压得更低、总 MSE 更小。这就是<b>偏差-方差权衡</b>在贝叶斯里的样子。</p>
+    </div>
+  </section>
+
+  <!-- 1.2 the crossing -->
+  <section id="t-cross" class="topic-block">
+    <h3 class="topic cjk">1.2　交叉点：贝叶斯 vs MLE，谁更好取决于真值落在哪 ⚠</h3>
+    <p class="topic-en">Plotting MSE(Bayes) against MSE(MLE) — the curves cross, so "better" is conditional, not absolute</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-pg">用 §1.1 的 MSE 公式</a></span>
+      <span class="rel dual"><span class="dot"></span>对照：有偏的贝叶斯 ↔ 无偏的 MLE</span>
+      <span class="rel limit"><span class="dot"></span>没有免费午餐：胜负随 \(\theta_0\) 翻转</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · MLE 的 MSE，和退化关系</div>
+      <p class="cjk">泊松的 MLE 是样本均值 \(\hat\theta=\dot X/n\)，它<b>无偏</b>（\(\mathbb E_{\theta_0}\hat\theta=\theta_0\)），方差 \(=\theta_0/n\)，所以</p>
+      <p>$$\mathrm{MSE}_{\theta_0}(\hat\theta)=0+\mathrm{Var}_{\theta_0}(\hat\theta)=\frac{\theta_0}{n}.$$</p>
+      <p class="cjk">一个漂亮的事实：把贝叶斯估计量里的先验调成<b>无信息</b>（\(a\to0,\ b\to\infty\)），\(\bar\theta=\dfrac{(\dot X+a)b}{nb+1}\to\dfrac{\dot X}{n}=\hat\theta\)。<b>MLE 就是先验权重归零的贝叶斯</b>——这把第九节"弱先验退回数据驱动"又量化了一遍。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>交互 + 2D · 复刻课件 p41：拨动 \(a,b,n\)，看两条 MSE 曲线怎么交叉</div>
+      <p class="cjk">下图横轴是<b>真值 \(\theta_0\)</b>，两条曲线是 \(\mathrm{MSE}_{\theta_0}(\bar\theta)\)（贝叶斯，赭实线）与 \(\mathrm{MSE}_{\theta_0}(\hat\theta)=\theta_0/n\)（MLE，灰虚线）。课件默认 \(a=b=1,\ n=10\)。<b>先看默认</b>：两条线交叉，贝叶斯曲线在<b>中间一段</b>更低（先验中心 \(ab\) 附近，先验帮了忙），但 \(\theta_0\) 太小或太大时反被 MLE 压过——<b>这就是"没有谁全程更好"</b>。<b>课件的提示：把 \(n\) 从 10 调到 3</b>——小样本下先验话语权更大，贝叶斯占优的区间会变化；再<b>把 \(b\) 调大</b>（先验更弱），贝叶斯曲线整体向 MLE 靠拢。</p>
+      <div class="controls">
+        <div class="ctrl"><label>先验形状 a <span class="val" id="cross-a-v">1.0</span></label><input type="range" id="cross-a" min="0.2" max="5" step="0.1" value="1"></div>
+        <div class="ctrl"><label>先验尺度 b <span class="val" id="cross-b-v">1.0</span></label><input type="range" id="cross-b" min="0.2" max="6" step="0.1" value="1"></div>
+        <div class="ctrl"><label>样本量 n <span class="val" id="cross-n-v">10</span></label><input type="range" id="cross-n" min="1" max="60" step="1" value="10"></div>
+      </div>
+      <div class="plotwrap"><div id="p-cross" class="plot tall"><div class="loading cjk">绘制中…</div></div></div>
+      <p class="cap cjk" id="cross-info"></p>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>批判 · "贝叶斯更准"是个带星号的断言</p>
+      <p class="cjk">很多科普会说"小样本下贝叶斯更准"。上图告诉你：<b>这句话只在先验中心 \(ab\) 离真值 \(\theta_0\) 不太远时成立</b>。先验设歪了（\(ab\) 远离 \(\theta_0\)），偏差项 \((ab-\theta_0)^2\) 会把贝叶斯的 MSE 顶得比 MLE 还高——<b>先验质量决定优劣</b>，而真值你事先并不知道。所以诚实的说法是：贝叶斯用"可能设错的先验"换"方差更小"，这是一场<b>赌注</b>，不是免费的提升。频率派的 MLE 则是"无偏但方差全靠数据"的保守选择。两者各有适用域，没有银弹。</p>
+    </div>
+  </section>
+
+  <!-- 1.3 bias-variance 3D -->
+  <section id="t-bv3d" class="topic-block">
+    <h3 class="topic cjk">1.3　三维：偏差²与方差两张曲面，叠起来就是 MSE</h3>
+    <p class="topic-en">Two stacked surfaces over (θ₀, n) — watch both the bias² floor and the variance sheet collapse as n grows</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-pg">展开 §1.1 的两项分解</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：纯 Canvas 三维（无需 WebGL）</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">⬢</span>3D · 拖动旋转：看两项如何随 \(n\) 一起塌向零平面</div>
+      <p class="cjk">把 \(\mathrm{MSE}\) 的两项画成关于 \((\theta_0,\ n)\) 的两张曲面：<b>下层紫面</b>是方差 \(\dfrac{n\theta_0 b^2}{(nb+1)^2}\)，<b>上层金面</b>是它再加上偏差² 后的<b>总 MSE</b>（两面之间的<b>垂直缝隙</b>就是 \(\mathrm{bias}^2\)）。沿 \(n\) 轴往大处看：<b>缝隙（偏差²）迅速合拢、整张曲面贴向零平面</b>——这就是相合性的几何版。沿 \(\theta_0\) 轴看：方差随 \(\theta_0\) 线性涨（泊松方差=均值），偏差² 在 \(\theta_0=ab\) 处触零（先验中心命中真值）。</p>
+      <div class="controls">
+        <div class="ctrl"><label>先验形状 a <span class="val" id="bv-a-v">1.0</span></label><input type="range" id="bv-a" min="0.2" max="4" step="0.1" value="1"></div>
+        <div class="ctrl"><label>先验尺度 b <span class="val" id="bv-b-v">1.0</span></label><input type="range" id="bv-b" min="0.3" max="4" step="0.1" value="1"></div>
+      </div>
+      <div class="plotwrap"><div id="p-bv3d" class="plot tall"><div class="loading cjk">绘制中（纯 Canvas）…</div></div></div>
+      <p class="cap cjk" id="bv-info"></p>
+    </div>
+  </section>
+
+  <!-- 1.4 normal-invgamma -->
+  <section id="t-nig" class="topic-block">
+    <h3 class="topic cjk">1.4　第二例：正态（已知均值）估方差，同样的剧本</h3>
+    <p class="topic-en">Normal with known mean, Inverse-Gamma prior on the variance — same story, same n→∞ collapse</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span><a href="#t-pg">与 §1.1 同构：换个共轭对，结论不变</a></span>
+      <span class="rel inherit"><span class="dot"></span>用第九节的逆伽马后验</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 后验、期望、方差、MSE</div>
+      <p class="cjk">模型 \(X_i\mid\theta\sim N(\mu,\theta)\)（均值 \(\mu\) 已知，估方差 \(\theta=\sigma^2\)），先验 \(\theta\sim\text{InvGamma}(a,b)\)。记 \(S=\sum_i(x_i-\mu)^2\)。后验仍是逆伽马：</p>
+      <p>$$\theta\mid x\sim\text{InvGamma}\!\Big(\tfrac n2+a,\ \big[\tfrac12 S+\tfrac1b\big]^{-1}\Big),\qquad \mathbb E(\theta\mid x)=\bar\theta=\frac{S+2/b}{\,n+2a-2\,}.$$</p>
+      <p class="cjk">同样戴频率眼镜（真值 \(\theta_0\)，用 \(\mathbb E_{\theta_0}S=n\theta_0\)、\(\mathrm{Var}_{\theta_0}S=2n\theta_0^2\)，因为 \(S/\theta_0\sim\chi^2_n\)）：</p>
+      <p>$$\mathbb E_{\theta_0}(\bar\theta)=\frac{n\theta_0+2/b}{n+2a-2},\quad \mathrm{Var}_{\theta_0}(\bar\theta)=\frac{2n\theta_0^2}{(n+2a-2)^2},$$</p>
+      <p>$$\boxed{\ \mathrm{MSE}_{\theta_0}(\bar\theta)=\frac{\big[(2a-2)\theta_0-2/b\big]^2+2n\theta_0^2}{(n+2a-2)^2}\ }$$</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">▣</span>案例 · 读懂这个公式说了同一件事</div>
+      <p class="cjk">分母 \((n+2a-2)^2\sim n^2\)，分子两项分别 \(\sim\text{常数}\) 和 \(\sim n\)，所以 <b>\(n\to\infty\) 时 \(\mathrm{MSE}\to 0\)</b>，又一次相合。偏差项 \((2a-2)\theta_0-2/b\) 在 \(\theta_0=\dfrac{2/b}{2a-2}=\dfrac{1}{b(a-1)}\) 处归零——这正是逆伽马的<b>先验均值</b> \(\mathbb E(\theta)=\dfrac1{b(a-1)}\)（\(a>1\) 时）。和泊松例完全一个套路：<b>先验中心命中真值时偏差消失</b>。课件用两个不同的共轭对讲同一个道理，是想让你看到这<b>不是泊松的巧合，是共轭贝叶斯的普遍现象</b>。</p>
+    </div>
+
+    <div class="xander">
+      <p class="who cjk"><span>✦</span>给 Xander 的话（计量视角）</p>
+      <p class="cjk">这一部分其实就是把"贝叶斯估计量"塞进频率派的<b>抽样分布</b>框架里打分，和你做计量时评估一个 estimator 的 bias / variance / consistency 是<b>同一套语言</b>。换个说法：后验均值是一种<b>收缩估计量（shrinkage estimator）</b>——它把 MLE 向先验中心收缩，收缩力度 \(\propto\) 先验权重。这跟岭回归（ridge）把系数向 0 收缩、James–Stein 估计量在 \(d\ge3\) 维下一致优于 MLE 是<b>同一个家族的思想</b>。所以"有偏但 MSE 更低"在你熟悉的领域并不稀奇——贝叶斯只是给了它一个"先验"的解释。值得你存疑的点：上面所有 MSE 都假设<b>模型设定正确</b>（数据真是泊松/正态）。模型一旦设错，这些漂亮的 \(\to0\) 全部失效，那是另一个更深的坑（misspecification），课件没碰，但你做实证时天天会遇到。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART II ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第二部分 · 出路一</span>
+    <h2 class="part-title cjk">当后验算不出闭式：用一个正态分布去"描峰"（拉普拉斯近似）</h2>
+    <p class="part-lead cjk">前面两例都<b>共轭</b>，后验是现成的伽马/逆伽马。但现实里后验往往<b>非共轭、高维、积不出归一化常数</b>。第一条出路：既然后验通常在<b>众数附近最集中</b>，就在众数处做<b>二阶泰勒展开</b>，把后验近似成一个<b>正态分布</b>——均值取在众数，协方差取曲率的逆。便宜、解析、好用；代价是它<b>只描了峰、丢了偏态和约束</b>。</p>
+  </div>
+
+  <!-- 2.1 idea + formula -->
+  <section id="t-lap" class="topic-block">
+    <h3 class="topic cjk">2.1　核心：在众数处展开，曲率变成精度</h3>
+    <p class="topic-en">Second-order Taylor at the mode — the Hessian of −log posterior becomes the precision matrix</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>工具：二阶泰勒展开 + 多元正态密度核</span>
+      <span class="rel dual"><span class="dot"></span>对照 §1：共轭给闭式 ↔ 非共轭靠近似</span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">"能写成 \(e^{-\psi}\)"不是条件，见 §0 错误 1</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 为什么是正态、为什么用曲率</div>
+      <p class="cjk">任何<b>光滑、单峰、在峰附近近似对称</b>的密度，放大看峰顶都像一口"抛物线碗"。而<b>对数正态密度恰好是一条抛物线</b>（\(\log N\propto-(\theta-\mu)^2/2\sigma^2\)）。所以：对<b>对数后验</b>在峰顶做二阶泰勒展开，二次项就是一条抛物线 → 指数化回去就是一个正态。峰<b>越尖</b>（二阶导越大、曲率越大），对应的正态<b>越窄</b>（方差越小、越确定）——<b>曲率 = 精度（方差的倒数）</b>，这是整条思路的灵魂。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 一般 \(d\) 维推导</div>
+      <p class="cjk">后验 \(f(\theta\mid x)\propto L(\theta)f(\theta)\)，\(\theta\) 是 \(d\times1\) 向量，归一化常数算不出。定义</p>
+      <p>$$\psi(\theta)=-\log\big[L(\theta)f(\theta)\big]\quad(\text{差一个常数无所谓}),\qquad\text{则}\quad L(\theta)f(\theta)\propto e^{-\psi(\theta)}.$$</p>
+      <p class="cjk">设 \(\theta^*\) 是 \(\psi\) 的<b>唯一全局极小点</b>（即后验<b>众数</b>），满足梯度为零、海森正定：</p>
+      <p>$$\nabla\psi(\theta^*)=\mathbf 0,\qquad \mathcal H\psi(\theta^*)=\Big[\tfrac{\partial^2\psi}{\partial\theta_i\partial\theta_j}\Big]_{\theta^*}\succ 0\ (\text{正定}).$$</p>
+      <p class="cjk">在 \(\theta^*\) 处做<b>二阶泰勒展开</b>，一阶项因 \(\nabla\psi(\theta^*)=0\) 消失：</p>
+      <p>$$\psi(\theta)\approx\psi(\theta^*)+\tfrac12(\theta-\theta^*)^{\!\top}\mathcal H\psi(\theta^*)(\theta-\theta^*).$$</p>
+      <p class="cjk">指数化（常数吸进归一化），剩下的正好是多元正态的密度核：</p>
+      <p>$$L(\theta)f(\theta)\propto\exp\!\Big[-\tfrac12(\theta-\theta^*)^{\!\top}\mathcal H\psi(\theta^*)(\theta-\theta^*)\Big]\ \Longrightarrow\ \boxed{\ \theta\mid x\ \dot\sim\ N_d\big(\theta^*,\,[\mathcal H\psi(\theta^*)]^{-1}\big)\ }$$</p>
+      <p class="cap cjk">一维特例：\(\theta\mid x\ \dot\sim\ N\big(\theta^*,\,[\psi''(\theta^*)]^{-1}\big)\)。协方差是<b>海森的逆</b>：曲率大 → 海森大 → 逆小 → 正态窄。多元情形下 \([\mathcal H\psi]^{-1}\) 的<b>非对角元</b>还顺手给了参数间的后验相关。</p>
+    </div>
+  </section>
+
+  <!-- 2.2 theorem -->
+  <section id="t-lap-thm" class="topic-block">
+    <h3 class="topic cjk">2.2　Theorem 6.3：什么时候那个 \(\theta^*\) 真的是唯一全局极小</h3>
+    <p class="topic-en">The conditions that make the expansion point legitimate — strict convexity ⇒ unique global minimum</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-lap">支撑 §2.1 的"唯一全局极小"假设</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：非凸/多峰 \(\psi\) 时本节失效</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>定理 · 驻点 + 海森 ⇒ 极值定性</div>
+      <p class="cjk">设 \(\psi:\mathbb R^d\to\mathbb R\) 二阶连续可导，\(\theta^*\) 是<b>内部驻点</b>（\(\nabla\psi(\theta^*)=0\)）。则：</p>
+      <ul class="ul cjk">
+        <li>若 \(\mathcal H\psi(\theta^*)\) <b>正定</b> → \(\theta^*\) 是<b>严格局部极小</b>；</li>
+        <li>若 \(\psi\) 在整个定义域上<b>严格凸</b>（处处海森正定）→ 局部极小<b>就是唯一的全局极小</b>。</li>
+      </ul>
+      <p class="cjk">这两条把"在 \(\theta^*\) 展开"<b>合法化</b>了：海森正定既保证它是个"碗"（不是鞍点、不是峰），又保证展开出来的二次型对应一个<b>合法的正态</b>（协方差正定）。全局凸进一步保证<b>没有别的峰</b>会让近似张冠李戴。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>批判 · 这才是真·限制条件（不是"能写成 \(e^{-\psi}\)"）</p>
+      <p class="cjk">回到 §0 错误 1：任何正函数都能写成 \(e^{-\psi}\)，那句话是<b>免费的</b>。真正卡门槛的是这里的三件事：<b>① \(\psi\) 二阶连续可导；② 有内部驻点；③ 该点海森正定</b>，再加隐含的<b>④ 二阶展开要足够准</b>（只有大样本、后验集中且近似对称时才成立）。一旦后验是<b>多峰</b>（\(\psi\) 非凸，有好几个谷），拉普拉斯只会抓住<b>其中一个峰</b>，把另一个峰的质量<b>整个无视</b>——这时候你需要的是第三部分的 MCMC。所以这两条出路不是替代，是<b>分工</b>：单峰光滑 → 拉普拉斯够用且快；多峰/复杂 → 上 MCMC。</p>
+    </div>
+  </section>
+
+  <!-- 2.3 Pareto worked -->
+  <section id="t-pareto" class="topic-block">
+    <h3 class="topic cjk">2.3　帕累托实例：非共轭也能描峰（含课件 p49 的图）</h3>
+    <p class="topic-en">Pareto likelihood × half-normal prior — a non-conjugate posterior, approximated end to end</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-lap">套用 §2.1 的一维公式</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：二次方程求根公式定位 \(\theta^*\)</span>
+      <span class="rel warn"><span class="dot"></span><a href="#t-lap-trap">近似会漏到 \(\theta<0\)，见 §2.5</a></span>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">▣</span>案例 · 模型与先验（课件 p45）</div>
+      <p class="cjk">帕累托分布常用于<b>重尾</b>现象（财富、城市规模、保险大额理赔）。\(X_i\mid\theta\sim f(x_i\mid\theta)=\dfrac{\theta}{x_i^{\theta+1}}\,\mathbb I(x_i\ge1)\)，\(\theta>0\) 控制尾巴厚度。似然（记 \(\ddot x=\prod_i x_i\ge1\)）：</p>
+      <p>$$L(\theta)=\prod_{i=1}^n\frac{\theta}{x_i^{\theta+1}}=\frac{\theta^{\,n}}{\ddot x^{\,\theta+1}}.$$</p>
+      <p class="cjk">先验取<b>半正态</b>（尺度 \(a\)，只在 \(\theta>0\)）：\(f(\theta)\propto\exp\!\big(-\theta^2/2a^2\big)\,\mathbb I(\theta>0)\)。这个组合<b>不共轭</b>，后验没有现成名字——正是拉普拉斯的用武之地。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>推导 · 写出 \(\psi\)，验证严格凸，二次方程定位 \(\theta^*\)</div>
+      <ol class="steps cjk">
+        <li><b>写 \(\psi(\theta)=-\log[L f]\)</b>（丢常数）：$$\psi(\theta)=-n\log\theta+(\theta+1)\log\ddot x+\frac{\theta^2}{2a^2},\qquad\theta>0.$$</li>
+        <li><b>一阶、二阶导：</b>$$\psi'(\theta)=-\frac n\theta+\log\ddot x+\frac{\theta}{a^2},\qquad \psi''(\theta)=\frac{n}{\theta^2}+\frac{1}{a^2}>0.$$ \(\psi''>0\) 处处成立 → <b>严格凸 ✓</b>（Theorem 6.3 的条件满足，极小唯一）。</li>
+        <li><b>解 \(\psi'(\theta)=0\)：</b>两边乘 \(\theta\) 化成二次方程 $$\frac{1}{a^2}\theta^2+(\log\ddot x)\,\theta-n=0.$$</li>
+        <li><b>求根公式取正根</b>（\(\theta>0\)）：$$\theta^*=\frac{-\log\ddot x+\sqrt{(\log\ddot x)^2+4n/a^2}}{2/a^2}.$$ 判别式恒正，根号项 \(>\lvert\log\ddot x\rvert\)，所以分子恒正、\(\theta^*>0\) 保证存在。</li>
+        <li><b>组装正态近似</b>（方差 = \(1/\psi''(\theta^*)\)）：$$\theta\mid x\ \dot\sim\ N\!\Big(\theta^*,\ \big[\tfrac{n}{(\theta^*)^2}+\tfrac1{a^2}\big]^{-1}\Big).$$</li>
+      </ol>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>交互 + 2D · 真后验 vs 正态近似：峰对得上，尾巴对不上</div>
+      <p class="cjk">下图把<b>数值算出的真后验</b>（赭实心，对 \(L f\) 在网格上归一化得到）和<b>拉普拉斯正态近似</b>（蓝虚线）画在一起；竖线标出众数 \(\theta^*\)。数据用 \(n\) 个分位点合成（\(\log\ddot x\) 随之确定）。<b>看两件事</b>：(1) 两条曲线在<b>峰附近贴合</b>——描峰成功；(2) 真后验<b>右偏</b>（尾巴拖向右），正态是<b>对称</b>的，所以在右尾<b>低估</b>、左侧可能<b>高估</b>。<b>把 \(n\) 调小</b>（如 3–5）：后验更宽更偏，正态近似<b>明显变差</b>，而且它的左尾会<b>漏到 \(\theta<0\)</b>（红色阴影区，下一节专门说）。<b>把 \(n\) 调大</b>：后验收紧、趋于对称，近似越来越好——印证"大样本才靠谱"。</p>
+      <div class="controls">
+        <div class="ctrl"><label>样本量 n <span class="val" id="pareto-n-v">12</span></label><input type="range" id="pareto-n" min="2" max="60" step="1" value="12"></div>
+        <div class="ctrl"><label>先验尺度 a <span class="val" id="pareto-a-v">2.0</span></label><input type="range" id="pareto-a" min="0.5" max="6" step="0.1" value="2"></div>
+      </div>
+      <div class="plotwrap"><div id="p-pareto" class="plot tall"><div class="loading cjk">绘制中…</div></div></div>
+      <p class="cap cjk" id="pareto-info"></p>
+    </div>
+  </section>
+
+  <!-- 2.4 3D laplace -->
+  <section id="t-lap3d" class="topic-block">
+    <h3 class="topic cjk">2.4　三维：当真后验"弯"了，正态近似的椭圆就描不住</h3>
+    <p class="topic-en">A curved (banana) 2-D posterior vs its Laplace ellipse — side by side, the failure mode is visible</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span><a href="#t-lap">§2.1 的多元情形可视化</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：曲率/偏态是正态近似的盲区</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">⬢</span>3D · 左=真后验（香蕉形），右=拉普拉斯正态近似（椭圆）</div>
+      <p class="cjk">为了让"近似的极限"看得见，用一个会<b>拐弯</b>的二维目标 \(f(\theta_1,\theta_2)\propto\exp\!\big[-\tfrac{(\theta_2-\theta_1^2)^2}{2s^2}-\tfrac{\theta_1^2}{2}\big]\)（统计/优化里有名的"香蕉形"）。它的众数在原点，海森在原点是对角阵 → 拉普拉斯给出一个<b>轴对齐的椭圆正态</b>（右图）。但真后验（左图）沿 \(\theta_2=\theta_1^2\) 这条<b>抛物脊</b>弯曲。<b>拖动两张图对比</b>：正态只能在原点附近"贴"一小块，<b>整条弯脊它一无所知</b>。<b>把曲率 \(s\) 调小</b>（香蕉更弯更细）：左右差距更夸张——这就是拉普拉斯在<b>强非线性/强相关</b>后验上失灵的典型样子，也是为什么需要 MCMC 去<b>真正踏遍</b>这条脊。</p>
+      <div class="controls">
+        <div class="ctrl"><label>弯曲程度 s（越小越弯）<span class="val" id="lap-s-v">0.70</span></label><input type="range" id="lap-s" min="0.35" max="1.6" step="0.05" value="0.7"></div>
+      </div>
+      <div class="two-col">
+        <div class="plotwrap"><div id="p-lap-true" class="plot tall"><div class="loading cjk">绘制中…</div></div></div>
+        <div class="plotwrap"><div id="p-lap-approx" class="plot tall"><div class="loading cjk">绘制中…</div></div></div>
+      </div>
+      <p class="cap cjk" id="lap3d-info"></p>
+    </div>
+  </section>
+
+  <!-- 2.5 positivity trap -->
+  <section id="t-lap-trap" class="topic-block">
+    <h3 class="topic cjk">2.5　易错 · 正态近似不认识"约束"：概率会漏到 \(\theta<0\) ⚠</h3>
+    <p class="topic-en">The approximation ignores the support — Gaussian tails leak into impossible parameter regions</p>
+    <div class="rels cjk">
+      <span class="rel warn"><span class="dot"></span><a href="#t-pareto">回看 §2.3 那块红色漏出区</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：有界/正参数 + 小样本 = 高危</span>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label"><span class="ic">⚠</span>陷阱 · 真后验在 \(\theta\le0\) 处为 0，正态近似却给了它质量</div>
+      <p class="cjk">帕累托的 \(\theta>0\)，半正态先验也只在 \(\theta>0\)，所以<b>真后验在 \(\theta\le0\) 处恒为零</b>。但拉普拉斯近似是个<b>定义在整条实轴</b>上的正态——它的<b>左尾</b>必然漏一部分概率到 \(\theta<0\)（§2.3 图里的红色阴影）。漏多少 \(\approx\Phi\!\big(-\theta^*/\sigma^*\big)\)：当 \(\theta^*\) 离 0 不够远、或方差 \(\sigma^{*2}\) 较大（<b>小样本</b>）时，这块漏出会很可观，意味着近似把<b>不可能的负值</b>当成了有概率的事件。后验均值、区间都会因此<b>偏低</b>。</p>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 怎么补救（课件没展开，但你该知道）</div>
+      <p class="cjk">两条常见补丁：(1) <b>变量变换</b>——对 \(\phi=\log\theta\) 做拉普拉斯（\(\phi\in\mathbb R\) 无约束），再变换回去，得到的近似自动落在 \(\theta>0\)，而且常常更对称、更准；(2) 干脆<b>放弃近似、上 MCMC</b>，让链只在合法区域走。这条"漏出 \(\theta<0\)"的小毛病，恰好是把你<b>从出路一推向出路二</b>的现实动机。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART III ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第三部分 · 出路二</span>
+    <h2 class="part-title cjk">当连描峰都不够：让一条随机游走的链，自己踏遍后验（MCMC）</h2>
+    <p class="part-lead cjk">拉普拉斯只描了一个峰。要是后验<b>多峰、强偏、高维</b>，我们需要的是<b>真正按后验的形状采样</b>。难点在那个算不出的归一化常数 \(Z\)。MCMC 的精妙之处：构造一条<b>马尔可夫链</b>，让它的<b>平稳分布恰好是后验</b>，而判断"往哪走"只用到后验的<b>比值</b>——\(Z\) 当场约掉，<b>永远不用算它</b>。这被称为贝叶斯计算的一次"解放"。</p>
+  </div>
+
+  <!-- 3.1 the wall -->
+  <section id="t-wall" class="topic-block">
+    <h3 class="topic cjk">3.1　那堵墙：归一化常数 \(Z\) 在高维下算不出</h3>
+    <p class="topic-en">The normalizing-constant wall — why direct sampling fails and numerical integration doesn't scale</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-lap">承接 §2：近似不够时的下一步</a></span>
+      <span class="rel general"><span class="dot"></span>动机：维度灾难压垮数值积分</span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 墙在哪</div>
+      <p class="cjk">后验 \(f(\theta\mid x)=\dfrac{L(\theta)f(\theta)}{Z}\)，其中 \(Z=\displaystyle\int L(\theta)f(\theta)\,d\theta\) 是<b>归一化常数</b>。分子（<b>未归一化的核</b>）我们随手能算；难的是 \(Z\)：</p>
+      <ul class="ul cjk">
+        <li><b>解析积不出</b>——非共轭时几乎总是这样；</li>
+        <li><b>数值积分不扛维度</b>——网格法在 \(d\) 维要 \(m^d\) 个点，\(d=10\)、每维 100 点就是 \(10^{20}\) 次求值，<b>维度灾难（curse of dimensionality）</b>直接劝退；</li>
+        <li>没有 \(Z\) 就<b>没有 PDF</b>，传统抽样（如逆变换）也就<b>无从下手</b>。</li>
+      </ul>
+      <p class="cjk">MCMC 的承诺：<b>只用核 \(L f\)、不碰 \(Z\)</b>，也能采出服从后验的样本。下一节看它凭什么。</p>
+    </div>
+  </section>
+
+  <!-- 3.2 MH formula + cancellation -->
+  <section id="t-mh" class="topic-block">
+    <h3 class="topic cjk">3.2　Metropolis–Hastings：提议 + 接受，常数在比值里约掉（题眼）</h3>
+    <p class="topic-en">Propose, then accept with a ratio — the normalizing constant cancels, which is the whole point</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>工具：提议分布 \(q\) + 接受概率 \(\alpha\)</span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">为什么不用 \(Z\)：见 §0 错误 2</a></span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 接受概率，以及那一步关键的约分</div>
+      <p class="cjk">给定当前状态 \(\theta^{(t)}\)，从<b>提议分布</b> \(q(\theta'\mid\theta^{(t)})\) 抽一个候选 \(\theta'\)。以下面的<b>接受概率</b>决定去留：</p>
+      <p>$$\alpha\big(\theta^{(t)},\theta'\big)=\min\!\left\{\frac{f(\theta'\mid x)\,q(\theta^{(t)}\mid\theta')}{f(\theta^{(t)}\mid x)\,q(\theta'\mid\theta^{(t)})},\ 1\right\}.$$</p>
+      <p class="cjk">把 \(f(\theta\mid x)=L(\theta)f(\theta)/Z\) 代进去，<b>分子分母各有一个 \(Z\)，当场约掉</b>：</p>
+      <p>$$\alpha=\min\!\left\{\frac{\dfrac{L(\theta')f(\theta')}{\cancel{Z}}\,q(\theta^{(t)}\mid\theta')}{\dfrac{L(\theta^{(t)})f(\theta^{(t)})}{\cancel{Z}}\,q(\theta'\mid\theta^{(t)})},\ 1\right\}=\min\!\left\{\frac{L(\theta')f(\theta')\,q(\theta^{(t)}\mid\theta')}{L(\theta^{(t)})f(\theta^{(t)})\,q(\theta'\mid\theta^{(t)})},\ 1\right\}.$$</p>
+      <p class="cap cjk">这就是题眼：<b>整个算法只需要未归一化的核 \(L f\)</b>。\(Z\) 算不出？无所谓，它从来没在公式里活下来。这不是 MCMC 的附带优点，是它<b>能成立的根本原因</b>。这个 \(\alpha\) 的设计来自<b>细致平衡（detailed balance）</b>条件，它保证后验是这条链的平稳分布。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>流程 · 一步 MH 长什么样</div>
+      <ol class="steps cjk">
+        <li><b>提议。</b>给定 \(\theta^{(t)}\)，从 \(q(\cdot\mid\theta^{(t)})\) 抽候选 \(\theta'\)。</li>
+        <li><b>算接受概率 \(\alpha\)。</b>用上面的核比值（× 提议比值）。</li>
+        <li><b>掷骰子定去留。</b>抽 \(u\sim U(0,1)\)：若 \(u<\alpha\) 则<b>接受</b>，\(\theta^{(t+1)}=\theta'\)；否则<b>拒绝</b>，\(\theta^{(t+1)}=\theta^{(t)}\)（<b>原地不动，但仍记一笔样本</b>）。</li>
+        <li><b>预热与采样。</b>前 \(N_0\) 个样本（<b>burn-in</b>，链还没收敛）<b>丢弃</b>；保留 \(t=N_0{+}1,\dots,N\) 用于推断。收敛与否看<b>轨迹图（trace plot）</b>：是否在某区域稳定来回、不再单向漂移。</li>
+      </ol>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label"><span class="ic">▣</span>案例 · 课件 p53 的二项–Beta（这是<u>独立</u> MH，不是 Gibbs）</div>
+      <p class="cjk">\(X\mid\theta\sim\text{Binomial}(m,\theta)\)，先验 \(\theta\sim\text{Beta}(1,1)=U(0,1)\)。核 \(L(\theta)f(\theta)\propto\theta^{x}(1-\theta)^{m-x}\,\mathbb I(0<\theta<1)\)，<b>恰好是 \(\text{Beta}(x+1,m-x+1)\) 的核</b>（这里真后验其实闭式可知，课件用它当"标准答案"来检验 MCMC）。取<b>独立提议</b> \(q=U(0,1)\)（与当前点无关），则提议比值 \(=1\)，接受概率退化成纯核比值。课件用 MATLAB 的 <span class="code" style="display:inline;padding:1px 6px">mhsample</span> 跑出链，再用<b>核密度估计</b>（<span class="code" style="display:inline;padding:1px 6px">ksdensity</span>）画样本分布，和真 Beta 后验<b>几乎重合</b>——证明 MH 确实采到了后验。</p>
+    </div>
+  </section>
+
+  <!-- 3.3 LIVE MH sampler -->
+  <section id="t-mhlive" class="topic-block">
+    <h3 class="topic cjk">3.3　★ 亲手跑一条链：步长的两难，看着它发生</h3>
+    <p class="topic-en">A live random-walk Metropolis sampler — the step-size dilemma, in motion</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-mh">把 §3.2 的算法跑起来</a></span>
+      <span class="rel tool"><span class="dot"></span>工具：随机游走提议 \(q=N(\theta^{(t)},\sigma_q^2)\)</span>
+      <span class="rel limit"><span class="dot"></span>核心两难：接受率 vs 混合速度</span>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>交互 · 一个双峰目标，一条随机游走的链（点"运行"看它走）</div>
+      <p class="cjk">目标是一个<b>双峰</b>后验（左峰矮窄、右峰高宽）。链用<b>随机游走提议</b>：候选 \(\theta'=\theta^{(t)}+\sigma_q\,\varepsilon\)，\(\varepsilon\sim N(0,1)\)。<b>上图</b>实时叠：黑线=目标密度，赭色直方图=已接受样本的分布（应逐渐逼近黑线），竖线=当前位置。<b>下图</b>是<b>轨迹（trace）</b>：纵轴 \(\theta\)、横轴迭代步。</p>
+      <p class="cjk"><b>请亲自做这个实验</b>（这是本节最该"手感"的东西）：</p>
+      <ul class="ul cjk">
+        <li><b>把步长 \(\sigma_q\) 调到很小</b>（如 0.1）：接受率飙到 90%+（几乎来者不拒），但轨迹像蚂蚁挪步、<b>半天爬不出当前这个峰</b>——直方图填得极慢，这叫<b>混合差（poor mixing）</b>。</li>
+        <li><b>把 \(\sigma_q\) 调到很大</b>（如 8）：候选经常跳到密度极低处，<b>大面积被拒</b>，接受率掉到个位数，轨迹出现大段<b>水平死线</b>（卡住不动）——同样混合差。</li>
+        <li><b>调到中间</b>（如 1.5–2.5）：接受率落在 <b>0.2–0.5</b> 这个"金区"，链既能跨峰又不常被拒，直方图<b>最快</b>贴合黑线。</li>
+      </ul>
+      <div class="controls">
+        <div class="ctrl"><label>提议步长 σ_q <span class="val" id="mh-step-v">2.0</span></label><input type="range" id="mh-step" min="0.1" max="8" step="0.1" value="2"></div>
+        <div class="seg" id="mh-speed" style="margin-top:6px">
+          <button data-spd="2" class="on">慢放</button><button data-spd="6">常速</button><button data-spd="20">快进</button>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="mh-run">▶ 运行 / 暂停</button>
+        <button class="btn ghost" id="mh-step100">+200 步</button>
+        <button class="btn ghost" id="mh-reset">↺ 重置</button>
+      </div>
+      <div class="readout cjk">
+        <span>迭代：<b id="mh-iter">0</b></span>
+        <span>累计接受率：<b id="mh-acc">—</b></span>
+        <span id="mh-verdict" class="rd-note">把 σ_q 调一调，盯住接受率和直方图的填充速度</span>
+      </div>
+      <div class="plotwrap"><div id="p-mhlive" class="plot tall"><div class="loading cjk">等待运行…</div></div></div>
+      <div class="plotwrap"><div id="p-mhtrace" class="plot"><div class="loading cjk">轨迹将在这里滚动…</div></div></div>
+      <p class="cap cjk">接受率不是越高越好：<b>90% 的接受率往往意味着步子太小、链在原地打转</b>。一维随机游走的经验最优接受率约 <b>0.44</b>，高维降到约 <b>0.234</b>——这就是"调步长"在实务里的全部学问。注意直方图能逼近目标，<b>靠的是 burn-in 后</b>的样本；前期那段单向爬升要丢掉。</p>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>批判 · "采到了后验样本" ≠ "采到了独立样本"</p>
+      <p class="cjk">MCMC 样本是<b>自相关</b>的——相邻两步高度相关（尤其步长小时）。所以 \(N\) 个 MCMC 样本的<b>有效信息量</b>远小于 \(N\) 个独立样本，差距用<b>有效样本量（ESS, effective sample size）</b>衡量：\(\text{ESS}=N/(1+2\sum_k\rho_k)\)，\(\rho_k\) 是滞后 \(k\) 的自相关。混合越差，自相关越高，ESS 越小。这就是为什么"接受率高 = 好"是错觉：高接受率常伴随高自相关、低 ESS。课件聚焦在"能不能采到后验"，但你实际用时，<b>真正该报告的是 ESS 和收敛诊断（如 \(\hat R\)）</b>，而不只是接受率。</p>
+    </div>
+  </section>
+
+  <!-- 3.4 3D bimodal chain -->
+  <section id="t-mh3d" class="topic-block">
+    <h3 class="topic cjk">3.4　三维：链在双峰曲面上游走，看它"卡"在一个峰里</h3>
+    <p class="topic-en">A random-walk chain on a bimodal 2-D surface — watch it get trapped in one mode</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span><a href="#t-mhlive">§3.3 的二维版</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：随机游走难跨越低密度"山谷"</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">⬢</span>3D · 路径骑在双峰后验曲面上（拖动旋转，点"重新模拟"换一条链）</div>
+      <p class="cjk">二维双峰目标（两座被低密度山谷隔开的高斯山）。一条随机游走 MH 链的访问路径画成<b>骑在曲面上的折线</b>（高度=该点密度）。<b>观察</b>：步长小时，链常常<b>在一座山里绕很久</b>才偶然翻过山谷到另一座——这就是双峰下随机游走的痛点：<b>跨峰是小概率事件</b>，短链可能<b>整段只采到一个峰</b>，给出严重偏倚的后验。<b>把步长调大</b>能增加跨峰机会，但又会拉低接受率（§3.3 的两难在二维重演）。这正是 §3.5 要说的：<b>多峰场景下，随机游走未必够，可能需要"全局型"提议</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label>提议步长 σ_q <span class="val" id="mh3d-step-v">0.55</span></label><input type="range" id="mh3d-step" min="0.15" max="2.5" step="0.05" value="0.55"></div>
+      </div>
+      <div class="btnrow"><button class="btn" id="mh3d-run">↺ 重新模拟一条链</button></div>
+      <div class="plotwrap"><div id="p-mh3d" class="plot tall"><div class="loading cjk">绘制中（纯 Canvas）…</div></div></div>
+      <p class="cap cjk" id="mh3d-info"></p>
+    </div>
+  </section>
+
+  <!-- 3.5 convergence + proposals -->
+  <section id="t-conv" class="topic-block">
+    <h3 class="topic cjk">3.5　收敛凭什么 + 两种提议怎么选</h3>
+    <p class="topic-en">Why the chain converges (irreducibility, aperiodicity, ergodic theorem) and how to pick a proposal</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>工具：遍历性定理（时间平均 = 空间期望）</span>
+      <span class="rel warn"><span class="dot"></span><a href="#audit">"独立提议适合多峰"要加条件，见 §0 错误 5</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 三个词撑起整个收敛保证</div>
+      <ul class="ul cjk">
+        <li><b>不可约（irreducible）</b>：从任意状态出发，能（以正概率）到达参数空间的任意区域——链不会被困在某个子集里出不来。</li>
+        <li><b>非周期（aperiodic）</b>：不会陷入"\(A\to B\to A\to B\)"式的固定循环。</li>
+        <li>满足这两条，链的边缘分布 \(\to f(\theta\mid x)\)；更有用的是<b>遍历性定理（ergodic theorem）</b>：$$\frac1N\sum_{t=1}^N e\big(\theta^{(t)}\big)\ \xrightarrow{\text{a.s.}}\ \mathbb E\big(e(\theta)\mid x\big).$$ <b>时间平均收敛到空间期望</b>——这才是你能<b>用样本均值估后验均值、用样本分位数估可信区间</b>的依据。（§0 提过：转写把它误写成"便利性定理"。）</li>
+      </ul>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>对照 · 两种提议分布（点切换）</div>
+      <div class="seg" id="prop-seg" style="margin-bottom:8px">
+        <button data-prop="rw" class="on">随机游走型</button>
+        <button data-prop="indep">独立型</button>
+      </div>
+      <p class="cjk" id="prop-info"></p>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>批判 · 别把"独立=多峰、随机游走=单峰"背成口诀</p>
+      <p class="cjk">课件 p52 的大方向对，但<b>独立提议好不好，完全取决于那个固定分布像不像目标</b>。若提议是一把能<b>盖住所有峰</b>的"大伞"，它确实能一步跨峰；可一旦提议和目标<b>对不上</b>（提议集中在一处、目标质量在别处），独立 MH 会<b>大面积被拒、彻底卡死</b>，比随机游走还糟。所以正确表述是：<b>独立提议适合"你已经有一个不错的全局近似"的情形</b>——比如<b>先用第二部分的拉普拉斯近似当提议分布</b>！这一步正好把<b>出路一</b>和<b>出路二</b>接上：拉普拉斯给全局形状，独立 MH 拿它当提议、用接受/拒绝<b>修正</b>近似的偏差。两条出路不是二选一，是可以<b>串起来</b>的。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART IV ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第四部分 · MH 的一个特例</span>
+    <h2 class="part-title cjk">多参数怎么办：一次只动一个坐标（Gibbs 采样）</h2>
+    <p class="part-lead cjk">当 \(\theta=(\theta_1,\dots,\theta_d)\) 是高维向量，一次性提议整个向量很难调好。Gibbs 换个思路：<b>每次固定其余坐标，只从某个坐标的"全条件分布"里抽样</b>，轮流更新。当这些全条件分布是<b>已知、易抽</b>的家族（共轭模型里常常如此），Gibbs 就<b>不需要调步长、不需要拒绝</b>——它其实是 MH 的一个<b>接受概率恒为 1</b> 的特例。</p>
+  </div>
+
+  <!-- 4.1 full conditionals -->
+  <section id="t-gibbs" class="topic-block">
+    <h3 class="topic cjk">4.1　全条件分布：把不含 \(\theta_i\) 的因子全扔掉</h3>
+    <p class="topic-en">Full conditionals — drop every factor that doesn't depend on θ_i, sample one coordinate at a time</p>
+    <div class="rels cjk">
+      <span class="rel tool"><span class="dot"></span>工具：从联合核里读出每个坐标的条件分布</span>
+      <span class="rel inherit"><span class="dot"></span><a href="#t-wall">同样只用核、不碰 \(Z\)</a></span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 全条件分布的定义与算法</div>
+      <p class="cjk">联合后验 \(f(\theta_1,\dots,\theta_d\mid x)\propto L(\theta)f(\theta)\)。第 \(i\) 个坐标的<b>全条件分布（full conditional）</b>是固定其余坐标 \(\theta_{-i}=(\theta_1,\dots,\theta_{i-1},\theta_{i+1},\dots,\theta_d)\) 后 \(\theta_i\) 的分布：</p>
+      <p>$$f(\theta_i\mid x,\theta_{-i})\ \propto\ \underbrace{L(\theta)f(\theta)}_{\text{联合核}}\ \Big|_{\theta_{-i}\text{ 固定}}.$$</p>
+      <p class="cjk">关键技巧：<b>把联合核里所有不含 \(\theta_i\) 的因子当常数扔掉</b>，剩下的（关于 \(\theta_i\) 的部分）往往就是某个<b>一维、已知名字</b>的分布的核——于是能直接抽样。<b>系统扫描 Gibbs</b> 的一轮（第 \(t\) 步）：</p>
+      <ol class="steps cjk">
+        <li>抽 \(\theta_1^{(t)}\sim f\big(\theta_1\mid x,\ \theta_2^{(t-1)},\dots,\theta_d^{(t-1)}\big)\)；</li>
+        <li>抽 \(\theta_2^{(t)}\sim f\big(\theta_2\mid x,\ \theta_1^{(t)},\ \theta_3^{(t-1)},\dots,\theta_d^{(t-1)}\big)\)（<b>注意 \(\theta_1\) 已用刚更新的值</b>）；</li>
+        <li>……以此类推，抽 \(\theta_i^{(t)}\sim f\big(\theta_i\mid x,\ \theta_1^{(t)},\dots,\theta_{i-1}^{(t)},\ \theta_{i+1}^{(t-1)},\dots\big)\)；</li>
+        <li>直到 \(\theta_d^{(t)}\)，然后 \(t\leftarrow t+1\)，重复。</li>
+      </ol>
+      <p class="cap cjk">每个 \(\theta_i\) 也可以是一<b>组</b>参数（block Gibbs）。初值常取先验众数/均值或后验众数。一轮里<b>后更新的坐标用的是同轮已更新的前面坐标</b>——这是它和"同时更新"的区别。</p>
+    </div>
+  </section>
+
+  <!-- 4.2 3D staircase -->
+  <section id="t-gibbs3d" class="topic-block">
+    <h3 class="topic cjk">4.2　三维：Gibbs 的"楼梯"，以及相关性如何拖慢它</h3>
+    <p class="topic-en">The Gibbs staircase on a bivariate normal — and how strong correlation cripples mixing</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span><a href="#t-gibbs">§4.1 算法的可视化</a></span>
+      <span class="rel limit"><span class="dot"></span>边界：高相关 → 小步 → 混合慢</span>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label"><span class="ic">⬢</span>3D · 二维正态上的轴对齐"楼梯"路径（拖动旋转，调相关性 ρ）</div>
+      <p class="cjk">目标取二维正态 \(N\!\big(\mathbf 0,\left(\begin{smallmatrix}1&\rho\\\rho&1\end{smallmatrix}\right)\big)\)。它的全条件是现成的一维正态：\(\theta_1\mid\theta_2\sim N(\rho\theta_2,\,1-\rho^2)\)，\(\theta_2\mid\theta_1\sim N(\rho\theta_1,\,1-\rho^2)\)。Gibbs 交替更新 → 路径是<b>横一步、竖一步</b>的<b>轴对齐楼梯</b>（每次只动一个坐标，所以折线永远平行于坐标轴）。<b>把 ρ 调到接近 0</b>：两坐标近独立，楼梯大步快速铺满整个钟形。<b>把 ρ 调到 0.9+</b>：分布被压成一条<b>细长斜脊</b>，而 Gibbs 只能横竖走、<b>不能斜着走</b>，于是被迫挪一连串<b>极小的台阶</b>贴着斜脊蹭——<b>混合急剧变慢</b>，要很多步才能从脊的一端走到另一端。</p>
+      <div class="controls">
+        <div class="ctrl"><label>相关系数 ρ <span class="val" id="gibbs-rho-v">0.0</span></label><input type="range" id="gibbs-rho" min="-0.95" max="0.95" step="0.05" value="0"></div>
+      </div>
+      <div class="btnrow"><button class="btn" id="gibbs-run">↺ 重新模拟楼梯</button></div>
+      <div class="plotwrap"><div id="p-gibbs3d" class="plot tall"><div class="loading cjk">绘制中（纯 Canvas）…</div></div></div>
+      <p class="cap cjk" id="gibbs-info"></p>
+    </div>
+  </section>
+
+  <!-- 4.3 gibbs = MH -->
+  <section id="t-gibbs-mh" class="topic-block">
+    <h3 class="topic cjk">4.3　Gibbs 是 MH 的特例：提议=全条件，接受率恒为 1</h3>
+    <p class="topic-en">Gibbs is Metropolis–Hastings with the full conditional as proposal — acceptance is always 1</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-mh">归约到 §3.2 的 MH 框架</a></span>
+      <span class="rel dual"><span class="dot"></span>对照：Gibbs 不用调步长 ↔ 随机游走要调</span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 为什么从不拒绝</div>
+      <p class="cjk">把"从全条件 \(f(\theta_i\mid x,\theta_{-i})\) 抽样"看成一次 MH 提议：提议分布 \(q\) 就<b>取成那个全条件本身</b>。代进 §3.2 的接受概率，提议比值和核比值<b>恰好抵消</b>，算出来 <b>\(\alpha\equiv1\)</b>——<b>每次提议都接受</b>。所以 Gibbs 是 MH 的一个"幸运特例"：</p>
+      <ul class="ul cjk">
+        <li><b>好处</b>：没有拒绝（不浪费提议）、<b>不需要调步长</b>——前提是全条件<b>抽得出来</b>（共轭/标准家族）。</li>
+        <li><b>代价</b>：只能<b>沿坐标轴</b>动，碰上 §4.2 那种<b>强相关</b>后验会<b>混合极慢</b>；而且要求每个全条件都已知可抽，否则得在某一步内嵌一个 MH（Metropolis-within-Gibbs）。</li>
+      </ul>
+      <p class="cjk">所以四个部分连起来是一条<b>能力递进</b>的线：共轭闭式（§1）→ 单峰描峰（§2，拉普拉斯）→ 通用采样（§3，MH）→ 高维分坐标采样（§4，Gibbs，MH 的特例）。<b>越往后越通用，但也越要小心混合与诊断</b>。</p>
+    </div>
+  </section>
+
+  <!-- ============================== PART V ============================== -->
+  <div class="part-head">
+    <span class="part-kicker cjk">第五部分 · 落到应用</span>
+    <h2 class="part-title cjk">从采样到预测：偏差为什么随时间发散，以及该怪谁</h2>
+    <p class="part-lead cjk">研讨会最后落到一个实战观察：用模拟做<b>长期预测</b>（如股价），预测值会<b>越来越偏离真值</b>。直觉容易甩锅给"贝叶斯不准"。但这一节要说清：这往往<b>不是贝叶斯/采样方法的错，而是底层模型的特性</b>——几何布朗运动的方差<b>本就随时间线性增长</b>。对策是<b>滚动更新</b>把预测窗口压短，以及<b>主观地</b>调整先验权重。</p>
+  </div>
+
+  <!-- 5.1 GBM fan -->
+  <section id="t-gbm" class="topic-block">
+    <h3 class="topic cjk">5.1　几何布朗运动：方差 \(\propto t\)，扇面必然越张越开</h3>
+    <p class="topic-en">Geometric Brownian motion — variance grows linearly in time, so the forecast fan inevitably widens</p>
+    <div class="rels cjk">
+      <span class="rel general"><span class="dot"></span>承接 §3–4：采样用于前向模拟</span>
+      <span class="rel limit"><span class="dot"></span>边界：发散来自模型，不是算法</span>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label"><span class="ic">∑</span>公式 · 为什么不确定性按 \(\sqrt t\) 张开</div>
+      <p class="cjk">几何布朗运动 \(dS_t=\mu S_t\,dt+\sigma S_t\,dW_t\)，对数价格 \(\log S_t\) 是带漂移的布朗运动：</p>
+      <p>$$\log S_t=\log S_0+\big(\mu-\tfrac12\sigma^2\big)t+\sigma W_t,\qquad \mathrm{Var}(\log S_t)=\sigma^2 t.$$</p>
+      <p class="cjk">关键就是 \(\mathrm{Var}(\log S_t)=\sigma^2 t\)：<b>方差随时间线性增长，标准差按 \(\sqrt t\) 张开</b>。所以预测区间（"扇面"）必然随时间<b>越张越宽</b>——这是 \(W_t\) 的本性，<b>和你用 MLE、贝叶斯、还是 MCMC 采样毫无关系</b>。任何无偏的长期预测都逃不过这个 \(\sqrt t\)。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label"><span class="ic">⊕</span>交互 + 2D · 模拟路径 + 理论 ±2σ√t 扇面；切换"一把梭"vs"滚动更新"</div>
+      <p class="cjk">下图：细线是若干条模拟的 GBM 价格路径，阴影是理论 \(S_0 e^{(\mu-\sigma^2/2)t}\) 中位线的 \(\pm2\sigma\sqrt t\) 扇面。<b>把 σ 调大</b>或<b>把预测期 \(T\) 拉长</b>：扇面像喇叭一样张开——<b>这就是"偏差/不确定性随时间发散"的真身</b>。再点切换到<b>滚动更新</b>：把长区间切成若干短段，每段结束就<b>用新数据重新锚定</b>起点（窗口短 → 每段扇面都窄）。对比两条：滚动更新的<b>有效不确定性被"重置"压低</b>了，代价是你必须<b>持续喂新数据、频繁重算后验</b>。</p>
+      <div class="controls">
+        <div class="ctrl"><label>波动率 σ（年化）<span class="val" id="gbm-sigma-v">0.30</span></label><input type="range" id="gbm-sigma" min="0.05" max="0.8" step="0.01" value="0.3"></div>
+        <div class="ctrl"><label>预测期 T（年）<span class="val" id="gbm-horizon-v">3.0</span></label><input type="range" id="gbm-horizon" min="0.5" max="6" step="0.5" value="3"></div>
+      </div>
+      <div class="seg" id="gbm-seg" style="margin:2px 0 6px">
+        <button data-mode="single" class="on">一把梭（单一长窗口）</button>
+        <button data-mode="roll">滚动更新（短窗口重锚）</button>
+      </div>
+      <div class="plotwrap"><div id="p-gbm" class="plot tall"><div class="loading cjk">绘制中…</div></div></div>
+      <p class="cap cjk" id="gbm-info"></p>
+    </div>
+  </section>
+
+  <!-- 5.2 rolling + prior weight -->
+  <section id="t-roll" class="topic-block">
+    <h3 class="topic cjk">5.2　滚动更新与先验权重：把"主观"摆上台面</h3>
+    <p class="topic-en">Rolling updates and prior-weight tuning — making subjectivity explicit, and owning it</p>
+    <div class="rels cjk">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-gbm">承接 §5.1 的对策</a></span>
+      <span class="rel general"><span class="dot"></span>呼应 §1：先验权重 = 收缩力度</span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>直觉 · 两个旋钮，一种诚实</div>
+      <ul class="ul cjk">
+        <li><b>滚动更新（rolling / backtesting）</b>：新数据来了就并入样本、重算后验，让预测窗口始终很短。好处是 §5.1 看到的——窄扇面、低累积不确定。本质上是把"历史"和"本次"的界限<b>不断往前推</b>（这正是第九节那条"合并样本即可消解两派界限"的动态版）。</li>
+        <li><b>先验权重调整</b>：贝叶斯框架<b>允许你人为给先验降权</b>。比如认为新冠前后的医疗/金融数据参考价值下降，就乘个 \(<1\) 的系数压低它的影响。在 §1 的语言里，这相当于<b>调小先验的"等效样本量"</b>，即<b>减弱收缩</b>。</li>
+        <li><b>数据来源拓展</b>：先验/似然不必来自数值。<b>文本情感分析</b>等非结构化信号也能折成参数的先验或似然——这是贝叶斯建模灵活性的体现。</li>
+      </ul>
+    </div>
+
+    <div class="crit">
+      <p class="who cjk"><span>⚖</span>批判 · 灵活性的另一面是"研究者自由度"</p>
+      <p class="cjk">"人为调先验权重"听着很强大，但请清醒：它同时是一扇<b>过拟合与事后合理化（p-hacking 的贝叶斯版）</b>的门。你<b>总能</b>调一组权重让回测好看；问题是这组权重<b>在样本外</b>还成不成立。诚实的做法是：(1) <b>预先注册</b>你的降权规则（基于领域知识，不是看了结果再调）；(2) 用<b>留出期/前向回测</b>检验，而不是在同一段数据上既调又评；(3) 把先验当成<b>可证伪的假设</b>做敏感性分析（先验一变结论就翻，说明结论是先验撑的、不是数据撑的）。一句话：贝叶斯把主观<b>摆上台面</b>是优点，但"摆上台面"不等于"免于审视"——恰恰相反，<b>越主观越要交代清楚、越要接受样本外检验</b>。这点课件点到为止，但对你做实证是生死线。</p>
+    </div>
+  </section>
+
+  <!-- ============================== CLOSING ============================== -->
+  <section id="closing" class="topic-block closing-block">
+    <h3 class="topic cjk">收束　第十节的一条主线，与它在第六章里的位置</h3>
+    <p class="topic-en">One thread through session 10, and where it sits in the whole Bayesian-inference chapter</p>
+
+    <div class="mod idea">
+      <div class="mod-label"><span class="ic">◆</span>一句话脉络</div>
+      <p class="cjk">这一节回答的是同一个实际问题——<b>"后验我写得出核，却算不出/用不动，怎么办？"</b>——的三种答案，按能力递进：</p>
+      <ol class="steps cjk">
+        <li><b>欠账（§1）</b>：先承认贝叶斯估计量也能被频率派打分。MSE = 偏差² + 方差，\(n\to\infty\) 两项归零（相合）；小样本下谁更好<b>取决于先验设得准不准</b>，没有银弹。</li>
+        <li><b>出路一 · 描峰（§2）</b>：后验单峰光滑时，在众数处二阶展开 → 正态近似，<b>曲率变精度</b>。便宜解析，但<b>丢偏态、不认约束</b>（会漏到 \(\theta<0\)），多峰时只抓一个峰。</li>
+        <li><b>出路二 · 踏遍（§3–4）</b>：构造马尔可夫链按后验采样，<b>归一化常数在接受比值里约掉</b>。MH 通用但要调步长（接受率 vs 混合的两难、自相关/ESS）；<b>Gibbs 是 MH 的 \(\alpha\equiv1\) 特例</b>，分坐标抽样、不调步长，但<b>强相关下楼梯走得极慢</b>。</li>
+        <li><b>落地（§5）</b>：长期预测发散是<b>模型（GBM 方差 \(\propto t\)）</b>的锅，不是采样的锅；用<b>滚动更新</b>压短窗口、用<b>先验降权</b>注入判断——但主观性必须<b>摆上台面并接受样本外检验</b>。</li>
+      </ol>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label"><span class="ic">→</span>放进第六章的坐标系</div>
+      <p class="cjk">第八节给了<b>共轭先验与点估计</b>（后验是现成分布）；第九节做了<b>区间、两总体、多元 t，并起了频率派 MSE 的头</b>；<b>本节（第十节）</b>把那个头补完（§1），然后正面处理<b>"后验不再现成"时的计算手段</b>（§2 近似 + §3–4 采样），最后接到<b>应用与建模判断</b>（§5）。再往后，整套 MCMC 会成为你做<b>层次模型、缺失数据、隐变量</b>等"写得出核、算不出闭式"问题的<b>默认引擎</b>。</p>
+    </div>
+
+    <div class="xander">
+      <p class="who cjk"><span>✦</span>给 Xander 的收尾（也欢迎你拆台）</p>
+      <p class="cjk">我把全节按"<b>能不能算闭式 → 能不能描峰 → 能不能踏遍</b>"的递进重排了，没有顺着课件页码走，因为我认为这条"<b>计算可行性</b>"主线比"知识点罗列"更接近这节的<b>真正动机</b>。你完全可以质疑这个编排：比如有人会说"Gibbs 不该当成 MH 特例来教，应该先独立讲透条件分布"——这是合理的另一种教法，我选择强调统一性是因为它能帮你<b>少记一套规则</b>。另外我对纪要做了五处批判（§0），其中"拉普拉斯的真条件"和"独立提议要全局近似才行"两条，是我认为<b>最容易'听懂了、用时翻车'</b>的地方，如果你觉得我哪条批评过重或本身有误，<b>请直接顶回来</b>——这正是你说的"没有百分百对的，总有盲点"。下一步如果你愿意，我们可以挑二项–Beta 那个例子，<b>把 MH 和 Gibbs 各跑一遍、比 ESS</b>，把"接受率高≠采得好"这件事用数字钉死。</p>
+    </div>
+  </section>
+
+  <footer class="foot-wrap">
+    <p class="foot-title cjk">统计补课 · 第十节 · 交互式讲义</p>
+    <p class="foot-sub cjk">当积分算不出来：用正态近似"描峰"，用随机游走"踏遍"后验</p>
+    <p class="foot-meta cjk">覆盖范围：Chapter 6 · p38–p55（频率派 MSE → 拉普拉斯近似 → MH/MCMC → Gibbs；含 §5 应用）。<br>八种模态（直觉/公式/案例/2D/3D/交互/流程/陷阱）+ 六类关系（继承/泛化/工具/对照/边界/警示）· 3D 全程<b>纯 Canvas 绘制，无需 WebGL</b>。</p>
+    <p class="foot-fine cjk">讲义内容由 AI 依据你的会议纪要、思维导图与课件（p38–55）整理生成，并对纪要做了批判性勘误；公式与结论以课本为准，如与课件出入请以课件原文为准，也欢迎当面纠错。</p>
+  </footer>
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1E1C18',inkSoft:'#574F46',faint:'#8C857A',line:'#E4D8C2',lineStrong:'#D2C2A4',
+  accent:'#2D4A82',accentSoft:'#E1E6F2',teal:'#1F6B66',tealSoft:'#DCEDEB',gold:'#B7892A',goldSoft:'#F4E9CF',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:54,r:16,t:16,b:44},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.13,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var PURPLE_SCALE=[[0,'#F1DEEA'],[0.5,'#C77FA6'],[1,'#6E2A50']];
+var TEAL_SCALE=[[0,'#DCEDEB'],[0.5,'#5AA39D'],[1,'#1F6B66']];
+var GOLD_SCALE=[[0,'#F6ECD3'],[0.5,'#D9B25A'],[1,'#8A6A1F']];
+var INDIGO_SCALE=[[0,'#E1E6F2'],[0.5,'#5C7CB8'],[1,'#22386A']];
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;}
+function normCdf(x,m,s){m=m||0;s=(s===undefined?1:s);return 0.5*(1+erf((x-m)/(s*Math.SQRT2)));}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+var npdf=normPdf;
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function maxOf(a){return Math.max.apply(null,a);}
+function max2(Z){var m=-Infinity,i,j;for(i=0;i<Z.length;i++)for(j=0;j<Z[i].length;j++)if(Z[i][j]>m)m=Z[i][j];return m;}
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false}],
+    throwOnError:false,strict:false});
+}
+/* ===================== concept map ===================== */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+var NODE_FILL={bridge:C.accentSoft,gen:'#F4E9CF',test:'#DFEDE2',tool:'#E5E1F2',warn:'#F3E0DA'};
+var NODE_STROKE={bridge:C.accent,gen:C.gold,test:C.green,tool:C.violet,warn:C.rust};
+var NODE_TXT={bridge:C.accent,gen:'#8a6a1f',test:C.green,tool:C.violet,warn:C.rust};
+var EDGE_COL={derive:C.green,gen:C.accent,tool:C.violet,supply:C.gold,warn:C.rust};
+var MAP_NODES=[
+  {id:'s9',  ty:'bridge',x:24, y:318,w:152,h:60,href:'#spine',   t:['后验封闭公式','（第九节落点）']},
+  {id:'mse', ty:'test',  x:214,y:120,w:158,h:60,href:'#t-pg',    t:['Ⅰ 频率派','MSE 天平']},
+  {id:'cross',ty:'warn', x:214,y:318,w:158,h:60,href:'#t-cross', t:['偏差²+方差','无银弹·会交叉']},
+  {id:'lap', ty:'tool',  x:428,y:96, w:160,h:60,href:'#t-lap',   t:['Ⅱ 拉普拉斯','正态近似·描峰']},
+  {id:'laptrap',ty:'warn',x:642,y:96,w:158,h:60,href:'#t-lap-trap',t:['漏到 θ<0','只描一个峰']},
+  {id:'mh',  ty:'tool',  x:428,y:360,w:160,h:60,href:'#t-mh',    t:['Ⅲ MCMC / MH','Z 在比值里约掉']},
+  {id:'conv',ty:'gen',   x:642,y:286,w:158,h:60,href:'#t-conv',  t:['遍历性定理','时间均=空间期望']},
+  {id:'live',ty:'test',  x:642,y:430,w:158,h:60,href:'#t-mhlive',t:['步长两难','接受率 vs ESS']},
+  {id:'gibbs',ty:'tool', x:820,y:360,w:142,h:60,href:'#t-gibbs', t:['Ⅳ Gibbs','MH 特例 α≡1']},
+  {id:'app', ty:'warn',  x:560,y:578,w:184,h:58,href:'#t-gbm',   t:['Ⅴ 应用','GBM · 主观性自由度']}
+];
+var MAP_EDGES=[
+  ['s9','mse','supply'],['mse','cross','derive'],
+  ['s9','lap','warn'],['s9','mh','warn'],
+  ['lap','laptrap','warn'],['lap','mh','tool'],
+  ['mh','conv','derive'],['mh','live','derive'],
+  ['mh','gibbs','derive'],['mh','app','gen']
+];
+function nodeById(id){for(var i=0;i<MAP_NODES.length;i++)if(MAP_NODES[i].id===id)return MAP_NODES[i];return null;}
+function anchor(n,side){if(side==='r')return[n.x+n.w,n.y+n.h/2];if(side==='l')return[n.x,n.y+n.h/2];if(side==='t')return[n.x+n.w/2,n.y];return[n.x+n.w/2,n.y+n.h];}
+function buildMap(){
+  var E=document.getElementById('edges'),N=document.getElementById('nodes');
+  if(!E||!N)return;
+  MAP_EDGES.forEach(function(ed){
+    var a=nodeById(ed[0]),b=nodeById(ed[1]),col=EDGE_COL[ed[2]]||C.lineStrong;
+    var p1,p2;
+    if(b.x>a.x+a.w-2){p1=anchor(a,'r');p2=anchor(b,'l');}
+    else if(a.x>b.x+b.w-2){p1=anchor(a,'l');p2=anchor(b,'r');}
+    else if(Math.abs(b.x-a.x)<14){if(b.y>a.y){p1=anchor(a,'b');p2=anchor(b,'t');}else{p1=anchor(a,'t');p2=anchor(b,'b');}}
+    else{p1=anchor(a,'b');p2=anchor(b,'t');}
+    var mx=(p1[0]+p2[0])/2;
+    var d='M '+p1[0]+' '+p1[1]+' C '+mx+' '+p1[1]+', '+mx+' '+p2[1]+', '+p2[0]+' '+p2[1];
+    var dash=(ed[2]==='warn'||ed[2]==='supply')?'5 4':'0';
+    E.appendChild(el('path',{d:d,stroke:col,'stroke-dasharray':dash,'marker-end':'url(#ar)'}));
+  });
+  MAP_NODES.forEach(function(n){
+    var g=el('a',{href:n.href,class:'node-card'});
+    g.appendChild(el('rect',{x:n.x,y:n.y,width:n.w,height:n.h,rx:11,class:'node-box',
+      fill:NODE_FILL[n.ty],stroke:NODE_STROKE[n.ty],'stroke-width':1.6}));
+    var cy=n.y+n.h/2+5-((n.t.length-1)*8);
+    n.t.forEach(function(line,i){
+      var tx=el('text',{x:n.x+n.w/2,y:cy+i*16,'text-anchor':'middle','font-size':12.5,'font-weight':600,fill:NODE_TXT[n.ty]});
+      tx.textContent=line;g.appendChild(tx);
+    });
+    N.appendChild(g);
+  });
+}
+/* ===================== nav + sliders ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){
+  var rs=document.querySelectorAll('input[type=range]'),i;
+  for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}
+}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+function seg(id,cb){var box=document.getElementById(id);if(!box)return;
+  box.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('button'):null;if(!b||!box.contains(b))return;
+    var bs=box.querySelectorAll('button'),i;for(i=0;i<bs.length;i++)bs[i].classList.remove('on');b.classList.add('on');if(cb)cb();});}
+function segData(id,key){var box=document.getElementById(id);if(!box)return null;var on=box.querySelector('button.on');return on?on.getAttribute('data-'+key):null;}
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'||o.type==='dots'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      } else if(o.type==='dots'){o._V.map(proj).forEach(function(q){prims.push({z:q.d,k:2,sx:q.sx,sy:q.sy,r:o.r||3,color:o.color});});}
+    });
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else if(p.k===1){ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(p.sx,p.sy,p.r,0,6.2832);ctx.fillStyle=p.color;ctx.fill();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function ed(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',ed);cv.addEventListener('pointercancel',ed);cv.addEventListener('pointerleave',ed);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+/* ============================================================ PART I */
+function msecross(){
+  var div=document.getElementById('p-cross');if(!div)return;
+  var aE=document.getElementById('cross-a'),bE=document.getElementById('cross-b'),nE=document.getElementById('cross-n');
+  var av=document.getElementById('cross-a-v'),bv=document.getElementById('cross-b-v'),nv=document.getElementById('cross-n-v');
+  var info=document.getElementById('cross-info');
+  function run(){
+    var a=+aE.value,b=+bE.value,n=+nE.value;
+    av.textContent=a.toFixed(1);bv.textContent=b.toFixed(1);nv.textContent=n;
+    var pm=a*b; // prior mean
+    var t0max=Math.max(6, pm*3, 4);
+    var th=lin(0.001,t0max,260);
+    var den=(n*b+1)*(n*b+1);
+    var mseB=th.map(function(t0){return ((pm-t0)*(pm-t0)+n*t0*b*b)/den;});
+    var mseM=th.map(function(t0){return t0/n;});
+    // crossings
+    var crs=[],i;for(i=1;i<th.length;i++){var d0=mseB[i-1]-mseM[i-1],d1=mseB[i]-mseM[i];
+      if(d0===0||(d0<0)!==(d1<0)){var f=d0/((d0-d1)||1e-12);crs.push(th[i-1]+f*(th[i]-th[i-1]));}}
+    var ymax=Math.max(maxOf(mseB.slice(0, Math.floor(th.length*0.9))), maxOf(mseM))*1.08;
+    Plotly.react(div,[
+      {type:'scatter',mode:'lines',x:th,y:mseM,line:{color:C.faint,width:2.2,dash:'dash'},name:'MLE：θ₀/n（无偏，方差全靠数据）'},
+      Object.assign({type:'scatter',mode:'lines',x:th,y:mseB,line:{color:C.accent,width:2.8},name:'贝叶斯后验均值的 MSE'},{})
+    ],baseLayout({showlegend:true,legend:{orientation:'h',y:1.15,x:0,font:{size:10.5}},
+      xaxis:{title:{text:'真值 θ₀',font:{size:12}},range:[0,t0max],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'MSE_θ₀',font:{size:12}},range:[0,ymax],gridcolor:C.line,linecolor:C.lineStrong},
+      shapes:[{type:'line',x0:pm,x1:pm,y0:0,y1:ymax,line:{color:C.gold,width:1.4,dash:'dot'}}],
+      annotations:[{x:pm,y:ymax*0.96,text:'先验均值 ab='+pm.toFixed(2),showarrow:false,font:{size:10,color:C.gold},xanchor:'left'}]
+    }),CONF);
+    var msg='先验均值 \u200bab='+pm.toFixed(2)+'（金色点线）。';
+    if(crs.length===0){msg+='当前参数下两条曲线<b>不相交</b>：在整个 θ₀ 范围内 '+(mseB[10]<mseM[10]?'贝叶斯一直更低（先验很强且方向对）':'MLE 一直更低（先验把偏差顶得太高）')+'。';}
+    else if(crs.length===1){msg+='两线在 θ₀≈<b>'+crs[0].toFixed(2)+'</b> 处交叉：一侧贝叶斯更优、另一侧 MLE 更优。';}
+    else {msg+='两线在 θ₀≈<b>'+crs[0].toFixed(2)+'</b> 与 θ₀≈<b>'+crs[1].toFixed(2)+'</b> 处<b>两次</b>交叉：只有当真值落在这<b>中间一段</b>（先验均值附近）时贝叶斯才更优，过小或过大都输给 MLE。';}
+    msg+=' <b>把 n 调小</b>：先验话语权更大，贝叶斯占优的区间整体抬高、变化明显；<b>把 b 调大</b>（先验更弱）：贝叶斯曲线整体压向 MLE 的 θ₀/n。这就是"没有谁全程更好"的实证——胜负取决于<b>你事先并不知道</b>的真值。';
+    if(info)info.innerHTML=msg;
+  }
+  [aE,bE,nE].forEach(function(e){e.addEventListener('input',run);});run();
+}
+function biasvar3d(){
+  var div=document.getElementById('p-bv3d');if(!div)return;
+  var aE=document.getElementById('bv-a'),bE=document.getElementById('bv-b');
+  var av=document.getElementById('bv-a-v'),bv=document.getElementById('bv-b-v');
+  var info=document.getElementById('bv-info');
+  function run(){
+    var a=+aE.value,b=+bE.value;
+    av.textContent=a.toFixed(1);bv.textContent=b.toFixed(1);
+    var pm=a*b;
+    var t0max=Math.max(5, pm*2.4);
+    var X=lin(0.05,t0max,26);     // theta0
+    var Y=lin(1,40,26);           // n
+    var Zv=[],Zt=[],i,j;
+    for(i=0;i<Y.length;i++){var rv=[],rt=[],n=Y[i],den=(n*b+1)*(n*b+1);
+      for(j=0;j<X.length;j++){var t0=X[j];var v=n*t0*b*b/den;var bias2=(pm-t0)*(pm-t0)/den;rv.push(v);rt.push(v+bias2);}
+      Zv.push(rv);Zt.push(rt);}
+    var zmax=max2(Zt)*1.02;
+    var sc=Scene3D(div,{xr:[0,t0max],yr:[1,40],zr:[0,Math.max(1e-6,zmax)],xlabel:'θ₀',ylabel:'n',zlabel:'误差',yaw:-0.78,pitch:0.62});
+    if(sc)sc.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Zv,scale:TEAL_SCALE,alpha:0.96,wire:false},
+      {type:'surface',X:X,Y:Y,Z:Zt,scale:GOLD_SCALE,alpha:0.5,wire:true}
+    ]);
+    if(info)info.innerHTML='下层<b>青面</b>=方差，上层<b>金面（半透明）</b>=总 MSE；两面之间的<b>垂直缝隙</b>就是偏差²（在 θ₀=ab='+pm.toFixed(2)+' 处合拢为 0——先验中心命中真值）。沿 <b>n 轴</b>往大处看：缝隙与整张曲面一起塌向零平面，这就是相合性。<b>缩放/旋转</b>可换角度。注意当前 a='+a.toFixed(1)+', b='+b.toFixed(1)+'：调大 b 会把方差面整体抬高（先验更弱、收缩更少→更接近 MLE 的 θ₀/n）。';
+  }
+  [aE,bE].forEach(function(e){e.addEventListener('input',run);});run();
+}
+/* ============================================================ PART II */
+function paretoApprox(){
+  var div=document.getElementById('p-pareto');if(!div)return;
+  var nE=document.getElementById('pareto-n'),aE=document.getElementById('pareto-a');
+  var nv=document.getElementById('pareto-n-v'),av=document.getElementById('pareto-a-v');
+  var info=document.getElementById('pareto-info');
+  var THTRUE=2.0; // synthetic data: E[log X]=1/theta_true
+  function run(){
+    var n=+nE.value,a=+aE.value;
+    nv.textContent=n;av.textContent=a.toFixed(1);
+    var L=n*(1/THTRUE);            // log(prod x_i) = sum log x_i
+    var disc=L*L+4*n/(a*a);
+    var thStar=(-L+Math.sqrt(disc))/(2/(a*a));
+    var prec=n/(thStar*thStar)+1/(a*a);
+    var sig=Math.sqrt(1/prec);
+    var leak=normCdf(0,thStar,sig); // mass below 0 under the Gaussian approx
+    var thmax=Math.max(thStar+5.2*sig, THTRUE*2.6);
+    var xneg=Math.min(-1.1, thStar-4.2*sig);
+    // true posterior on grid theta>0 : prop theta^n * exp(-theta*L - theta^2/(2a^2))
+    var gpos=lin(1e-3,thmax,360),lt=[],i,mx=-Infinity;
+    for(i=0;i<gpos.length;i++){var th=gpos[i];var lp=n*Math.log(th)-th*L-th*th/(2*a*a);if(lp>mx)mx=lp;lt.push(lp);}
+    var raw=lt.map(function(v){return Math.exp(v-mx);});
+    var area=0;for(i=1;i<gpos.length;i++)area+=0.5*(raw[i]+raw[i-1])*(gpos[i]-gpos[i-1]);
+    var truePdf=raw.map(function(v){return v/area;});
+    // gaussian approx over full range incl negatives
+    var gfull=lin(xneg,thmax,400);
+    var gpdf=gfull.map(function(x){return npdf(x,thStar,sig);});
+    // negative-leak area (x<0 under gaussian)
+    var negx=[],negy=[];for(i=0;i<gfull.length;i++){if(gfull[i]<=0){negx.push(gfull[i]);negy.push(npdf(gfull[i],thStar,sig));}}
+    if(negx.length){negx.push(0);negy.push(npdf(0,thStar,sig));}
+    var ymax=Math.max(maxOf(truePdf),maxOf(gpdf))*1.08;
+    var traces=[
+      {type:'scatter',mode:'lines',x:gpos,y:truePdf,line:{color:C.accent,width:2.6},fill:'tozeroy',fillcolor:rgba(hex2rgb(C.accent),0.13),name:'真后验（数值归一化）'},
+      {type:'scatter',mode:'lines',x:gfull,y:gpdf,line:{color:'#2E6FB0',width:2.2,dash:'dash'},name:'拉普拉斯正态近似'}
+    ];
+    if(negx.length>1)traces.push({type:'scatter',mode:'lines',x:negx,y:negy,line:{color:C.rust,width:0},fill:'tozeroy',fillcolor:rgba(hex2rgb(C.rust),0.5),name:'漏到 θ<0 的概率'});
+    Plotly.react(div,traces,baseLayout({showlegend:true,legend:{orientation:'h',y:1.15,x:0,font:{size:10}},
+      xaxis:{title:{text:'θ',font:{size:12}},range:[xneg,thmax],gridcolor:C.line,linecolor:C.lineStrong,zeroline:true,zerolinecolor:C.rust,zerolinewidth:1.4},
+      yaxis:{title:{text:'密度',font:{size:12}},range:[0,ymax],gridcolor:C.line,linecolor:C.lineStrong},
+      shapes:[{type:'line',x0:thStar,x1:thStar,y0:0,y1:ymax*0.97,line:{color:C.accent,width:1.5,dash:'dot'}}]
+    }),CONF);
+    if(info)info.innerHTML='众数 θ*='+thStar.toFixed(3)+'（蓝点线），近似方差 σ*²='+(sig*sig).toFixed(3)+'（σ*='+sig.toFixed(3)+'）。<b>漏到 θ&lt;0 的概率 ≈ '+(leak*100).toFixed(leak<0.01?3:2)+'%</b>（红色区，θ=0 是红色基线）。真后验<b>右偏</b>：右尾比正态厚，正态在右尾低估、峰左侧略高估。<b>把 n 调小</b>（如 3–5）：后验更宽更偏，红色漏出明显变大；<b>把 n 调大</b>：后验收紧趋于对称，近似与漏出都收敛——"大样本才靠谱"被这张图钉死。';
+  }
+  [nE,aE].forEach(function(e){e.addEventListener('input',run);});run();
+}
+function laplace3d(){
+  var dT=document.getElementById('p-lap-true'),dA=document.getElementById('p-lap-approx');
+  if(!dT&&!dA)return;
+  var sE=document.getElementById('lap-s'),sv=document.getElementById('lap-s-v');
+  var info=document.getElementById('lap3d-info');
+  function run(){
+    var s=+sE.value;sv.textContent=s.toFixed(2);
+    var s2=s*s;
+    var X=lin(-2.2,2.2,40);          // theta1
+    var Y=lin(-1.5,5.0,40);          // theta2
+    var Ztrue=[],Zapp=[],i,j;
+    for(i=0;i<Y.length;i++){var rt=[],ra=[],t2=Y[i];
+      for(j=0;j<X.length;j++){var t1=X[j];
+        var psi=(t2-t1*t1)*(t2-t1*t1)/(2*s2)+t1*t1/2;
+        rt.push(Math.exp(-psi));
+        ra.push(Math.exp(-(t1*t1/2 + t2*t2/(2*s2))));}
+      Ztrue.push(rt);Zapp.push(ra);}
+    var zmax=1.0;
+    if(dT){var scT=Scene3D(dT,{xr:[-2.2,2.2],yr:[-1.5,5.0],zr:[0,zmax],xlabel:'θ₁',ylabel:'θ₂',zlabel:'密度',yaw:-0.7,pitch:0.62});
+      if(scT)scT.setObjects([{type:'surface',X:X,Y:Y,Z:Ztrue,scale:PURPLE_SCALE,alpha:0.96,wire:true}]);}
+    if(dA){var scA=Scene3D(dA,{xr:[-2.2,2.2],yr:[-1.5,5.0],zr:[0,zmax],xlabel:'θ₁',ylabel:'θ₂',zlabel:'密度',yaw:-0.7,pitch:0.62});
+      if(scA)scA.setObjects([{type:'surface',X:X,Y:Y,Z:Zapp,scale:GOLD_SCALE,alpha:0.96,wire:true}]);}
+    if(info)info.innerHTML='左（紫）=真后验，沿抛物脊 θ₂=θ₁² <b>弯曲</b>；右（金）=拉普拉斯近似，在原点海森为 diag(1, 1/s²)，给出<b>轴对齐椭圆</b> N(0, diag(1, s²))。两者只在原点附近贴合。<b>把 s 调小到 '+s.toFixed(2)+'（更弯更细）</b>：真后验脊更尖、椭圆更扁，<b>左右形状差距更夸张</b>——这就是拉普拉斯在强非线性/强相关后验上的失灵，也是为什么需要 MCMC 去真正沿脊采样。';
+  }
+  sE.addEventListener('input',run);run();
+}
+/* ============================================================ PART III */
+function mkcanvas(div){
+  div.innerHTML='';var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');var W=0,Hh=0;
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;Hh=div.clientHeight||300;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(Hh*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+  resize();
+  return {cv:cv,ctx:ctx,get W(){return W;},get H(){return Hh;},resize:resize};
+}
+function mhLive(){
+  var dH=document.getElementById('p-mhlive'),dT=document.getElementById('p-mhtrace');
+  if(!dH||!dT)return;
+  var stepE=document.getElementById('mh-step'),stepV=document.getElementById('mh-step-v');
+  var runB=document.getElementById('mh-run'),stepB=document.getElementById('mh-step100'),resetB=document.getElementById('mh-reset');
+  var iterEl=document.getElementById('mh-iter'),accEl=document.getElementById('mh-acc'),vEl=document.getElementById('mh-verdict');
+  if(!dH.getContext&&!(dH.firstChild)){}
+  var XLO=-5,XHI=6.5;
+  function tgt(x){return 0.45*npdf(x,-1.4,0.55)+0.55*npdf(x,1.7,0.85);}
+  function lp(x){return Math.log(tgt(x)+1e-300);}
+  var cH,cT;try{cH=mkcanvas(dH);cT=mkcanvas(dT);}catch(_){return;}
+  if(!cH.ctx||!cT.ctx)return;
+  // precompute target curve + ymax
+  var gx=lin(XLO,XHI,260),gy=gx.map(tgt),ymax=maxOf(gy)*1.22;
+  var S={x:0.0,sq:+stepE.value,spd:2,samples:[],trace:[],nAcc:0,nTot:0,running:false,raf:0};
+  function step(){
+    var xp=S.x+S.sq*randn();
+    var la=lp(xp)-lp(S.x);
+    if(Math.log(Math.random())<la){S.x=xp;S.nAcc++;}
+    S.nTot++;S.samples.push(S.x);S.trace.push(S.x);
+    if(S.trace.length>4000)S.trace.shift();
+  }
+  function mapx(W,x){var ml=34,mr=12;return ml+(x-XLO)/((XHI-XLO))*(W-ml-mr);}
+  function drawHist(){
+    var ctx=cH.ctx,W=cH.W,H=cH.H,ml=34,mr=12,mt=10,mb=22;
+    ctx.clearRect(0,0,W,H);
+    function YX(v){return H-mb-(v/ymax)*(H-mt-mb);}
+    // baseline
+    ctx.strokeStyle=C.lineStrong;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ml,H-mb);ctx.lineTo(W-mr,H-mb);ctx.stroke();
+    // histogram
+    var bins=46,bw=(XHI-XLO)/bins,cnt=new Array(bins).fill(0),i,N=S.samples.length;
+    for(i=0;i<N;i++){var bi=Math.floor((S.samples[i]-XLO)/bw);if(bi>=0&&bi<bins)cnt[bi]++;}
+    if(N>0){ctx.fillStyle=rgba(hex2rgb(C.accent),0.18);ctx.strokeStyle=rgba(hex2rgb(C.accent),0.5);ctx.lineWidth=0.6;
+      for(i=0;i<bins;i++){if(!cnt[i])continue;var dens=cnt[i]/(N*bw);var x0=mapx(W,XLO+i*bw),x1=mapx(W,XLO+(i+1)*bw),yt=YX(dens);
+        ctx.fillRect(x0,yt,x1-x0,(H-mb)-yt);ctx.strokeRect(x0,yt,x1-x0,(H-mb)-yt);}}
+    // target curve
+    ctx.strokeStyle=C.ink;ctx.lineWidth=2.2;ctx.beginPath();
+    for(i=0;i<gx.length;i++){var px=mapx(W,gx[i]),py=YX(gy[i]);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+    ctx.stroke();
+    // current position
+    var cxp=mapx(W,S.x);
+    ctx.strokeStyle=C.rust;ctx.lineWidth=1.6;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(cxp,mt);ctx.lineTo(cxp,H-mb);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.rust;ctx.beginPath();ctx.arc(cxp,YX(tgt(S.x)),4.5,0,6.2832);ctx.fill();
+    ctx.fillStyle=C.faint;ctx.font='10px Spectral, serif';ctx.textAlign='center';
+    ctx.fillText('当前 θ',cxp,H-mb+13);
+    ctx.textAlign='left';ctx.fillStyle=C.inkSoft;ctx.font='11px Fraunces, serif';
+    ctx.fillText('黑线=目标密度 · 赭柱=样本直方图',ml+2,mt+8);
+  }
+  function drawTrace(){
+    var ctx=cT.ctx,W=cT.W,H=cT.H,ml=34,mr=12,mt=8,mb=18;
+    ctx.clearRect(0,0,W,H);
+    function YT(v){return mt+(XHI-v)/((XHI-XLO))*(H-mt-mb);}
+    // mode guide lines
+    ctx.strokeStyle=rgba(hex2rgb(C.faint),0.35);ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    [-1.4,1.7].forEach(function(m){ctx.beginPath();ctx.moveTo(ml,YT(m));ctx.lineTo(W-mr,YT(m));ctx.stroke();});
+    ctx.setLineDash([]);
+    var NT=Math.min(S.trace.length,560),start=S.trace.length-NT,i;
+    ctx.strokeStyle=C.accent;ctx.lineWidth=1.5;ctx.beginPath();
+    for(i=0;i<NT;i++){var px=ml+(i/(Math.max(1,NT-1)))*(W-ml-mr),py=YT(S.trace[start+i]);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+    ctx.stroke();
+    ctx.fillStyle=C.faint;ctx.font='10px Spectral, serif';ctx.textAlign='left';
+    ctx.fillText('θ 轨迹（最近 '+NT+' 步）→',ml+2,mt+9);
+  }
+  function readout(){
+    iterEl.textContent=S.nTot;
+    if(S.nTot===0){accEl.textContent='—';accEl.className='';vEl.textContent='把 σ_q 调一调，盯住接受率和直方图的填充速度';return;}
+    var ar=S.nAcc/S.nTot;
+    accEl.textContent=(ar*100).toFixed(1)+'%';
+    accEl.className=(ar>=0.2&&ar<=0.5)?'okval':'warnval';
+    var v;
+    if(S.nTot<40)v='样本还太少，继续跑';
+    else if(ar>0.7)v='接受率偏高 → 步长可能太小，链在原地附近打转，混合慢（自相关高、ESS 低）';
+    else if(ar<0.15)v='接受率偏低 → 步长太大，候选常被拒，轨迹出现水平死线';
+    else if(ar>=0.2&&ar<=0.5)v='接受率落在「金区」，混合较好 ✓';
+    else v='接受率尚可，可再微调 σ_q 找最佳混合';
+    vEl.textContent=v;
+  }
+  function drawAll(){cH.resize();cT.resize();drawHist();drawTrace();readout();}
+  function loop(){if(!S.running)return;var k;for(k=0;k<S.spd;k++)step();drawHist();drawTrace();readout();S.raf=requestAnimationFrame(loop);}
+  runB.addEventListener('click',function(){S.running=!S.running;runB.textContent=S.running?'⏸ 暂停':'▶ 运行 / 暂停';if(S.running){S.raf=requestAnimationFrame(loop);}else if(S.raf){cancelAnimationFrame(S.raf);}});
+  stepB.addEventListener('click',function(){var k;for(k=0;k<200;k++)step();drawAll();});
+  resetB.addEventListener('click',function(){if(S.raf)cancelAnimationFrame(S.raf);S.running=false;runB.textContent='▶ 运行 / 暂停';S.x=0;S.samples=[];S.trace=[];S.nAcc=0;S.nTot=0;drawAll();});
+  stepE.addEventListener('input',function(){S.sq=+stepE.value;stepV.textContent=S.sq.toFixed(1);});
+  seg('mh-speed',function(){S.spd=+segData('mh-speed','spd')||2;});
+  stepV.textContent=(+stepE.value).toFixed(1);
+  window.addEventListener('resize',function(){drawHist();drawTrace();});
+  drawAll();
+}
+function mh3d(){
+  var div=document.getElementById('p-mh3d');if(!div)return;
+  var sE=document.getElementById('mh3d-step'),sv=document.getElementById('mh3d-step-v');
+  var runB=document.getElementById('mh3d-run'),info=document.getElementById('mh3d-info');
+  function g(x,y,mx,my,s){return Math.exp(-((x-mx)*(x-mx)+(y-my)*(y-my))/(2*s*s));}
+  function dens(x,y){return 0.62*g(x,y,-1.3,-1.0,0.62)+0.40*g(x,y,1.5,1.25,0.66);}
+  function build(){
+    var sq=+sE.value;sv.textContent=sq.toFixed(2);
+    var X=lin(-3.6,3.6,34),Y=lin(-3.6,3.6,34),Z=[],i,j;
+    for(i=0;i<Y.length;i++){var r=[];for(j=0;j<X.length;j++)r.push(dens(X[j],Y[i]));Z.push(r);}
+    var zmax=max2(Z)*1.02;
+    // chain
+    var cx=-1.3,cy=-1.0,pts=[[cx,cy,dens(cx,cy)+0.012]],nA=0,nT=0,k,left=0,cross=0,prevSide=(cx<0.1);
+    for(k=0;k<650;k++){var px=cx+sq*randn(),py=cy+sq*randn();var la=Math.log(dens(px,py)+1e-300)-Math.log(dens(cx,cy)+1e-300);
+      if(Math.log(Math.random())<la){cx=px;cy=py;nA++;}nT++;
+      pts.push([cx,cy,dens(cx,cy)+0.012]);
+      var side=(cx<0.1);if(side)left++;if(side!==prevSide)cross++;prevSide=side;}
+    var sc=Scene3D(div,{xr:[-3.6,3.6],yr:[-3.6,3.6],zr:[0,zmax],xlabel:'θ₁',ylabel:'θ₂',zlabel:'密度',yaw:-0.66,pitch:0.6});
+    if(sc)sc.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Z,scale:PURPLE_SCALE,alpha:0.9,wire:true},
+      {type:'line',pts:pts,color:rgba(hex2rgb(C.accent),0.92),width:2},
+      {type:'dots',pts:[pts[0]],color:C.green,r:5},
+      {type:'dots',pts:[pts[pts.length-1]],color:C.rust,r:5}
+    ]);
+    var lp=(left/nT*100).toFixed(0),rp=(100-left/nT*100).toFixed(0);
+    if(info)info.innerHTML='步长 σ_q='+sq.toFixed(2)+'，接受率 '+(nA/nT*100).toFixed(0)+'%。这条链在<b>左峰停留约 '+lp+'%</b>、右峰约 '+rp+'%，全程<b>跨峰 '+cross+' 次</b>（绿点=起点，红点=终点）。<b>步长小</b>时跨峰是稀有事件，短链可能整段只采到一个峰、给出偏倚后验；<b>步长大</b>能增加跨峰机会，但接受率随之下降——双峰下的两难。点"重新模拟"看不同随机种子下结果的波动（这本身说明：单条短链不可靠，需要多链/长链 + 收敛诊断）。';
+  }
+  sE.addEventListener('input',build);runB.addEventListener('click',build);build();
+}
+/* ============================================================ PART IV */
+function gibbs3d(){
+  var div=document.getElementById('p-gibbs3d');if(!div)return;
+  var rE=document.getElementById('gibbs-rho'),rv=document.getElementById('gibbs-rho-v');
+  var runB=document.getElementById('gibbs-run'),info=document.getElementById('gibbs-info');
+  function build(){
+    var rho=+rE.value;rv.textContent=rho.toFixed(2);
+    var om=1-rho*rho, csd=Math.sqrt(Math.max(1e-6,om));
+    function dens(x,y){return Math.exp(-(x*x-2*rho*x*y+y*y)/(2*om));}
+    var X=lin(-3.3,3.3,34),Y=lin(-3.3,3.3,34),Z=[],i,j;
+    for(i=0;i<Y.length;i++){var r=[];for(j=0;j<X.length;j++)r.push(dens(X[j],Y[i]));Z.push(r);}
+    var cx=2.4,cy=-2.4,pts=[[cx,cy,dens(cx,cy)+0.012]],k;
+    for(k=0;k<58;k++){
+      cx=rho*cy+csd*randn();pts.push([cx,cy,dens(cx,cy)+0.012]);   // update theta1 | theta2  (horizontal)
+      cy=rho*cx+csd*randn();pts.push([cx,cy,dens(cx,cy)+0.012]);   // update theta2 | theta1  (vertical)
+    }
+    var sc=Scene3D(div,{xr:[-3.3,3.3],yr:[-3.3,3.3],zr:[0,1.0],xlabel:'θ₁',ylabel:'θ₂',zlabel:'密度',yaw:-0.68,pitch:0.62});
+    if(sc)sc.setObjects([
+      {type:'surface',X:X,Y:Y,Z:Z,scale:INDIGO_SCALE,alpha:0.9,wire:true},
+      {type:'line',pts:pts,color:rgba(hex2rgb(C.rust),0.95),width:2.1},
+      {type:'dots',pts:[pts[0]],color:C.green,r:5}
+    ]);
+    var note;
+    if(Math.abs(rho)<0.3)note='两坐标近独立，全条件标准差 √(1−ρ²)='+csd.toFixed(2)+' 很大，楼梯<b>大步快速铺满</b>整个钟形——混合好。';
+    else if(Math.abs(rho)>0.8)note='分布被压成<b>细长斜脊</b>，全条件标准差仅 √(1−ρ²)='+csd.toFixed(2)+'，每个台阶<b>极小</b>，Gibbs 只能横竖蹭、<b>不能斜着走</b>，要很多步才能从脊一端到另一端——<b>混合极慢</b>，这正是 §4.2 的痛点。';
+    else note='相关中等，全条件标准差 √(1−ρ²)='+csd.toFixed(2)+'，楼梯台阶变小、开始贴着斜向拉伸的等高线走。';
+    if(info)info.innerHTML='ρ='+rho.toFixed(2)+'。路径是横一步（更新 θ₁|θ₂）、竖一步（更新 θ₂|θ₁）的<b>轴对齐楼梯</b>（绿点=起点）。'+note+' 点"重新模拟"换随机种子。';
+  }
+  rE.addEventListener('input',build);runB.addEventListener('click',build);build();
+}
+/* ============================================================ PART V */
+function gbmFan(){
+  var div=document.getElementById('p-gbm');if(!div)return;
+  var sE=document.getElementById('gbm-sigma'),hE=document.getElementById('gbm-horizon');
+  var sv=document.getElementById('gbm-sigma-v'),hv=document.getElementById('gbm-horizon-v');
+  var info=document.getElementById('gbm-info');
+  var MU=0.07,S0=100,W=0.75;
+  function run(){
+    var sig=+sE.value,T=+hE.value,mode=segData('gbm-seg','mode')||'single';
+    sv.textContent=sig.toFixed(2);hv.textContent=T.toFixed(1);
+    var NST=80,dt=T/NST,t=lin(0,T,NST+1),i,k;
+    var medTh=t.map(function(tt){return S0*Math.exp((MU-sig*sig/2)*tt);});
+    var upS=[],loS=[];for(i=0;i<t.length;i++){upS.push(medTh[i]*Math.exp(2*sig*Math.sqrt(t[i])));loS.push(medTh[i]*Math.exp(-2*sig*Math.sqrt(t[i])));}
+    var traces=[];
+    if(mode==='single'){
+      traces.push({type:'scatter',mode:'lines',x:t,y:loS,line:{color:'rgba(0,0,0,0)'},showlegend:false,hoverinfo:'skip'});
+      traces.push({type:'scatter',mode:'lines',x:t,y:upS,line:{color:'rgba(0,0,0,0)'},fill:'tonexty',fillcolor:rgba(hex2rgb(C.accent),0.14),name:'理论 ±2σ√t 扇面'});
+      traces.push({type:'scatter',mode:'lines',x:t,y:medTh,line:{color:C.accent,width:2.4},name:'中位轨迹 S₀e^{(μ−σ²/2)t}'});
+      for(k=0;k<10;k++){var ls=Math.log(S0),pth=[S0];for(i=1;i<t.length;i++){ls+=(MU-sig*sig/2)*dt+sig*Math.sqrt(dt)*randn();pth.push(Math.exp(ls));}
+        traces.push({type:'scatter',mode:'lines',x:t,y:pth,line:{color:rgba(hex2rgb(C.faint),0.5),width:1},showlegend:(k===0),name:'模拟路径',hoverinfo:'skip'});}
+    } else {
+      // faint single-fan reference
+      traces.push({type:'scatter',mode:'lines',x:t,y:loS,line:{color:'rgba(0,0,0,0)'},showlegend:false,hoverinfo:'skip'});
+      traces.push({type:'scatter',mode:'lines',x:t,y:upS,line:{color:'rgba(0,0,0,0)'},fill:'tonexty',fillcolor:rgba(hex2rgb(C.faint),0.1),name:'一把梭扇面（参考）'});
+      // one realized path
+      var ls2=Math.log(S0),real=[S0];for(i=1;i<t.length;i++){ls2+=(MU-sig*sig/2)*dt+sig*Math.sqrt(dt)*randn();real.push(Math.exp(ls2));}
+      // rolling fan anchored at each segment start
+      var upR=[],loR=[];for(i=0;i<t.length;i++){var seg=Math.floor(t[i]/W+1e-9),ts=seg*W;var idx=Math.round(ts/dt);if(idx>=real.length)idx=real.length-1;var pa=real[idx];var dts=Math.max(0,t[i]-ts);upR.push(pa*Math.exp(2*sig*Math.sqrt(dts)));loR.push(pa*Math.exp(-2*sig*Math.sqrt(dts)));}
+      traces.push({type:'scatter',mode:'lines',x:t,y:loR,line:{color:'rgba(0,0,0,0)'},showlegend:false,hoverinfo:'skip'});
+      traces.push({type:'scatter',mode:'lines',x:t,y:upR,line:{color:'rgba(0,0,0,0)'},fill:'tonexty',fillcolor:rgba(hex2rgb(C.accent),0.18),name:'滚动短窗口扇面（每 '+W+' 年重锚）'});
+      traces.push({type:'scatter',mode:'lines',x:t,y:real,line:{color:C.accent,width:2.2},name:'实现路径（持续喂新数据）'});
+      // anchor markers
+      var ax=[],ay=[];for(k=0;k*W<=T+1e-9;k++){var idx2=Math.round(k*W/dt);if(idx2<real.length){ax.push(t[idx2]);ay.push(real[idx2]);}}
+      traces.push({type:'scatter',mode:'markers',x:ax,y:ay,marker:{color:C.rust,size:7,symbol:'diamond'},name:'重锚点'});
+    }
+    var allTop=maxOf(upS);
+    Plotly.react(div,traces,baseLayout({showlegend:true,legend:{orientation:'h',y:1.16,x:0,font:{size:9.5}},
+      xaxis:{title:{text:'时间 t（年）',font:{size:12}},range:[0,T],gridcolor:C.line,linecolor:C.lineStrong},
+      yaxis:{title:{text:'价格 S_t',font:{size:12}},gridcolor:C.line,linecolor:C.lineStrong}
+    }),CONF);
+    var widthT=medTh[medTh.length-1]*(Math.exp(2*sig*Math.sqrt(T))-Math.exp(-2*sig*Math.sqrt(T)));
+    var widthSeg=S0*(Math.exp(2*sig*Math.sqrt(W))-Math.exp(-2*sig*Math.sqrt(W)));
+    var msg='σ='+sig.toFixed(2)+'，T='+T.toFixed(1)+' 年。终点处一把梭扇面宽度 ≈ <b>'+widthT.toFixed(0)+'</b> 个价位（随 √t 张开）。';
+    if(mode==='roll')msg+=' 切到<b>滚动更新</b>：每段只跨 '+W+' 年，单段扇面宽度仅 ≈ <b>'+widthSeg.toFixed(0)+'</b>（菱形=重锚点，band 在每个重锚处<b>掐成零宽再重新张开</b>）——有效不确定性被反复"重置"压低。';
+    else msg+=' <b>把 σ 调大或 T 拉长</b>：扇面像喇叭张开——这就是"长期预测发散"的真身，<b>来自 GBM 的 Var(logSₜ)=σ²t，与你用 MLE/贝叶斯/MCMC 无关</b>。切到"滚动更新"看对策。';
+    msg+=' 代价：滚动更新要求<b>持续喂新数据、频繁重算后验</b>。';
+    if(info)info.innerHTML=msg;
+  }
+  [sE,hE].forEach(function(e){e.addEventListener('input',run);});
+  seg('gbm-seg',run);run();
+}
+/* convergence proposal toggle */
+function propToggle(){
+  var info=document.getElementById('prop-info');if(!info)return;
+  function upd(){
+    var p=segData('prop-seg','prop')||'rw';
+    if(p==='rw')info.innerHTML='<b>随机游走型（random-walk MH）</b>：提议 \\(q=N(\\theta^{(t)},\\sigma_q^2)\\)，以<b>当前点为中心</b>小步挪动。对称（\\(q(\\theta\'\\mid\\theta^{(t)})=q(\\theta^{(t)}\\mid\\theta\')\\)），所以提议比值=1，接受概率退化成纯核比值。<b>适合</b>单峰、集中、形状未知的后验；<b>软肋</b>是步长难调（§3.3 的两难）、多峰时难跨峰（§3.4）。这是最通用的"无脑能用"提议。';
+    else info.innerHTML='<b>独立型（independence MH）</b>：提议 \\(q(\\theta\')\\) 是一个<b>固定分布</b>，与当前点无关。<b>好不好完全取决于这个固定分布像不像目标</b>：若它能盖住所有峰，可一步跨峰、混合极快；若与目标错位，则<b>大面积被拒、彻底卡死</b>，比随机游走还糟。<b>正确用法</b>：当你已经有一个不错的<b>全局近似</b>时用它——比如把第二部分的<b>拉普拉斯近似当提议分布</b>，用接受/拒绝去修正它的偏态与漏出（这就把出路一和出路二串起来了）。';
+    renderMath();
+  }
+  seg('prop-seg',upd);upd();
+}
+/* ===================== init ===================== */
+function init(){
+  renderMath();
+  wireSliderFill();wireNav();wireMenu();buildMap();
+  msecross();biasvar3d();
+  paretoApprox();laplace3d();
+  mhLive();mh3d();
+  gibbs3d();
+  gbmFan();propToggle();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>
