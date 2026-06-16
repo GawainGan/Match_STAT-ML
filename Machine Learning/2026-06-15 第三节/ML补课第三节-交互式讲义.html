@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机器学习 · 补课第三节 — 泛化理论：把"可学习"钉死（B(N,k) · Sauer 引理 · VC 不等式）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<style>
+:root{
+  --paper:#FBF6F1; --paper-2:#F2ECE6; --card:#FFFCF8;
+  --ink:#1C1418; --ink-soft:#52464C; --ink-faint:#897C82;
+  --line:#E4D9D5; --line-strong:#D2C2BE;
+  --accent:#83304A;        /* 第三节主色：石榴 / 绛红。第一节"砌地基"用陶土暖砖，第二节"在雾里量出第一条边界"用墨靛蓝；这一节是"围捕无穷、给可学习性盖上封印"——红墨水与火漆印，把那条只在直觉里成立的 VC 不等式真正钉死。 */
+  --accent-soft:#F1E1E6;
+  --teal:#1F6B66;  --teal-soft:#DCEDEB;   /* 2D 通道 */
+  --gold:#B7892A;  --gold-soft:#F4E9CF;   /* 案例通道 */
+  --violet:#6A4DB0;--violet-soft:#E8E2F4; /* 3D 通道 */
+  --green:#3E7C4E; --green-soft:#DFEDE2;  /* 推导/步骤通道 */
+  --rust:#B0442B;  --rust-soft:#F3E0DA;   /* 盲点/批判通道（暖橙砖，刻意区别于绛红主色） */
+  --shadow:0 1px 2px rgba(28,20,24,.05), 0 8px 30px rgba(28,20,24,.06);
+  --shadow-lg:0 10px 50px rgba(28,20,24,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #F2DCE2 0%, rgba(242,220,226,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #EFE6DD 0%, rgba(239,230,221,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+.layout{display:flex; align-items:flex-start; max-width:1680px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,64px) 56px; max-width:1235px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,252,248,.7), rgba(255,252,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease; width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(20,12,16,.35)}
+  .content{padding-top:64px}
+}
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase; font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,52px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:96px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(60px,12vw,116px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,39px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:90ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px; max-width:95ch}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod p:last-child{margin-bottom:0}
+.mod .katex-display{margin:.4em 0; overflow-x:auto; overflow-y:hidden; padding:2px 0}
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 14px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#F7E8EC; border:1px solid #E2C2CD; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+.plot{width:100%; height:380px; overflow:hidden}
+.plot.tall{height:460px}
+.plot.d3{height:540px}
+.svgfig{width:100%; max-width:540px; margin:6px auto 2px; overflow:hidden; border-radius:10px}
+.svgfig svg{display:block; width:100%; height:auto}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #D9B6C2; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+.gwn{background:#EAF1EC; border:1px solid #BFD6C6; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.gwn .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--green); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.gwn p:last-child{margin-bottom:0}
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFCF6; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+.mapwrap{border:1px solid var(--line); border-radius:18px; background:
+   repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(210,194,190,.16) 27px, rgba(210,194,190,.16) 28px), var(--card);
+   padding:10px; box-shadow:var(--shadow); overflow:auto}
+#conceptmap{display:block; width:100%; min-width:980px; height:auto}
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; margin:14px 2px 0; font-size:13.5px; color:var(--ink-soft); font-family:"Spectral"}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.legend i{width:18px; height:0; border-top-width:2px; border-top-style:solid; display:inline-block}
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+footer.site-foot{margin-top:80px; border-top:1px solid var(--line); padding:30px 4px 70px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+footer.site-foot p{margin:0 0 8px; max-width:92ch}
+footer.site-foot b{color:var(--ink-soft)}
+.part-kicker{display:inline-block; font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:4px 11px; border-radius:999px}
+.btnrow{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 4px}
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px; font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+.closing-block{background:linear-gradient(180deg, rgba(131,48,74,.05), rgba(0,0,0,0)); border:1px solid var(--line); border-top:3px solid var(--accent)}
+/* B(N,k) 递归表 / 三角表 / 谜题表 专用 */
+.btab{border-collapse:collapse; font-family:"Fraunces"; font-variant-numeric:tabular-nums; font-size:14px; margin:6px auto}
+.btab th,.btab td{border:1px solid var(--line); padding:5px 11px; text-align:center; min-width:42px}
+.btab th{background:var(--paper-2); color:var(--ink-soft); font-weight:600}
+.btab td.cell{cursor:pointer; transition:.12s; background:var(--card)}
+.btab td.cell:hover{background:var(--accent-soft)}
+.btab td.hi{background:var(--accent); color:#fff; font-weight:600}
+.btab td.src{background:var(--gold-soft); color:var(--gold); font-weight:600}
+.btab td.diag{background:var(--teal-soft)}
+.bsplit{display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start}
+.bsplit .bcol{flex:1 1 300px; min-width:260px}
+/* 谜题表 */
+.puz{border-collapse:collapse; font-family:"Fraunces"; font-size:15px; margin:8px auto}
+.puz th,.puz td{border:1px solid var(--line-strong); padding:6px 14px; text-align:center}
+.puz th{background:var(--paper-2); color:var(--ink-soft)}
+.puz .dot-pos{color:var(--accent); font-weight:600}
+.puz .dot-neg{color:var(--ink-faint)}
+.puz td.colsel{background:var(--accent-soft)}
+.chiprow{display:flex; flex-wrap:wrap; gap:7px; margin:8px 0}
+.tchip{font-family:"Fraunces"; font-size:13px; padding:5px 12px; border-radius:8px; border:1px solid var(--line-strong); background:var(--card); color:var(--ink-soft); cursor:pointer; transition:.12s}
+.tchip.on{background:var(--accent); color:#fff; border-color:var(--accent)}
+.bin-wrap{display:flex; flex-wrap:wrap; gap:18px; justify-content:center; margin:6px 0}
+</style>
+</head>
+<body>
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+<div class="layout">
+<aside class="sidebar">
+  <a href="#top" class="brand cjk">泛化理论<small>补课第三节 · 把"可学习"钉死</small></a>
+  <nav class="toc cjk">
+    <h4>开篇</h4>
+    <a href="#map"><span class="num">◆</span>知识地图：两个任务一张图</a>
+    <a href="#spine"><span class="num">◆</span>主线：一句话讲完这一节</a>
+    <h4>第〇部分 · 回到上节的扣子</h4>
+    <a href="#t-recap-m"><span class="num">0.1</span>为什么要把 M 换掉</a>
+    <a href="#t-recap-trio"><span class="num">0.2</span>二分 / 增长函数 / 断点 速查</a>
+    <a href="#t-puzzle"><span class="num">0.3</span>参谜题：3 特征只有 4 种二分</a>
+    <h4>第一部分 · 证明 mₕ(N) 是多项式</h4>
+    <a href="#t-bnk"><span class="num">1.1</span>关键量 B(N,k)：通用上界</a>
+    <a href="#t-decomp"><span class="num">1.2</span>把二分表拆成 S₁/S₂⁺/S₂⁻</a>
+    <a href="#t-bounds"><span class="num">1.3</span>两个不等式：α+β 与 β</a>
+    <a href="#t-recur"><span class="num">1.4</span>递归式与数值三角</a>
+    <a href="#t-sauer"><span class="num">1.5</span>Sauer 引理：归纳 + 帕斯卡</a>
+    <a href="#t-poly"><span class="num">1.6</span>结论：多项式！三例代回</a>
+    <h4>第二部分 · mₕ(N) 能替换 M 吗</h4>
+    <a href="#t-goal"><span class="num">2.1</span>想要的式子长什么样</a>
+    <a href="#t-paint"><span class="num">2.2</span>图示证明：增长函数量重叠</a>
+    <a href="#t-eout"><span class="num">2.3</span>Eₒᵤₜ 不可观测的难题</a>
+    <a href="#t-ghost"><span class="num">2.4</span>幽灵样本：消去 Eₒᵤₜ</a>
+    <a href="#t-vc"><span class="num">2.5</span>拼起来：VC 不等式</a>
+    <h4>第三部分 · 盲点拷问</h4>
+    <a href="#t-loose" class="trap-link"><span class="num">⚠</span>这条界其实松到没用</a>
+    <a href="#t-measures-h" class="trap-link"><span class="num">⚠</span>mₕ 量的是 H，不是数据量</a>
+    <a href="#t-binary" class="trap-link"><span class="num">⚠</span>二分类凭什么是万能基元</a>
+    <h4>收尾</h4>
+    <a href="#closing"><span class="num">✓</span>考点清单 · 自测 · 下节预告</a>
+  </nav>
+</aside>
+<main class="content" id="top">
+<header style="margin-bottom:8px">
+  <p class="h-eyebrow cjk">SDSC8003 机器学习 · 补课讲义 · 第三节 / 共约八节</p>
+  <h1 class="title cjk">围捕无穷：<br>把"可学习"真正钉死</h1>
+  <p class="lead">上一节我们停在一句<b>没证完的承诺</b>上：把泛化保证里那个会爆炸的"假设个数 \(M\)"，换成只数"在 \(N\) 个点上能切出几种花样"的<b>增长函数 \(m_{\mathcal H}(N)\)</b>，并断言——只要存在<b>断点</b>，\(m_{\mathcal H}(N)\) 就是多项式、模型就可学。这两步当时都只是<mark>直觉</mark>。这一节（对应 Caltech <b>print 6 · Theory of Generalization</b>）就是来还债的：把那两句直觉<b>逐字证出来</b>。课件开头把任务列得干干净净——<b>任务一：证明 \(m_{\mathcal H}(N)\) 是多项式；任务二：证明 \(m_{\mathcal H}(N)\) 真能替换 \(M\)。</b></p>
+  <p class="muted">这是全课最"组合数学+概率"的一节，也是你在第二节课上明确喊"有点晕"的那一段的<b>升级正片</b>。但它的骨架其实只有两根：任务一靠一张<b>会自我递归的表格</b>（把无穷假设关进一个叫 \(B(N,k)\) 的笼子，再证笼子只有多项式大）；任务二靠一个<b>偷天换日的小技巧</b>（再抽一份"幽灵样本"，把那个永远算不出来的 \(E_{out}\) 替换掉）。课上 gawain 反复卡在三处——"断点到底在数几个特征"、"\(B(N,k)\) 为什么非要写成 \(\alpha+2\beta\)"、"为什么能用 \(E_{in}'\) 替 \(E_{out}\)"——这三处我都单开了交互与盲点。规则照旧一条：<b>先拖交互、再看图、最后才回头看公式。</b></p>
+
+  <div class="guide cjk">
+    <div class="gchip idea"><div class="ic">◉</div><h5>文字直觉</h5><p>这个概念在"说什么"，用人话讲一遍</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5>数学形式</h5><p>符号化的精确表述，考试写的就是它</p></div>
+    <div class="gchip case"><div class="ic">⚖</div><h5>案例</h5><p>扑克花色 / 打靶圆盘 / 数字识别</p></div>
+    <div class="gchip d2"><div class="ic">▤</div><h5>2D 图像</h5><p>平面上的曲线、计数与几何</p></div>
+    <div class="gchip d3"><div class="ic">◆</div><h5>3D 图像</h5><p>可拖动旋转的纯 Canvas 三维场景</p></div>
+    <div class="gchip live"><div class="ic">✋</div><h5>交互实验</h5><p>拖滑块、点表格，亲手把结论跑出来</p></div>
+    <div class="gchip flow"><div class="ic">↦</div><h5>推导步骤</h5><p>编号的逻辑链，每步只走一小格</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5>盲点拷问</h5><p>批判视角：这个结论哪里站不住</p></div>
+  </div>
+</header>
+
+<!-- ===================== 知识地图 ===================== -->
+<section id="map" class="topic-block">
+  <h3 class="topic cjk">知识地图：两个任务，一条证明链</h3>
+  <p class="topic-en">print 6 = one outline with exactly two jobs</p>
+  <p>这一节不发散，它就是把 print 6 开头那张 <b>outline</b> 走完——只有<b>两个任务</b>，但每个任务底下是一条紧密咬合的证明链。下图把它画成依赖关系：<span style="color:#3E7C4E;font-weight:600">绿色边</span>是"推导/继承"，<span style="color:#83304A;font-weight:600">绛红边</span>是"回答上节抛出的问题"，<span style="color:#6A4DB0;font-weight:600">紫色边</span>是"工具供给"，<span style="color:#B0442B;font-weight:600">橙色边</span>是"暴露问题/限制"。<span class="kw">点击任何节点</span>跳到对应小节。</p>
+  <div class="mapwrap"><svg id="conceptmap" viewBox="0 0 1020 580" role="img" aria-label="本节知识依赖图"><g id="edges"></g><g id="nodes"></g></svg></div>
+  <div class="legend cjk">
+    <span><i style="border-color:#3E7C4E"></i>推导 / 继承</span>
+    <span><i style="border-color:#83304A"></i>回答上节问题</span>
+    <span><i style="border-color:#6A4DB0"></i>工具供给</span>
+    <span><i style="border-color:#B0442B"></i>暴露问题 / 限制</span>
+    <span><i style="border-color:#B7892A; border-top-style:dashed"></i>补充 / 强化</span>
+  </div>
+</section>
+
+<!-- ===================== 主线 ===================== -->
+<section id="spine" class="topic-block">
+  <h3 class="topic cjk">主线：一句话讲完这一节</h3>
+  <p class="topic-en">the spine of this lecture</p>
+  <p class="lead"><b>上节把"\(g\approx f\)"精确成了"鸿沟 + 拟合"，又把鸿沟里的 \(M\) 换成 \(m_{\mathcal H}(N)\) 却没证完；这节用一张会自我递归的表格证出"有断点 ⟹ \(m_{\mathcal H}(N)\) 是多项式"（任务一），再用一份"幽灵样本"把不可观测的 \(E_{out}\) 偷换掉，证出 \(m_{\mathcal H}(N)\) 确实能替换 \(M\)（任务二）——两步合起来，就是大名鼎鼎的 VC 不等式 \(4\,m_{\mathcal H}(2N)\,e^{-\frac18\varepsilon^2N}\)，可学习性第一次被严格钉死。</b></p>
+  <ol class="steps cjk">
+    <li><b>把无穷关进笼子（任务一·上半）。</b>逐个家族去手推 \(m_{\mathcal H}(N)\) 太累。换个思路：不分析某个具体的 \(\mathcal H\)，而是定义一个<b>通用上界函数 \(B(N,k)\)</b>＝"断点为 \(k\) 时，\(N\) 个点上最多能有几种二分"。任何断点为 \(k\) 的假设集都满足 \(m_{\mathcal H}(N)\le B(N,k)\)。证 \(B\) 是多项式，比证每个 \(m_{\mathcal H}\) 都是多项式<b>更省、更宽</b>——这是"放宽到一个更容易证的充分条件"。</li>
+    <li><b>让笼子自己递归（任务一·下半）。</b>把 \(N\) 个点的二分表按"去掉最后一列后是否成对"拆成三块 \(S_1,S_2^+,S_2^-\)，数量记 \(\alpha,\beta,\beta\)，于是 \(B(N,k)=\alpha+2\beta\)。再用断点定义挤出两个不等式 \(\alpha+\beta\le B(N{-}1,k)\)、\(\beta\le B(N{-}1,k{-}1)\)，得递归 \(B(N,k)\le B(N{-}1,k)+B(N{-}1,k{-}1)\)。一路递归 + <b>帕斯卡恒等式</b>，落地成 \(B(N,k)\le\sum_{i=0}^{k-1}\binom{N}{i}=O(N^{k-1})\)。<mark>多项式，任务一完成。</mark></li>
+    <li><b>偷换掉那个算不出来的量（任务二）。</b>我们想要 \(P[\,|E_{in}-E_{out}|>\varepsilon\,]\le 2\,m_{\mathcal H}(N)e^{-2\varepsilon^2N}\)，但 \(E_{out}\) 定义在无穷总体上、<b>永远观测不到</b>。技巧：再独立抽一份和训练集等大的"<b>幽灵样本</b>"，它的误差 \(E_{in}'\) 与 \(E_{out}\) 同步波动；用三角不等式把"\(E_{in}\) 偏离 \(E_{out}\)"转成"\(E_{in}\) 偏离 \(E_{in}'\)"——\(E_{out}\) 被消掉，只剩两份有限样本在比。代价是样本总量变成 \(2N\)、常数变松，得到 <b>VC 不等式</b> \(P[\cdots]\le 4\,m_{\mathcal H}(2N)e^{-\frac18\varepsilon^2N}\)。</li>
+  </ol>
+  <div class="xander cjk"><p class="who">◈ 写给你的阅读策略</p>
+  <p>你说自己"懂模型怎么用、不懂背后为什么、数学手感也弱"。这一节恰恰<b>全是"为什么"、几乎没有"怎么用"</b>——它不教你训练任何模型，它在回答一个你天天在做却没想过的问题：<i>凭什么把一组数据一刀切成训练集和测试集，就能用训练表现去赌测试表现？</i> 课上 Xander 那句大白话点破了全节的气质：<b>"这里数学证明更多是一种概念性的东西，运算上都没有微积分，就涉及一点概率论。"</b> 难的从来不是算，是<b>那几个偷换概念的转念</b>。所以本节的交互我故意做成"可点的表格 / 可拖的样本箱"，让你<b>用手指把递归和偷换走一遍</b>，而不是盯着 \(\alpha+2\beta\) 发呆。最后那张 \(\frac18\) 系数的图你在课上写错过——没关系，<mark>那个常数本来就不重要，重要的是"多项式 × 指数衰减"这个形状</mark>，第三部分我专门拿它当盲点拆。</p></div>
+</section>
+<!-- ===================== PART 0 ===================== -->
+<section class="part-head cjk">
+  <div class="pk">0</div>
+  <span class="part-kicker">print 5 重讲 · 把上节的三件套擦亮</span>
+  <h2>回到上节的扣子：M、二分、断点</h2>
+  <p>这一节开头，Xander 把 print 5 又过了一遍——不是因为它难，而是因为 print 6 的整条证明<b>全建在这三个零件上</b>：为什么非要把 \(M\) 换掉、什么是二分与增长函数、什么是断点。零件不牢，后面的递归和偷换都会"晕"。所以先用三个小交互把它们擦亮，再进正片。<b>已经对第二节滚瓜烂熟的话，可以直接跳到第一部分。</b></p>
+</section>
+
+<section id="t-recap-m" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel general"><span class="dot"></span>承接上节：训练版 Hoeffding \(2Me^{-2\varepsilon^2N}\)</span>
+    <span class="rel warn"><span class="dot"></span>暴露问题：\(M=\infty\) ⟹ 界失效</span>
+    <span class="rel tool"><span class="dot"></span>供给下文：<a href="#t-recap-trio">0.2 二分计数</a></span>
+  </div>
+  <h3 class="topic cjk">0.1 为什么非要把 M 换掉</h3>
+  <p class="topic-en">Where M came from, and why it explodes</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 文字 · M 是怎么混进来的</p>
+    <p>上节的训练版保证是 \(P[\,|E_{in}(g)-E_{out}(g)|>\varepsilon\,]\le 2M e^{-2\varepsilon^2N}\)。那个 \(M\)（假设个数）是<b>联合界（union bound）</b>的产物：我们不知道算法最终会挑中哪个 \(h\)，于是保守地把"<b>任意一个</b> \(h\) 出岔子"的概率，放大成"每个 \(h\) 出岔子概率之和"——\(M\) 个加起来。问题立刻来了：线性分类器的备选直线有<b>无穷多条</b>，\(M\to\infty\)，整个上界变成"\(\le\infty\)"，等于什么都没说。</p></div>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 文字 · 救命的观察：无穷条线，有限种"花样"</p>
+    <p>但联合界<b>错得很离谱</b>——它假设那 \(M\) 个"坏事件"几乎不重叠，可现实里它们<b>高度重叠</b>。Xander 课上的原话：<i>"这条线和这条线，对这两个点来说分类效果是一样的；我稍微挪一点，分类结果还是一样的。"</i> 也就是说：在固定的 \(N\) 个数据点上，<mark>无穷多条直线其实只切得出有限种"花样"</mark>。把假设按"在这 \(N\) 个点上的标号结果"归类，无穷的 \(\mathcal H\) 立刻塌缩成有限的几组——这正是把 \(M\) 换成增长函数 \(m_{\mathcal H}(N)\) 的全部动机。</p></div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 2D · 拖滑块：无穷条线 → 有限种二分</p>
+    <p>下图是平面上固定的 5 个点。拖动滑块平移那条决策直线，<b>观察右侧标号（＋/−）</b>：在很大一段范围里，线怎么挪，5 个点的标号<b>纹丝不动</b>——这些线对这组点是"同一个假设"。只有当线<b>扫过某个点</b>时，标号才跳变一次。计数器会记录你一共见过<b>几种不同的二分</b>：你会发现无论怎么拖，它都卡在一个有限的小数字上，<mark>这个上限就是增长函数 \(m_{\mathcal H}(N)\) 的雏形</mark>。</p>
+    <div class="controls cjk">
+      <div class="ctrl"><label>决策线位置 <span class="val" id="v-line-shift">0.50</span></label><input id="line-shift" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+      <div class="ctrl"><label>线的角度 <span class="val" id="v-line-angle">0°</span></label><input id="line-angle" type="range" min="-60" max="60" step="1" value="0"></div>
+    </div>
+    <div class="readout cjk">
+      当前二分：<b id="rd-dich">＋＋＋＋＋</b>
+      <span>已见过的不同二分：<b id="rd-dcount" class="okval">1</b> 种</span>
+      <span class="rd-note" id="rd-dnote">挪动滑块，看标号何时才跳变</span>
+    </div>
+    <div class="plotwrap"><div id="p-twolines" class="plot"></div></div>
+    <button class="btn ghost cjk" id="btn-reset-dich" style="font-size:12.5px;padding:6px 12px">重置计数</button>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 一行字概括</p>
+    <p>$$\text{无穷的 }\mathcal H \;\xrightarrow{\text{按 }N\text{ 个点上的标号归类}}\; \text{有限的二分组},\quad \big|\{\text{二分}\}\big|\;\le\;2^N$$</p>
+    <p class="muted">于是上界里那个会爆炸的 \(M\)，有望被一个<b>最多 \(2^N\)、且常常远小于 \(2^N\)</b> 的数 \(m_{\mathcal H}(N)\) 顶替。"有望"二字是这节的全部工作——把它从直觉变成定理。</p></div>
+</section>
+
+<section id="t-recap-trio" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>继承上节：射线 / 区间 / 凸集三例</span>
+    <span class="rel dual"><span class="dot"></span>定义对照：二分 ↔ 增长函数 ↔ 断点</span>
+    <span class="rel tool"><span class="dot"></span>供给：<a href="#t-bnk">1.1 B(N,k) 的定义靠它</a></span>
+  </div>
+  <h3 class="topic cjk">0.2 三件套速查：二分 / 增长函数 / 断点</h3>
+  <p class="topic-en">dichotomy · growth function · break point — the three gears</p>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 三个定义钉死</p>
+    <ul class="ul">
+      <li><b>二分（dichotomy）</b>：把假设 \(h:\mathcal X\to\{-1,+1\}\) <b>限制</b>到固定的 \(N\) 个点上，得到的那串标号 \(h:\{x_1,\dots,x_N\}\to\{-1,+1\}\)。它是"迷你假设"——只关心这 \(N\) 个点怎么标。\(|\mathcal H|\) 可以无穷，但二分的种数<b>顶多 \(2^N\)</b>。</li>
+      <li><b>增长函数 \(m_{\mathcal H}(N)\)</b>：在<b>所有</b>可能的 \(N\) 点摆法里，能切出的<b>最多</b>二分种数：\(m_{\mathcal H}(N)=\max_{x_1,\dots,x_N\in\mathcal X}\big|\mathcal H(x_1,\dots,x_N)\big|\)。它把"\(\mathcal H\) 有多复杂"压成一个只跟 \(N\) 有关的数。</li>
+      <li><b>打散（shatter）</b>：若某 \(N\) 个点上 \(\mathcal H\) 能切出全部 \(2^N\) 种二分，就说这 \(N\) 个点被<b>打散</b>了（即 \(m_{\mathcal H}(N)=2^N\) 在这组点上达到）。</li>
+      <li><b>断点（break point）\(k\)</b>：若<b>不存在任何</b> \(k\) 个点能被 \(\mathcal H\) 打散，则 \(k\) 是一个断点。最小的那个断点最关键——它一旦出现就<b>向上传染</b>：\(k\) 是断点 ⟹ \(k{+}1,k{+}2,\dots\) 全是断点。</li>
+    </ul></div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 上节那三个家族（直接复用）</p>
+    <div class="scrollx"><table class="tab cjk">
+      <tr><th>假设家族</th><th>增长函数 \(m_{\mathcal H}(N)\)</th><th>断点 \(k\)</th><th>形态</th><th>可学？</th></tr>
+      <tr><td class="lbl">正射线 positive rays</td><td>\(N+1\)</td><td>\(2\)</td><td>线性（多项式）</td><td style="color:#3E7C4E;font-weight:600">可学</td></tr>
+      <tr><td class="lbl">正区间 positive intervals</td><td>\(\tfrac12N^2+\tfrac12N+1\)</td><td>\(3\)</td><td>二次（多项式）</td><td style="color:#3E7C4E;font-weight:600">可学</td></tr>
+      <tr><td class="lbl">2D 感知机 perceptron</td><td>\(\le\) 多项式（待证）</td><td>\(4\)</td><td>三次（多项式）</td><td style="color:#3E7C4E;font-weight:600">可学</td></tr>
+      <tr><td class="lbl">凸集 convex sets</td><td>\(2^N\)</td><td>\(\infty\)（无断点）</td><td>指数</td><td style="color:#B0442B;font-weight:600">不可学</td></tr>
+    </table></div>
+    <p class="muted">这张表就是<b>整条证明要解释的现象</b>：为什么"有断点"和"多项式"总是结伴出现、"无断点"和"指数 \(2^N\)"也总是结伴？第一部分会把这个经验规律<b>升级成定理</b>。注意感知机那行的 \(m_{\mathcal H}(N)\) 我们上节根本没算出闭式（手算 \(\le N^3\) 太烦）——这正是 \(B(N,k)\) 要解决的痛点：<mark>不必逐家族硬算，一个通用上界全包了。</mark></p></div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 课件 print 5 的招牌例子：感知机 8 → 14（不是 16）</p>
+    <p>课件先拿 <b>2D 感知机</b>（平面上一条直线分两类）热身，演示怎么"应用增长函数"：</p>
+    <ul class="ul cjk">
+      <li><b>3 个点</b>（不共线）：一条直线能切出全部 \(2^3=8\) 种标号 → \(m_{\mathcal H}(3)=8\)，这 3 点<b>被打散</b>。</li>
+      <li><b>4 个点</b>：直觉以为 \(2^4=16\)，实际只有 <b>\(m_{\mathcal H}(4)=14\)</b>。有 <b>2 种</b>标号怎么都画不出直线——就是把<b>对角点同色</b>的那种（XOR 型）。所以 4 个点<b>打散不了</b>，断点 \(k=4\)。</li>
+    </ul>
+    <p class="muted">"14 而非 16"是整门课第一个让人意外的数字：增长函数 \(m_{\mathcal H}(N)\) 一旦 \(<2^N\)，断点就出现了。下面亲手验证那 2 个画不出的标号。</p>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 亲手数感知机能切出的标号（线＝决策边界，不是连点的线）</p>
+    <p>先说清那条线<b>是什么</b>：它是<b>感知机的决策边界</b>，把整个平面切成两个半平面——<b style="color:var(--accent)">淡红一侧整片判 ＋</b>、<b style="color:var(--teal)">淡青一侧整片判 −</b>。它<b>不穿过点</b>，而是从点<b>之间</b>穿过；一种标号"可分"就是<b>存在</b>这样一条线，让每个点都站在与自己颜色一致的那侧。</p>
+    <p><b>点任意一个点</b>切换它的 ＋/−，程序会自动找最优边界（找得到 → 虚线＋半平面着色；找不到 → 整片淡红警示，说明这种标号<b>无解</b>）。先用 <b>3 点</b>感受"8 种全可分＝被打散"，再切到 <b>4 点</b>去找那 2 个怎么都分不开的 XOR 标号。</p>
+    <div class="seg cjk" id="perc-seg"><button data-mode="3">3 点（三角）</button><button data-mode="4" class="on">4 点（正方形）</button></div>
+    <div class="svgfig" id="p-perc814" style="background:var(--card);border:1px solid var(--line)"></div>
+    <div class="controls cjk"><button class="tchip" id="perc-xor">跳到一个 XOR 标号</button><button class="tchip" id="perc-reset">重置计数</button></div>
+    <div class="readout cjk"><b id="perc-status" class="rd-note">点一个点，或切换 3 / 4 点</b></div>
+    <div class="readout cjk"><span id="perc-count">已实现的可分标号：0 / 16</span></div>
+    <div class="readout cjk" style="background:var(--accent-soft);border-color:var(--line-strong)"><span class="rd-note" id="perc-note">提示：在 4 点模式下把"对角两点同色"那两种标号试出来，你会发现怎么转线都分不开。</span></div>
+  </div>
+  <div class="mod d2 cjk"><p class="mod-label">▤ 几何图像 · 三个家族长什么样（对照 print 5 的图）</p>
+    <p>把上节那三个家族的"几何长相"画出来，记忆会牢得多——每个家族就是"用某种形状去圈 ＋ 区域"：</p>
+    <div class="svgfig" id="p-families" style="max-width:760px"></div>
+    <p class="muted">① <b>正射线</b>：一条阈值 \(a\)，右边判 ＋ → 二分由 \(a\) 落在 \(N{+}1\) 个空档的哪个决定 → \(m_{\mathcal H}=N{+}1\)。② <b>正区间</b>：一段 \([a,b]\) 内判 ＋ → 两个端点放进 \(N{+}1\) 个空档里选 2 个（再加"全 −"）→ \(\binom{N+1}{2}{+}1\)。③ <b>2D 感知机</b>：一条直线分两半，就是上面那个交互。共同点是<b>都有有限断点 → 多项式</b>。</p>
+  </div>
+</section>
+<section id="t-puzzle" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>来自 print 5 最后一页的谜题</span>
+    <span class="rel warn"><span class="dot"></span>盲点高发：断点数"点"不是数"特征"</span>
+    <span class="rel general"><span class="dot"></span>承上启下：把"打散/断点"练到能上手</span>
+  </div>
+  <h3 class="topic cjk">0.3 参谜题：3 个点，却只有 4 种二分</h3>
+  <p class="topic-en">the print-5 puzzle — find the break point by hand</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 文字 · 谜题长什么样</p>
+    <p>课件 print 5 收尾留了一道题：有一个<b>被限制过</b>的假设集 \(\mathcal H\)，它作用在 3 个点 \(x_1,x_2,x_3\) 上，<b>本该有 \(2^3=8\) 种二分，却只切得出 4 种</b>。具体说，\(\mathcal H\) 只能产生"<b>至多一个点为 ＋、其余全为 −</b>"的标号：也就是 \((-,-,-)\)、\((+,-,-)\)、\((-,+,-)\)、\((-,-,+)\) 这 4 种。问：<b>这个 \(\mathcal H\) 的断点是几？</b></p>
+    <p>这道题在课上引发了最长的一段来回——gawain 一直追问"<i>为什么我用一个特征区别不出几组数、用两个特征也区别不出，这到底在区别什么？</i>"这个困惑非常值得，因为它戳中了一个<b>极易混淆的点</b>。下面这个交互就是来把它彻底掰开的。</p></div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 原图 + 可点复刻 · print 5 最后一页的谜题</p>
+    <p>课件原图把 4 种二分画成 4 行小圆点（●＝＋1，○＝−1）。<b>上图</b>是原始幻灯片；<b>下图</b>是它的<b>可点复刻</b>——点 4 行里任意一行看它为什么合法（"至多一个 ●"），再用最下面"<b>你来标</b>"那行自己标 3 个点，看 H 到底做不做得到。</p>
+    <img src="data:image/jpeg;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//Z" alt="print 5 谜题原图（原始幻灯片）" style="display:block;max-width:430px;width:100%;margin:6px auto;border:1px solid var(--line);border-radius:10px"/>
+    <div class="svgfig" id="p-puzzleslide" style="background:var(--card);border:1px solid var(--line);max-width:420px"></div>
+    <div class="readout cjk"><span class="rd-note" id="puzslide-read">点上面 4 行中的任意一行看解释。</span></div>
+    <div class="readout cjk" style="background:var(--accent-soft);border-color:var(--line-strong)"><span class="rd-note" id="puzslide-verdict">点"你来标"那行的圆圈，自己标标看（●=＋1，○=−1）。</span></div>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 上手做"打散测试"</p>
+    <p><b>第一步</b>：点下面 8 个目标标号，看 \(\mathcal H\) 能不能实现它（✓＝做得到，✗＝做不到）。你会摸出那条"至多一个 ＋"的规则。</p>
+    <div class="chiprow cjk" id="puz-targets"></div>
+    <p style="margin-top:14px"><b>第二步</b>：要"打散" \(k\) 个点，意思是在<b>这 \(k\) 个点</b>上， \(\mathcal H\) 必须能切出全部 \(2^k\) 种标号。点下面的子集，看 \(\mathcal H\) 在它上面到底能产生哪些标号、是否凑齐：</p>
+    <div class="chiprow cjk" id="puz-subsets"></div>
+    <div class="readout cjk">
+      该子集上 \(\mathcal H\) 能产生的标号：<b id="puz-realized" style="font-size:13.5px">—</b>
+    </div>
+    <div class="readout cjk">
+      需要凑齐 <b id="puz-need">—</b> 种，实际有 <b id="puz-have">—</b> 种 → <b id="puz-verdict" class="rd-note">选一个子集试试</b>
+    </div>
+    <div class="readout cjk" style="background:var(--gold-soft);border-color:var(--gold)">
+      <span style="color:var(--gold);font-weight:600">结论</span>
+      <span class="rd-note" id="puz-concl">把 1 点、2 点的子集都试一遍：最小的"打散不了"的点数，就是断点。</span>
+    </div>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 盲点 · gawain 的困惑其实是对的：断点数"点"，不数"特征"</p>
+    <p>课上 Xander 一度用"<b>需要几个特征才能把两类分开</b>"来找断点，gawain 反复觉得不对劲——他的直觉是准的。把它讲清楚：</p>
+    <ul class="ul">
+      <li><b>断点的定义只关于"点"和"标号"</b>：能不能在 \(k\) 个<b>点</b>上凑齐全部 \(2^k\) 种<b>标号</b>。它跟"输入有几个特征/几维"<b>没有直接关系</b>。本题里 \(\mathcal H\) 在 2 个点上就凑不齐 4 种标号（缺 \((+,+)\)），所以<mark>断点 \(k=2\)</mark>——这个判断完全不需要提"特征"。</li>
+      <li><b>"特征/维度"是另一套语言</b>：当你把"打散"翻译成"<b>在特征空间里存不存在一条直线/超平面切开</b>"时，维度才登场（比如 2D 感知机要 3 个点才打散、对应 \(d_{\text{VC}}=3\)）。但那是<b>针对感知机这一类几何假设</b>的具体算法，不是断点的定义。本题的 \(\mathcal H\) 是抽象给定的二分集，<b>压根没有"特征空间里的直线"这回事</b>，硬套"几个特征"就会拧巴。</li>
+      <li>一句话记牢：<b>断点 = 最小的"打散不了的点数"</b>；\(d_{\text{VC}}=\)（最小断点）\(-1=\) 能打散的最大点数。数的始终是<b>点</b>。</li>
+    </ul>
+    <p class="muted">顺带也澄清课上对这题"断点=3"的口误：按"至多一个 ＋"这条规则，2 个点就已经打不散（凑不出 \((+,+)\)），断点是 2 不是 3。第一次听把流程跑顺最重要，数字对错回头用这个交互一验便知——<b>这正是把"概念性证明"落到手上的意义</b>。</p></div>
+</section>
+<!-- ===================== PART 1 ===================== -->
+<section class="part-head cjk">
+  <div class="pk">1</div>
+  <span class="part-kicker">print 6 · 任务一 · Bounding mₕ(N)</span>
+  <h2>第一个任务：证明 mₕ(N) 是多项式</h2>
+  <p>课件 outline 的第一行。要证的事说白了就一句：<b>只要 \(\mathcal H\) 有断点，它的增长函数 \(m_{\mathcal H}(N)\) 就被一个 \(N\) 的多项式压住。</b>难点在于——不可能逐个家族去硬算（感知机那个就够呛）。Caltech 的招数很漂亮：<b>不碰任何具体的 \(m_{\mathcal H}\)，转而构造一个万能的上界函数 \(B(N,k)\)，证它是多项式，再把所有 \(m_{\mathcal H}\) 一网打尽。</b>这一路是 \(m_{\mathcal H}(N)\le\cdots\le\cdots\le\) 多项式。</p>
+</section>
+
+<section id="t-bnk" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel general"><span class="dot"></span>回答上节悬案：感知机 \(m_{\mathcal H}\) 闭式难算</span>
+    <span class="rel tool"><span class="dot"></span>构造工具：通用上界 \(B(N,k)\)</span>
+    <span class="rel inherit"><span class="dot"></span>继承定义：断点 / 打散（<a href="#t-recap-trio">0.2</a>）</span>
+  </div>
+  <h3 class="topic cjk">1.1 关键量 B(N,k)：一个"放宽"的妙手</h3>
+  <p class="topic-en">key quantity B(N,k): a universal combinatorial bound</p>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · B(N,k) 的定义</p>
+    <p>$$B(N,k)\;=\;\text{在断点为 }k\text{ 的约束下，}N\text{ 个点上能实现的}\textbf{最大}\text{二分种数}$$</p>
+    <p>读两遍这句话（课上 gawain 也让 Xander 重复了两遍）：<b>给定断点 \(k\)，\(N\) 个样本点最多能切出多少种二分。</b>注意它<b>不依附任何具体假设集</b>——它只锁两个数 \(N\) 和 \(k\)，问"在'断点 \(\le k\)'这个限制下，二分种数的天花板在哪"。</p></div>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 文字 · 为什么这么定义是"放宽"，而放宽是好事</p>
+    <p>它有一条关键性质：<b>任何</b>断点为 \(k\) 的假设集 \(\mathcal H\)，都满足
+    $$m_{\mathcal H}(N)\;\le\;B(N,k).$$
+    因为 \(\mathcal H\) 既然断点是 \(k\)，它的二分种数当然不超过"断点为 \(k\) 时的最大种数"。于是证明策略变成：<mark>只要证出 \(B(N,k)\) 是 \(N\) 的多项式，就一举证明了所有断点为 \(k\) 的 \(\mathcal H\) 都可学</mark>，再也不用逐个家族算。</p>
+    <p>Xander 把这步的逻辑讲得很到位：<i>"我找一个比较宽泛的条件，宽泛条件下都成立，那更严格的条件下不就更成立吗？"</i> \(m_{\mathcal H}(N)\) 有可能本来就是多项式，但我们<b>懒得逐个验证</b>；干脆退一步证那个更松的 \(B(N,k)\)——它是<b>充分条件</b>（\(B\) 多项式 ⟹ 可学），不是充要，但够用，而且<b>一次管所有家族</b>。这是数学里典型的"<b>退一步，海阔天空</b>"。</p></div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 它替我们省了什么</p>
+    <p>回看 <a href="#t-recap-trio">0.2 的表</a>：感知机那行的 \(m_{\mathcal H}(N)\) 我们写不出闭式。但感知机断点 \(k=4\)，所以只要 \(B(N,4)\) 是多项式，感知机就<b>自动可学</b>，根本不用知道它的 \(m_{\mathcal H}\) 到底是多少。<b>一个 \(B(N,k)\)，把射线、区间、感知机、以及无数没名字的假设集全包了。</b></p></div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · "放宽"到底放宽了什么</p>
+    <p>一张图说清这步棋：把"<b>你手上那个具体的 \(\mathcal H\)</b>"（左，\(m_{\mathcal H}(N)\) 可能很难算），<b>放宽</b>成"<b>所有断点 \(=k\) 的假设集</b>"这一大类（右，紫框），再在这一大类里<b>取最大</b>——那个最大值就是 \(B(N,k)\)，一个只跟 \(N,k\) 有关的天花板。</p>
+    <div class="svgfig" id="p-bnk" style="max-width:760px"></div>
+    <p class="muted">右下角小例 \(N{=}3,k{=}2\) 给出 \(B(3,2){=}4\)，画出来正好是"<b>至多一个 ＋</b>"那 4 行——也就是 <a href="#t-puzzle">0.3 谜题</a>里的那个 \(\mathcal H\)。谜题不是孤立的脑筋急转弯，它就是 \(B(N,k)\) 的一个最小实例。</p>
+  </div>
+</section>
+
+<section id="t-decomp" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>建立在 B(N,k) 定义上</span>
+    <span class="rel tool"><span class="dot"></span>产出：递归不等式的两块原料 α、β</span>
+    <span class="rel warn"><span class="dot"></span>盲点高发：为什么非写成 α+2β</span>
+  </div>
+  <h3 class="topic cjk">1.2 把二分表拆成 S₁ / S₂⁺ / S₂⁻</h3>
+  <p class="topic-en">recursive setup: split the dichotomy table by the last column</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 文字 · 一句话：盯住"最后一列"分三堆</p>
+    <p>把 \(B(N,k)\) 对应的<b>全部二分</b>列成一张表（每行一种二分，列是 \(x_1,\dots,x_N\)）。证明的灵魂动作是：<b>盯住最后一列 \(x_N\)，按"去掉它之后会不会撞车"把所有行分成三堆。</b></p>
+    <ul class="ul">
+      <li><b>\(S_1\)（数量 \(\alpha\)）</b>：去掉 \(x_N\) 这一列后，前 \(N{-}1\) 列的模式<b>独一份</b>——没有别的行跟它前缀相同。也就是说，这种前缀只对应<b>唯一一种</b> \(x_N\) 标签。</li>
+      <li><b>\(S_2\)（拆成 \(S_2^+\) 与 \(S_2^-\)，各数量 \(\beta\)）</b>：去掉 \(x_N\) 后会<b>成对撞车</b>——存在两行，前 \(N{-}1\) 列<b>完全相同</b>，只有 \(x_N\) 一列相反。把 \(x_N=+1\) 的那半放进 \(S_2^+\)，\(x_N=-1\) 的那半放进 \(S_2^-\)。它俩天然<b>一一配对、数量相等</b>，都是 \(\beta\)。</li>
+    </ul>
+    <p>于是总数 $$\boxed{\,B(N,k)=\alpha+2\beta\,}$$ ——\(S_1\) 贡献 \(\alpha\)，\(S_2^+\) 和 \(S_2^-\) 各贡献 \(\beta\)。</p></div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 点按钮，把三堆和"投影"看明白</p>
+    <p>下面是一张<b>具体的</b>二分表（4 个点 \(x_1{\sim}x_4\)、8 种二分，纯属举例）。点按钮高亮三堆、或执行"去掉最后一列"的投影动作，亲眼看 \(\alpha\)、\(\beta\) 和撞车是怎么回事。</p>
+    <div class="btnrow cjk" id="bdecomp-ctrl"></div>
+    <div id="p-bdecomp" style="overflow-x:auto"></div>
+    <div class="readout cjk">
+      <b id="bdecomp-read" class="rd-note">点上面的按钮看不同分堆</b>
+    </div>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 盲点 · 为什么非要 α+2β，不能直接写总数？</p>
+    <p>gawain 当场就问了这个："<i>\(B(N,k)\) 为什么一定要用 \(\alpha+2\beta\) 这种形式去展现？</i>"答案是<b>为了递归</b>。\(\alpha\) 和 \(\beta\) 不是随便分的，它俩各自能跟<b>"少一个点"的 \(B(N{-}1,\cdot)\)</b> 挂上钩（下一节就挂）：</p>
+    <ul class="ul">
+      <li>\(S_1\cup S_2^+\) 投影到前 \(N{-}1\) 列后，是一组<b>互不相同</b>的二分，数量 \(\alpha+\beta\) ⟹ 能被 \(B(N{-}1,k)\) 压住。</li>
+      <li>\(S_2\) 那些成对的，去掉 \(x_N\) 后剩的 \(\beta\) 个前缀，断点<b>降了一档</b> ⟹ 能被 \(B(N{-}1,k{-}1)\) 压住。</li>
+    </ul>
+    <p>所以这个"\(\alpha+2\beta\)"的拆法是<b>为递归量身定做的</b>——它把 \(N\) 个点的问题，劈成两个"\(N{-}1\) 个点"的子问题。Xander 的话：<i>"它先分出一个 \(S_1\)，分不出来的变成 \(S_2^+\) 和 \(S_2^-\)，就这么一点点往前推。"</i> 没有这个精心设计的分堆，递归根本起不来。<b>记不住推导没关系，记住这句"分堆是为了递归"就抓住了魂。</b></p>
+    <div class="mod form cjk" style="margin:10px 0 0;background:var(--paper)"><p class="mod-label">∑ 一行行写出来 · 从 α+2β 到递归式</p>
+      <p>$$\begin{aligned}B(N,k)&=\alpha+2\beta &&\text{（三堆相加）}\\[2pt] &=(\alpha+\beta)+\beta &&\text{（拆成这两块）}\\[2pt] &\le B(N{-}1,k)+\beta &&\text{（聚焦①：}\alpha+\beta\le B(N{-}1,k)\text{）}\\[2pt] &\le B(N{-}1,k)+B(N{-}1,k{-}1) &&\text{（聚焦②：}\beta\le B(N{-}1,k{-}1)\text{）}\end{aligned}$$</p>
+      <p class="muted">这四行就是<b>递归式</b>本身（§1.4 再正式写一遍并填进数值三角）。<b>关于你上传的那张红字图</b>：它<b>不是</b>这条递归——而是<b>再往后一步</b>的 <a href="#t-sauer">§1.5 Sauer 归纳</a>：把归纳假设 \(\sum\binom{N-1}{i}\) 代进这条递归、再用一次帕斯卡恒等式 \(\binom{N-1}{i}+\binom{N-1}{i-1}=\binom{N}{i}\)，收成 \(\sum_{i=0}^{k-1}\binom{N}{i}\)。那张图的每一行，在 §1.5 都有逐行对应。</p>
+    </div></div>
+</section>
+
+<section id="t-bounds" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>用 1.2 的 α、β</span>
+    <span class="rel flow"><span class="dot"></span>两条不等式 → 递归式</span>
+    <span class="rel tool"><span class="dot"></span>核心手法：投影 + 反证法</span>
+  </div>
+  <h3 class="topic cjk">1.3 挤出两个不等式：α+β 与 β</h3>
+  <p class="topic-en">two inequalities from the break-point definition</p>
+
+  <div class="mod flow cjk"><p class="mod-label">↦ 推导 · 不等式一：α + β ≤ B(N−1, k)</p>
+    <ol class="steps cjk">
+      <li><b>只看前 \(N{-}1\) 列。</b>把 \(S_1\) 和 \(S_2^+\) 这两堆行，砍掉最后一列 \(x_N\)，投影到 \(x_1,\dots,x_{N-1}\) 上。</li>
+      <li><b>这些投影互不相同。</b>\(S_1\) 本来前缀就独一份；\(S_2^+\) 内部前缀也互不相同（同前缀的早被配成对、归到一起了）；而且 \(S_1\) 与 \(S_2^+\) 之间也不撞（撞了就该进 \(S_2\)）。所以投影后是 \(\alpha+\beta\) 个<b>不同的</b>二分，定义在 \(N{-}1\) 个点上。</li>
+      <li><b>套 \(B\) 的定义。</b>原集合断点是 \(k\)，意味着它<b>打散不了任意 \(k\) 个点</b>；它在前 \(N{-}1\) 个点上的这个子集，自然也打散不了任意 \(k\) 个点——断点仍 \(\le k\)。于是这 \(\alpha+\beta\) 个二分受 \(B(N{-}1,k)\) 约束：
+      $$\alpha+\beta\;\le\;B(N-1,k).$$</li>
+    </ol></div>
+
+  <div class="mod flow cjk"><p class="mod-label">↦ 推导 · 不等式二：β ≤ B(N−1, k−1)（反证法）</p>
+    <ol class="steps cjk">
+      <li><b>只看 \(S_2\) 的前缀。</b>\(S_2^+\) 和 \(S_2^-\) 成对，去掉 \(x_N\) 后剩 \(\beta\) 个<b>不同</b>前缀，定义在 \(N{-}1\) 个点上。我们要证：这 \(\beta\) 个前缀的断点 \(\le k{-}1\)，即它们<b>打散不了任意 \(k{-}1\) 个点</b>。</li>
+      <li><b>反证：假设它们能打散某 \(k{-}1\) 个点。</b>那这 \(k{-}1\) 个点上，\(\beta\) 个前缀切出了全部 \(2^{k-1}\) 种标号。</li>
+      <li><b>把 \(x_N\) 加回来，矛盾就来了。</b>每个 \(S_2\) 前缀都<b>成对</b>对应着 \(x_N=+1\) 和 \(x_N=-1\) 两行（这是 \(S_2\) 的定义）。所以在"那 \(k{-}1\) 个点 \(+\) 再加上 \(x_N\)"这 \(k\) 个点上，我们能把 \(2^{k-1}\) 种前缀标号 \(\times\) \(x_N\) 的 \(\{+1,-1\}\) \(=2^k\) 种标号<b>全部</b>切出来——即<b>打散了 \(k\) 个点</b>。</li>
+      <li><b>这跟"断点是 \(k\)"直接冲突。</b>断点 \(k\) 意味着<b>没有任何 \(k\) 个点能被打散</b>。矛盾，故假设不成立。所以 \(S_2\) 前缀断点 \(\le k{-}1\)：
+      $$\beta\;\le\;B(N-1,k-1).$$</li>
+    </ol>
+    <p class="muted">这步是全节<b>唯一</b>用到反证法的地方，也是 gawain 听两遍的地方。抓住那个画面就行：<b>\(S_2\) 的成对性，等于"白送你一个维度（\(x_N\)）"；如果前缀已经能打散 \(k{-}1\) 个点，加上这个白送的维度就能打散 \(k\) 个点，撞穿了断点的墙。</b></p></div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · 两次"聚焦"各压出一条不等式</p>
+    <p>上面两段推导，本质是对同一张二分表做两个<b>聚焦动作</b>，画出来一目了然：</p>
+    <div class="svgfig" id="p-focus" style="max-width:760px"></div>
+    <p class="muted">左：<b>聚焦①</b>盖住 \(x_N\)、只留前 \(N{-}1\) 列 → 投影后是 \(\alpha+\beta\) 个不同二分，断点仍 \(\le k\) → \(\alpha+\beta\le B(N{-}1,k)\)。右：<b>聚焦②</b>只挑出 \(S_2\) 那些成对的行 → 前缀有 \(\beta\) 个，断点<b>降一档</b>到 \(k{-}1\) → \(\beta\le B(N{-}1,k{-}1)\)。</p>
+  </div>
+</section>
+<section id="t-recur" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel flow"><span class="dot"></span>合并 1.3 的两条不等式</span>
+    <span class="rel dual"><span class="dot"></span>数值验证：帕斯卡三角般的表</span>
+    <span class="rel tool"><span class="dot"></span>供给：Sauer 引理的归纳起点</span>
+  </div>
+  <h3 class="topic cjk">1.4 递归式与数值三角</h3>
+  <p class="topic-en">the recursion, and its Pascal-triangle table</p>
+
+  <div class="mod flow cjk"><p class="mod-label">↦ 推导 · 三式合一</p>
+    <p>把 1.2、1.3 的三个结果摆在一起：</p>
+    <p>$$B(N,k)=\alpha+2\beta,\qquad \alpha+\beta\le B(N{-}1,k),\qquad \beta\le B(N{-}1,k{-}1).$$</p>
+    <p>于是 \(B(N,k)=\underbrace{(\alpha+\beta)}_{\le\,B(N-1,k)}+\underbrace{\beta}_{\le\,B(N-1,k-1)}\)，直接得到<b>递归不等式</b>：</p>
+    <p>$$\boxed{\,B(N,k)\;\le\;B(N{-}1,k)+B(N{-}1,k{-}1)\,}$$</p>
+    <p class="muted">看着眼熟吗？这正是<b>帕斯卡三角/二项式系数</b>的递推骨架 \(\binom{N}{k}=\binom{N-1}{k}+\binom{N-1}{k-1}\)。这个"撞脸"不是巧合——它就是 1.5 能落地成组合数的根本原因。</p></div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 点任意格子，看它怎么由"左上两格"长出来</p>
+    <p>下表第 \(N\) 行第 \(k\) 列是 \(B(N,k)\)。边界很简单：<b>\(k=1\) 这列恒为 1</b>（连一个点都打散不了，所有二分只能处处同号 → 只剩 1 种）；<b>\(N=1\) 这行（\(k\ge2\)）恒为 2</b>（1 个点能打散 → 2 种）。其余每格＝<b>正上方</b>那格 \(+\) <b>左上方</b>那格。<span class="kw">点一个格子</span>看它的递归来源被点亮，并和组合数求和对账。</p>
+    <div id="p-btriangle" style="overflow-x:auto"></div>
+    <div class="readout cjk">
+      <b id="btri-read" class="rd-note">点一个内部格子（N≥2, k≥2）试试</b>
+    </div>
+    <div class="readout cjk" style="background:var(--teal-soft);border-color:var(--teal)">
+      <span style="color:var(--teal);font-weight:600">对账</span>
+      <span class="rd-note" id="btri-sum">每个 B(N,k) 恰好等于 Σ_{i=0}^{k−1} C(N,i)——递归与求和给出同一个数（Sauer 引理其实是等号）。</span>
+    </div>
+  </div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 看那条"楼梯"在哪里转平</p>
+    <p>盯着某一行往右看：\(B(N,k)\) 先随 \(k\) 增长，到 \(k>N\) 后<b>顶到 \(2^N\) 就不动了</b>（比如 \(N=3\) 行：\(1,4,7,8,8,8,\dots\)，\(k\ge4\) 全是 \(8=2^3\)）。这正对应"<b>断点比点数还大＝根本没断点的约束＝能打散＝指数</b>"。断点 \(k\) 越小，那条增长曲线越早被掰平成低次多项式——<mark>断点就是给指数增长按下的那个"封顶开关"</mark>。</p></div>
+</section>
+
+<section id="t-sauer" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel flow"><span class="dot"></span>对递归式做归纳</span>
+    <span class="rel tool"><span class="dot"></span>关键工具：帕斯卡恒等式</span>
+    <span class="rel general"><span class="dot"></span>落地：B(N,k) ≤ 组合数之和</span>
+  </div>
+  <h3 class="topic cjk">1.5 Sauer 引理：归纳 + 帕斯卡，把界写成组合数</h3>
+  <p class="topic-en">Sauer's lemma: induction with Pascal's identity</p>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 要证的定理</p>
+    <p>$$\textbf{定理（Sauer 引理）}:\qquad B(N,k)\;\le\;\sum_{i=0}^{k-1}\binom{N}{i}.$$</p>
+    <p>右边是一个关于 \(N\) 的、最高次为 \(N^{k-1}\) 的<b>多项式</b>（因为 \(\binom{N}{i}\) 是 \(N\) 的 \(i\) 次多项式，求和到 \(i=k{-}1\)）。证出它，任务一就只差临门一脚。</p></div>
+
+  <div class="mod flow cjk"><p class="mod-label">↦ 推导 · 数学归纳法（对 N 归纳）</p>
+    <ol class="steps cjk">
+      <li><b>边界条件（容易）。</b>\(k=1\)：\(B(N,1)=1=\binom{N}{0}\)，右边求和只有 \(i=0\) 一项，成立。\(N=1\)：\(B(1,k)\le 2\)，而 \(\sum_{i=0}^{k-1}\binom{1}{i}\ge\binom10+\binom11=2\)（\(k\ge2\)），成立。边界全部对得上。</li>
+      <li><b>归纳假设。</b>假设对 \(N{-}1\) 成立：
+      $$B(N{-}1,k)\le\sum_{i=0}^{k-1}\binom{N{-}1}{i},\qquad B(N{-}1,k{-}1)\le\sum_{i=0}^{k-2}\binom{N{-}1}{i}.$$</li>
+      <li><b>代入递归式，两个求和相加。</b>
+      $$B(N,k)\le \sum_{i=0}^{k-1}\binom{N{-}1}{i}+\sum_{i=0}^{k-2}\binom{N{-}1}{i}.$$
+      把第一项的 \(i=0\)（值为 1）单独拎出，第二项整体改写下标 \(i\to i{-}1\)，两个和并到 \(i=1{\dots}k{-}1\)：
+      $$=1+\sum_{i=1}^{k-1}\Big[\binom{N{-}1}{i}+\binom{N{-}1}{i{-}1}\Big].$$</li>
+      <li><b>祭出帕斯卡恒等式。</b>\(\binom{N{-}1}{i}+\binom{N{-}1}{i{-}1}=\binom{N}{i}\)（南方高中都学过的杨辉三角递推），方括号里直接合并：
+      $$=1+\sum_{i=1}^{k-1}\binom{N}{i}=\sum_{i=0}^{k-1}\binom{N}{i}.$$
+      归纳完成——对 \(N\) 也成立。<mark>定理得证。</mark></li>
+    </ol>
+    <p class="muted">整段证明的"运算"就这点：拆一项、换下标、用一次帕斯卡恒等式。Xander 说得对——<b>"它运算上都没有微积分，就涉及一点组合"</b>。难的是前面 \(\alpha+2\beta\) 的<b>构造性洞察</b>，不是这里的代数。</p></div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 对照 · 你上传的那张红字图，就是这一段</p>
+    <p>幻灯片右上角那串红字（\(B(N,k)\le\sum\binom{N-1}{i}+\sum\binom{N-1}{i}\)，拆 \(i{=}0\)、合并、用帕斯卡）逐行对应上面<b>步骤 2 → 3 → 4</b>。它属于 <b>§1.5 的归纳证明</b>，<b>不是</b> §1.2/§1.4 的那条递归——递归是"\(B\le B{+}B\)"，这里是"把递归里的 \(B\) 换成组合数和、再化简"。两步连起来，才是完整的 Sauer 引理。</p>
+  </div>
+</section>
+
+<section id="t-poly" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>继承自 Sauer 引理</span>
+    <span class="rel general"><span class="dot"></span>落地：三个经典假设空间</span>
+    <span class="rel tool"><span class="dot"></span>2D＋3D：多项式 vs 指数</span>
+  </div>
+  <h3 class="topic cjk">1.6 收尾任务一：增长函数被钉成多项式（附三个经典例子）</h3>
+  <p class="topic-en">Finishing task 1: the growth function is polynomial — with three classic instances</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 一条不等式链，任务一闭环</p>
+    <p>把这一节前面所有零件串起来，就是一条<b>从左到右越收越紧</b>的链子：</p>
+    <p>$$\underbrace{m_{\mathcal H}(N)}_{\text{我真正关心的}}\;\le\;\underbrace{B(N,k)}_{\text{断点为 }k\text{ 时的最大可能}}\;\le\;\underbrace{\sum_{i=0}^{k-1}\binom{N}{i}}_{\text{Sauer 引理}}\;=\;\underbrace{O\!\left(N^{\,k-1}\right)}_{\text{多项式！}}$$</p>
+    <p>第一个 \(\le\)：你的假设空间一旦有断点 \(k\)，它在任意 \(N\) 点上的二分数不可能超过"断点为 \(k\) 的理论天花板"\(B(N,k)\)。第二个 \(\le\)：上一节刚归纳证完。最后一步：求和的最高次项是 \(\binom{N}{k-1}\sim \tfrac{N^{k-1}}{(k-1)!}\)，所以整体是 \(N\) 的 \(\boldsymbol{k-1}\) <b>次多项式</b>。</p>
+    <p class="lead cjk"><b>任务一正式完成</b>：只要假设空间存在<b>有限</b>断点，它的增长函数就是多项式——指数墙被彻底拆掉。剩下唯一的事（任务二）是把这个多项式塞回泛化界，替换掉那个要命的 \(M\)。</p>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · 把这条链的四个量摆上对数高度</p>
+    <p>这条不等式链光看符号容易麻木，拨动滑块把四个量摆成柱子：前三个（\(m_{\mathcal H}\)、\(B(N,k)\)、Sauer 和）挨在一起，被第四个 \(2^N\) 远远甩开——这就是"多项式 ≤ … ≤ … ≪ 指数"的画面。</p>
+    <div class="controls cjk">
+      <div class="ctrl"><label>N <span class="val" id="v-chain-n">10</span></label><input id="chain-n" type="range" min="4" max="18" step="1" value="10"></div>
+      <div class="ctrl"><label>断点 k <span class="val" id="v-chain-k">4</span></label><input id="chain-k" type="range" min="2" max="6" step="1" value="4"></div>
+    </div>
+    <div class="svgfig" id="p-chain" style="max-width:760px"></div>
+    <div class="readout cjk"><span class="rd-note" id="chain-read">拨动 N、k 看四个量的高度差。</span></div>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 三个经典例子：断点 → 多项式上界</p>
+    <p>把公式套到第二节就见过的三个假设空间上，<b>断点直接决定了多项式的次数</b>，而且套出来的上界和精确计数<b>完全吻合</b>（这三个恰好是紧的）：</p>
+    <table class="tab cjk">
+      <thead><tr><th>假设空间 \(\mathcal H\)</th><th>断点 \(k\)</th><th>Sauer 上界 \(\sum_{i=0}^{k-1}\binom{N}{i}\)</th><th>精确增长函数</th><th>次数</th></tr></thead>
+      <tbody>
+        <tr><td>正射线 positive rays</td><td>\(k=2\)</td><td>\(\binom N0+\binom N1=1+N\)</td><td>\(N+1\)</td><td>\(1\) 次</td></tr>
+        <tr><td>正区间 positive intervals</td><td>\(k=3\)</td><td>\(1+N+\binom N2=\tfrac12N^2+\tfrac12N+1\)</td><td>\(\tfrac12N^2+\tfrac12N+1\)</td><td>\(2\) 次</td></tr>
+        <tr><td>2D 感知机 perceptron</td><td>\(k=4\)</td><td>\(1+N+\binom N2+\binom N3=\tfrac16N^3+\tfrac56N+1\)</td><td>\(\le\) 同式</td><td>\(3\) 次</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">注意一个漂亮的对应：<b>断点 \(k\)＝最高次 \(+2\)</b>，即多项式次数 \(=k-1\)。后面会看到 \(k-1\) 有个专门名字叫 <b>VC 维 \(d_{\text{VC}}\)</b>——它才是"假设空间真实自由度"的那把尺子。感知机在 2D 是 \(d_{\text{VC}}=3\)，恰好等于参数个数（两个权重 + 一个偏置），这不是巧合。</p>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 二维 · 反例对照：凸集"打散一切"——这就是无断点 / 2ᴺ 长什么样</p>
+    <p>三个能学的例子都有断点。课件 print 5 特意给了一个<b>没有断点</b>的反例：假设"\(h(x)=+1\) 的区域是<b>凸集</b>"。把 \(N\) 个点摆在<b>一个圆周上</b>，神奇的事发生了——<b>任何</b>一种 ＋/− 标号都实现得了：取所有 ＋ 点的<b>凸包</b>，它恰好圈住全部 ＋ 点、把 − 点全留在外面（圆上的点处于<b>凸位置</b>，子集的凸包是内接多边形，其余点必在多边形外）。</p>
+    <p><b>点圆上任意一点</b>切换 ＋/−，看红色凸包始终只圈住 ＋ 点：</p>
+    <div class="controls cjk">
+      <div class="ctrl"><label>点数 N <span class="val" id="v-cvx-n">8</span></label><input id="cvx-n" type="range" min="4" max="12" step="1" value="8"></div>
+      <button class="tchip" id="cvx-rand">随机标一个</button>
+    </div>
+    <div class="svgfig" id="p-convex" style="background:var(--card);border:1px solid var(--line)"></div>
+    <div class="readout cjk"><span class="rd-note" id="cvx-read">点一个点试试。</span></div>
+    <div class="readout cjk" style="background:var(--rust-soft);border-color:var(--rust)"><span style="color:var(--rust);font-weight:600">所以</span> <span class="rd-note" id="cvx-note">凸集能实现全部标号 → 打散任意 N 点 → 无断点 → m_H(N)=2ᴺ → 指数、不可学。</span></div>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 二维 · 多项式 vs 指数：为什么"多项式"是生死线</p>
+    <p>左图比"<b>裸增长</b>"：三条多项式上界和 \(2^N\) 放在<b>对数纵轴</b>上。一开始它们挨得很近（小 \(N\) 时多项式甚至反超），但 \(2^N\) 是直线（对数下指数＝直线），多项式是<b>越来越平的曲线</b>，迟早被甩开十万八千里。右图（拨动 \(\varepsilon\) 滑块）才是真正的payoff：看 <b>\(m_{\mathcal H}(N)\cdot e^{-2\varepsilon^2N}\)</b> 这个泛化界的核心量——</p>
+    <ul class="ul cjk">
+      <li><b>用 \(M=2^N\)（红）</b>：\(2^N e^{-2\varepsilon^2N}=e^{N(\ln 2-2\varepsilon^2)}\)。只要 \(\varepsilon<\sqrt{\ln2/2}\approx0.589\)，指数里是正的，<mark>整个界冲向 \(+\infty\)</mark>——废了，什么都保证不了。</li>
+      <li><b>用多项式 \(m_{\mathcal H}(N)\)（绿）</b>：多项式 \(\times\,e^{-2\varepsilon^2N}\)，指数衰减永远碾压多项式增长，<mark>对任意 \(\varepsilon>0\) 都 \(\to 0\)</mark>。这就是可学习。</li>
+    </ul>
+    <div class="seg cjk" id="polyexp-seg">
+      <button data-mode="grow" class="on">裸增长（对数轴）</button>
+      <button data-mode="bound">乘上 e^(−2ε²N) 后的界</button>
+    </div>
+    <div class="controls cjk" id="polyexp-ctrls" style="display:none">
+      <div class="ctrl"><label>ε（容忍误差） <span class="val" id="v-pe-eps">0.30</span></label><input id="pe-eps" type="range" min="0.05" max="0.7" step="0.01" value="0.30"></div>
+    </div>
+    <div class="plotwrap"><div id="p-polyexp" class="plot"></div></div>
+    <div class="readout cjk"><span class="rd-note" id="polyexp-read">对数轴下：指数是直线，多项式是会"压弯"的曲线。</span></div>
+  </div>
+
+  <div class="mod d3 cjk"><p class="mod-label">◆ 三维 · 把"封顶开关"立起来看：\(\log_2 B(N,k)\) 曲面</p>
+    <p>这是这一节我最想让你"转着看"的一张图。横面是 \((N,k)\) 网格，<b>高度＝\(\log_2 B(N,k)\)</b>（取对数后，\(2^N\) 那面墙变成斜率为 1 的<b>平面</b>，方便和多项式对比）。拖动旋转、滚轮缩放：</p>
+    <ul class="ul cjk">
+      <li><b>沿 \(k>N\) 那一侧（后墙）</b>：没有有效约束，\(B=2^N\)，高度 \(=N\)，是一面<b>笔直陡峭的斜墙</b>——指数。</li>
+      <li><b>固定一个小 \(k\) 切一刀（比如 \(k=2,3\)）</b>：那条剖面是<b>缓缓上抬的多项式坡</b>，被死死压在斜墙下方。\(k\) 越小，坡越平、起得越晚。</li>
+      <li><mark>"断点"在这张图里就是你沿 \(k\) 轴往回拨的那个开关</mark>：每往小拨一格，就把曲面从指数墙削成更低一阶的多项式坡。把指数"围捕"成多项式，视觉上就是这一下削平。</li>
+    </ul>
+    <div class="plotwrap"><div id="p-bsurface" class="plot tall"></div></div>
+    <div class="readout cjk" style="background:var(--violet-soft);border-color:var(--violet)"><span style="color:var(--violet);font-weight:600">读图</span> <span class="rd-note">这张曲面是纯 Canvas 手绘的（本讲义所有 3D 都不用 WebGL，避免"WebGL is not supported"那类报错）；拖不动时可滚轮缩放后再拖。</span></div>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 小盲点 · 上界 ≠ 处处都紧（这里先埋个雷）</p>
+    <p>这三个例子的 Sauer 上界都恰好等于精确值，容易让人以为"\(m_{\mathcal H}(N)=\sum\binom Ni\)永远成立"。<b>不对</b>。\(B(N,k)\) 是"<b>断点为 \(k\) 的所有假设空间里最坏的那个</b>"，你手上具体的 \(\mathcal H\) 可能远没那么能分。Sauer 给的是<b>天花板</b>，不是<b>实测身高</b>。这个"界很松"的问题会在第三部分（盲点）里被放大成一个对整个 VC 理论的灵魂拷问——记住这里的伏笔。</p>
+  </div>
+</section>
+
+<section class="part-head cjk">
+  <div class="pk">2</div>
+  <span class="part-kicker">print 6 · 任务二 · Replacing M with mₕ(N)</span>
+  <h2>第二个任务：证明 mₕ(N) 真能替换 M</h2>
+  <p>任务一证完了"增长函数是多项式"，但它只是个<b>组合数</b>——还没被允许走进概率不等式。任务二要补的，正是当年第二节<b>跳过的那一步</b>：凭什么能把联合界里的 \(M\)（甚至无穷个假设）直接换成 \(m_{\mathcal H}(N)\)？这一路有<b>两道坎</b>：① 多个假设的"坏事件"在重叠，联合界严重高估（→ 用增长函数刻画重叠）；② 真正要管的 \(E_{out}\) <b>定义在无穷总体上、永远观测不到</b>（→ 偷一份"幽灵样本"把它换掉）。跨过这两坎，得到的不是教科书最干净的式子，而是略丑却严格的 <b>VC 不等式</b>。</p>
+</section>
+
+<section id="t-goal" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>继承自任务一的多项式 mₕ(N)</span>
+    <span class="rel dual"><span class="dot"></span>对照：联合界版霍夫丁</span>
+    <span class="rel warn"><span class="dot"></span>剧透：最终式子不是这个"干净版"</span>
+  </div>
+  <h3 class="topic cjk">2.1 想要的式子 vs 真正到手的式子</h3>
+  <p class="topic-en">The inequality we want vs the one we actually get</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 把"假设个数"换成"花样个数"</p>
+    <p>第二节那条联合界（union bound）版的霍夫丁是这样来的：单个固定假设 \(h\)，霍夫丁保证 \(P[\,|E_{in}(h)-E_{out}(h)|>\varepsilon\,]\le 2e^{-2\varepsilon^2N}\)。但学习算法会<b>在整个 \(\mathcal H\) 里挑</b>那个 \(E_{in}\) 最小的 \(g\)，于是要管的是"<b>存在某个 \(h\) 翻车</b>"的概率。最粗暴的办法——把每个假设翻车的概率全加起来（联合界）：</p>
+    <p>$$P\!\left[\exists h\in\mathcal H:\ |E_{in}(h)-E_{out}(h)|>\varepsilon\right]\;\le\;\sum_{h\in\mathcal H}2e^{-2\varepsilon^2N}\;=\;2\,M\,e^{-2\varepsilon^2N}.$$</p>
+    <p>\(M=|\mathcal H|\) 一无穷就废。任务一已经告诉我们：在 \(N\) 个点上，再多的假设<b>本质上只有 \(m_{\mathcal H}(N)\) 种不同表现</b>。所以"想要的式子"自然是把 \(M\) 替换掉：</p>
+    <p>$$\boxed{\ \text{Want:}\qquad P\!\left[|E_{in}(g)-E_{out}(g)|>\varepsilon\right]\;\le\;2\,m_{\mathcal H}(N)\,e^{-2\varepsilon^2N}\ }$$</p>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 关键 · 这步替换"看着显然"，其实有两个隐藏漏洞</p>
+    <p>把 \(M\) 写成 \(m_{\mathcal H}(N)\) 不是换个记号那么简单。两个坑：</p>
+    <ol class="steps cjk">
+      <li><b>漏洞一：联合界本身在浪费。</b>不同假设的"坏事件"严重<b>重叠</b>（很多假设在这 \(N\) 个点上分得一模一样），把它们的概率简单相加是巨大的高估。增长函数 \(m_{\mathcal H}(N)\) 恰好就是用来<b>刻画这种重叠</b>的——这是 §2.2 的内容。</li>
+      <li><b>漏洞二：\(E_{out}\) 根本观测不到。</b>\(m_{\mathcal H}(N)\) 只数了"在样本 \(N\) 个点上的花样"，可 \(E_{out}\) 是在<b>整个无穷输入空间</b>上定义的——增长函数管不到样本之外。直接把 \(E_{out}\) 和"样本上的二分"挂钩，逻辑是断的。补这条逻辑要靠"幽灵样本"——这是 §2.4。</li>
+    </ol>
+    <p>正因为补这两个漏洞要付代价，<b>真正到手的式子比"想要的"丑一圈</b>（见下方剧透卡）。这正是后面 VC 不等式的要点：常数和细节会变，但<b>多项式 × 指数衰减</b>这个结构不会变（§2.5 详说）。</p>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 剧透：Vapnik–Chervonenkis 不等式</p>
+    <p>把两个漏洞都堵上后，最终的严格结论是（注意三处变化已用色块标出）：</p>
+    <p>$$P\!\left[|E_{in}(g)-E_{out}(g)|>\varepsilon\right]\;\le\;\underbrace{4}_{\color{#B0442B}{2\to4}}\;m_{\mathcal H}\!\big(\underbrace{2N}_{\color{#B0442B}{N\to2N}}\big)\;e^{-\frac{1}{8}\varepsilon^2N}\quad{\color{#B0442B}{\big(\tfrac{1}{8}\text{ 而非 }2\big)}}$$</p>
+    <p class="lead cjk">这就是大名鼎鼎的 <b>VC 不等式</b>。常数 \(2\to4\)、\(N\to2N\)（幽灵样本翻倍）、指数里 \(2\to\tfrac18\)（三角不等式 + 两次抽样各让一步）——全是为堵漏洞付的"过路费"。但<mark>它依然是"多项式 × 指数衰减"，所以依然 \(\to0\)，依然保证可学习</mark>。下面三节就是把这三处变化各自的来历讲清楚。</p>
+  </div>
+</section>
+
+<section id="t-paint" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>堵漏洞一：重叠</span>
+    <span class="rel tool"><span class="dot"></span>交互：三种界的"涂色面积"</span>
+    <span class="rel general"><span class="dot"></span>增长函数 = 重叠的刻画</span>
+  </div>
+  <h3 class="topic cjk">2.2 三张图看懂：增长函数其实在"数重叠"</h3>
+  <p class="topic-en">Hoeffding → Union Bound → VC Bound: the growth function characterizes the overlaps</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 把"数据集空间"想成一面墙，坏事件是墙上的污渍</p>
+    <p>换个舞台：不再画输入点，而是画"<b>所有可能的数据集</b>"组成的空间（课件里那个标着 \(\mathcal D\) 的方框）。对某个假设 \(h\)，"它会让 \(E_{in}\) 严重偏离 \(E_{out}\)"的那些<b>倒霉数据集</b>，在这面墙上是一小块污渍。霍夫丁说：单块污渍面积 \(\le 2e^{-2\varepsilon^2N}\)，很小。</p>
+    <ul class="ul cjk">
+      <li><b>(a) Hoeffding</b>：只有<b>一块</b>污渍。干净、可控。</li>
+      <li><b>(b) Union Bound</b>：\(M\) 个假设＝\(M\) 块污渍，联合界把它们<b>当作互不重叠</b>，面积直接相加。可一旦 \(M\) 大，"总面积"轻松超过整面墙（概率 &gt; 1，废话一句），<mark>因为现实里这些污渍是层层叠叠盖在一起的</mark>。</li>
+      <li><b>(c) VC Bound</b>：很多假设在这 \(N\) 个点上分法相同 → 它们的污渍<b>几乎完全重合</b>。真正"独立"的污渍块数，被 \(m_{\mathcal H}(N)\) 卡住。课件原话：<b>growth function characterizes the overlaps</b>。</li>
+    </ul>
+  </div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 课件那句"涂 100 遍"的刷墙比喻</p>
+    <p>课件 (c) 里写着一句很妙的话：<b>"假设任何一个点一旦被涂，就会被涂 100 遍，那么被涂色的总面积至多是 \(1/100\)。"</b>翻译成人话：如果你手上的"油漆量"（所有污渍面积之和，也就是联合界给的那个高估值）是固定的，而每块被涂的地方都被<b>重复涂了 100 层</b>，那真正<b>被覆盖到的墙面</b>只有总油漆的百分之一。<mark>重叠越重，联合界高估得越离谱，真实的坏概率越小。</mark>增长函数干的就是"数一数到底重复涂了多少层"这件事——它把 \(M\) 这桶油漆，折算成实际覆盖面积 \(m_{\mathcal H}(N)\)。</p>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 切换三种界，看"被涂总面积"怎么变</p>
+    <p>下面这面墙就是"数据集空间"。每个小污渍＝一个假设的坏事件区。拖动滑块改变假设数量，再切换三种记账方式，盯住右下角的<b>"按联合界算的总面积"</b>与<b>"实际覆盖面积"</b>的差距：</p>
+    <div class="seg cjk" id="paint-seg">
+      <button data-mode="hoeff" class="on">(a) Hoeffding：1 块</button>
+      <button data-mode="union">(b) Union：M 块相加</button>
+      <button data-mode="vc">(c) VC：按 mₕ 折叠</button>
+    </div>
+    <div class="controls cjk">
+      <div class="ctrl"><label>假设数量（示意） <span class="val" id="v-paint-m">40</span></label><input id="paint-m" type="range" min="1" max="120" step="1" value="40"></div>
+    </div>
+    <div class="plotwrap"><div id="p-paint" class="svgfig" style="background:var(--card);border:1px solid var(--line)"></div></div>
+    <div class="readout cjk">
+      <span>联合界记账（污渍面积直接相加）：<b id="paint-union" class="badval">—</b></span>
+      <span>实际覆盖（去掉重叠后）：<b id="paint-actual" class="okval">—</b></span>
+      <span class="rd-note" id="paint-read">切到 Union 把假设数拉大，看"相加面积"如何冲破整面墙——那就是联合界的浪费。</span>
+    </div>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 盲点提示 · 这张图是"示意"，不是严格证明</p>
+    <p>污渍折叠成 \(m_{\mathcal H}\) 块只是<b>几何直觉</b>。真要把"重叠"严格变成 \(m_{\mathcal H}(N)\) 进不等式，还差一步硬核操作——因为污渍住在"数据集空间"里，而 \(m_{\mathcal H}\) 只数"样本上的二分"，两者并不天然对齐。这正是 §2.3–2.4 要用<b>幽灵样本</b>补的那道缝。别被漂亮的刷墙比喻骗过去，<mark>真正的证明落点在"样本内 vs 幽灵样本内"，而不是"样本内 vs 总体"</mark>。</p>
+  </div>
+</section>
+
+<section id="t-eout" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>堵漏洞二的前半：先看清漏洞</span>
+    <span class="rel warn"><span class="dot"></span>Eₒᵤₜ 住在样本之外</span>
+    <span class="rel dual"><span class="dot"></span>mₕ 只数样本上的花样</span>
+  </div>
+  <h3 class="topic cjk">2.3 死结：Eₒᵤₜ 永远观测不到，而 mₕ 只管样本内</h3>
+  <p class="topic-en">The deadlock: E_out is unobservable, yet the growth function only counts on-sample dichotomies</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 两个量住在两个世界</p>
+    <p>把 §2.1 的漏洞二说透。回忆两个误差的定义域：</p>
+    <p>$$E_{in}(h)=\frac1N\sum_{n=1}^{N}[\![\,h(x_n)\ne f(x_n)\,]\!]\quad(\text{只用 }N\text{ 个样本点}),\qquad E_{out}(h)=\mathbb{E}_{x\sim P}\big[[\![\,h(x)\ne f(x)\,]\!]\big]\quad(\text{对整个分布 }P\text{ 求期望}).$$</p>
+    <ul class="ul cjk">
+      <li><b>\(E_{in}\)</b>：手里 \(N\) 个点上一数就有，<b>可观测</b>。</li>
+      <li><b>\(E_{out}\)</b>：要对<b>整个（往往无穷的）输入空间</b>积分/求期望，你<b>永远拿不到全部数据</b>，所以<b>不可观测</b>。它是上帝视角的真值。</li>
+    </ul>
+    <p>而我们刚证完的那把利器——增长函数 \(m_{\mathcal H}(N)\)——只回答一个问题："<b>在这 \(N\) 个样本点上</b>，\(\mathcal H\) 能切出几种不同标号？"它对样本<b>之外</b>的点一无所知。</p>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 课上卡点 · "把假设分组"为什么不能直接套到 Eₒᵤₜ 上</p>
+    <p>这是 gawain 在课上反复绕不过去的地方，值得慢讲。我们想这样论证：既然无穷个假设在 \(N\) 点上只有 \(m_{\mathcal H}(N)\) 种表现，那就把它们<b>按二分分组</b>，每组只留一个代表，于是联合界里的 \(M\) 就缩成 \(m_{\mathcal H}(N)\)。</p>
+    <p><b>问题出在哪？</b>同一组里的假设，在样本上 \(E_{in}\) 完全相同（毕竟二分一样）——这没问题。但它们的 \(E_{out}\) 可以<b>各不相同</b>！因为 \(E_{out}\) 取决于样本<b>之外</b>那无穷多个点上的分法，而那些点根本没参与分组。<mark>"样本上分法相同"\(\;\not\Rightarrow\;\)"\(E_{out}\) 相同"</mark>，所以坏事件 \(\{|E_{in}-E_{out}|>\varepsilon\}\) 不能干净地按二分归并——分组这一刀，砍不到 \(E_{out}\) 头上。</p>
+    <p>逻辑链在这里<b>断了</b>。要接上，必须想办法把那个赖在样本外的 \(E_{out}\) <b>请出局</b>，换成一个也住在"有限样本"里的东西。这就引出了整个证明最妙的一招。</p>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · "同二分"能合并 E_in，却合并不了 E_out</p>
+    <p>为什么分组这刀砍不到 \(E_{out}\)？看这张图：两个假设 \(h_1\)（实线）、\(h_2\)（虚线）在 6 个<b>样本点上标号完全相同</b>（所以 \(E_{in}\) 一样、属于同一个二分组），可在样本<b>之间</b>它俩走的路不一样——于是它们在整个空间上的错误率 \(E_{out}\) 也不一样。</p>
+    <div class="svgfig" id="p-groupeout" style="max-width:760px"></div>
+    <p class="muted">"样本上分法相同"只锁住了 \(E_{in}\)，锁不住依赖样本外那无穷多点的 \(E_{out}\)。所以不能直接把 \(M\) 换成 \(m_{\mathcal H}(N)\) —— 必须先把 \(E_{out}\) 请出局（下一节的幽灵样本）。</p>
+  </div>
+</section>
+
+<section id="t-ghost" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>堵漏洞二的后半：偷换 Eₒᵤₜ</span>
+    <span class="rel tool"><span class="dot"></span>蒙特卡洛交互：亲手验证 2 倍关系</span>
+    <span class="rel general"><span class="dot"></span>样本量翻倍 → mₕ(2N)</span>
+  </div>
+  <h3 class="topic cjk">2.4 偷天换日：用"幽灵样本" Eᵢₙ′ 替掉 Eₒᵤₜ</h3>
+  <p class="topic-en">The ghost (phantom) sample: replacing the unobservable E_out with a second in-sample error</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 再抽一份"平行宇宙"的样本</p>
+    <p>既然 \(E_{out}\) 这个上帝视角的真值碰不得，那就<b>别碰它</b>。换个思路：从<b>同一个分布 \(P\)</b> 里再独立抽一份和训练集等大的样本 \(\mathcal D'\)（\(N\) 个点），叫它<b>幽灵样本 / 影子样本</b>（ghost sample）。它的样本内误差记 \(E_{in}'\)。</p>
+    <p>关键观察：\(E_{in}\) 和 \(E_{in}'\) 都是 \(E_{out}\) 的<b>无偏估计</b>（都是同分布抽样的经验频率，期望都等于 \(E_{out}\)）。所以它俩<b>会围着同一个真值 \(E_{out}\) 一起抖动</b>。<mark>既然两个都在追同一个看不见的靶心，那"它俩彼此差多远"就能反映"它们各自离靶心多远"——而这一步完全不需要知道靶心在哪。</mark></p>
+  </div>
+
+  <div class="mod flow cjk"><p class="mod-label">↦ 推导 · 三角不等式：把 |Eᵢₙ−Eₒᵤₜ| 换成 |Eᵢₙ−Eᵢₙ′|</p>
+    <ol class="steps cjk">
+      <li><b>幽灵引理（核心）。</b>可以证明：
+      $$P\big[\,|E_{in}-E_{out}|>\varepsilon\,\big]\;\le\;2\,P\big[\,|E_{in}-E_{in}'|>\tfrac{\varepsilon}{2}\,\big].$$
+      <b>为什么？</b>假设在 \(\mathcal D\) 上坏事件发生了，即 \(E_{in}\) 离 \(E_{out}\) 超过 \(\varepsilon\)。此时幽灵样本 \(E_{in}'\) 作为 \(E_{out}\) 的无偏估计，有<b>至少一半的概率</b>落在 \(E_{out}\) 的"正常一侧"（\(\le\tfrac\varepsilon2\) 之内）。一旦如此，由三角不等式 \(|E_{in}-E_{in}'|\ge|E_{in}-E_{out}|-|E_{out}-E_{in}'|>\varepsilon-\tfrac\varepsilon2=\tfrac\varepsilon2\)。<b>那个 \(\tfrac12\) 翻上来就成了右边的因子 2，\(\varepsilon\) 让一半就成了 \(\tfrac\varepsilon2\)。</b></li>
+      <li><b>Eₒᵤₜ 出局了。</b>看右边：\(|E_{in}-E_{in}'|\) 只牵涉 \(\mathcal D\) 和 \(\mathcal D'\) 里<b>总共 \(2N\) 个实实在在的样本点</b>——那个赖着不走的 \(E_{out}\) <b>被彻底替换掉了</b>。逻辑链接上了。</li>
+      <li><b>现在才能安全分组。</b>事件只关于 \(2N\) 个点，于是按二分分组的招数终于合法：\(\mathcal H\) 在这 \(2N\) 个点上只有 <b>\(m_{\mathcal H}(2N)\)</b> 种表现——这就是式子里 \(N\) 变 \(2N\) 的来历。</li>
+      <li><b>对差值用霍夫丁。</b>两份等大独立样本经验均值之差，霍夫丁给出 \(\sim e^{-\frac18\varepsilon^2N}\)（\(\tfrac\varepsilon2\) 平方掉一个 \(\tfrac14\)，再叠上两样本各 \(N\) 的方差合并，常数从 \(2\) 掉到 \(\tfrac18\)）。叠加前面的因子 2 与两侧概率，前缀凑成 <b>4</b>。</li>
+      <li><b>合体。</b>
+      $$P\big[\,|E_{in}(g)-E_{out}(g)|>\varepsilon\,\big]\;\le\;4\,m_{\mathcal H}(2N)\,e^{-\frac18\varepsilon^2N}.\qquad\blacksquare$$
+      <mark>任务二完成，VC 不等式成立。</mark></li>
+    </ol>
+    <p class="muted">Xander 课上的总结很到位：<b>"这数学证明更多是概念性的东西，运算上都没有微积分，就涉及一点概率论。"</b>难点全在"再抽一份幽灵样本"这个<b>构造</b>上，代数本身是初等的。</p>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · 三角不等式那一步，画在数轴上看</p>
+    <p>步骤 1 那个三角不等式最值得画出来。拖动滑块移动 \(E_{in}\)，看它一旦离真值 \(E_{out}\) 超过 \(\varepsilon\)（红），而幽灵 \(E_{in}'\) 又大概率落在 \(E_{out}\) 的 \(\pm\varepsilon/2\) 绿带里，那么 \(E_{in}\) 与 \(E_{in}'\) 就必然相差 \(>\varepsilon/2\)（紫）：</p>
+    <div class="controls cjk">
+      <div class="ctrl"><label>E_in 的位置 <span class="val" id="v-tri-ein">0.52</span></label><input id="tri-ein" type="range" min="0.05" max="0.95" step="0.01" value="0.52"></div>
+      <div class="ctrl"><label>ε <span class="val" id="v-tri-eps">0.15</span></label><input id="tri-eps" type="range" min="0.05" max="0.35" step="0.01" value="0.15"></div>
+    </div>
+    <div class="svgfig" id="p-triangle" style="max-width:760px"></div>
+    <div class="readout cjk"><span class="rd-note" id="tri-read">拖动 E_in 试试。</span></div>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 亲手验证幽灵引理那个"2 倍"关系</p>
+    <p>光看证明容易将信将疑，不如<b>用蒙特卡洛跑给你看</b>。设真值 \(E_{out}=0.30\)（图上灰线，<b>但证明里我们假装不知道它</b>）。每次抽样：从 \(\mathrm{Binomial}(N,0.3)/N\) 各抽一个 \(E_{in}\)、一个 \(E_{in}'\)。点"开抽"跑几千次，比较两个频率——理论保证 \(P[|E_{in}-E_{out}|>\varepsilon]\le 2\,P[|E_{in}-E_{in}'|>\tfrac\varepsilon2]\)：</p>
+    <div class="controls cjk">
+      <div class="ctrl"><label>样本量 N <span class="val" id="v-gh-n">40</span></label><input id="gh-n" type="range" min="10" max="200" step="5" value="40"></div>
+      <div class="ctrl"><label>ε <span class="val" id="v-gh-eps">0.15</span></label><input id="gh-eps" type="range" min="0.05" max="0.35" step="0.01" value="0.15"></div>
+    </div>
+    <div class="btnrow cjk"><button id="gh-run" class="btn-primary">▶ 开抽 5000 次</button><button id="gh-toggle" class="btn-ghost">显示/隐藏 Eₒᵤₜ 灰线</button></div>
+    <div class="plotwrap"><div id="p-ghost" class="svgfig" style="background:var(--card);border:1px solid var(--line)"></div></div>
+    <div class="readout cjk">
+      <span>左边（需上帝视角）：\(P[|E_{in}-E_{out}|>\varepsilon]\approx\) <b id="gh-pin" class="badval">—</b></span>
+      <span>右边（只用样本）：\(2\,P[|E_{in}-E_{in}'|>\tfrac\varepsilon2]\approx\) <b id="gh-pgap" class="okval">—</b></span>
+      <span class="rd-note" id="gh-note">点"开抽"。右边应当 ≥ 左边——这就是用看得见的量罩住看不见的量。</span>
+    </div>
+  </div>
+</section>
+
+<section id="t-vc" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>任务一 + 任务二 合体</span>
+    <span class="rel tool"><span class="dot"></span>交互：亲手算这条界有多松</span>
+    <span class="rel limit"><span class="dot"></span>埋雷：界常常"空洞"（δ≥1）</span>
+  </div>
+  <h3 class="topic cjk">2.5 合体：VC 不等式，与它惊人的"松"</h3>
+  <p class="topic-en">Putting it together — the VC inequality, and how loose it really is</p>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 两种等价读法</p>
+    <p>把两个任务拧成一句话——<b>有断点 ⟹ 增长函数多项式（任务一）⟹ 可塞进概率界替换 M（任务二）⟹ 泛化间隔随 \(N\) 收敛</b>：</p>
+    <p>$$P\!\left[|E_{in}(g)-E_{out}(g)|>\varepsilon\right]\;\le\;\underbrace{4\,m_{\mathcal H}(2N)\,e^{-\frac18\varepsilon^2N}}_{\displaystyle =:\ \delta}.$$</p>
+    <p>反解出来就是工程上更常用的"<b>带置信度的泛化间隔</b>"读法：以至少 \(1-\delta\) 的概率，</p>
+    <p>$$E_{out}(g)\;\le\;E_{in}(g)\;+\;\underbrace{\sqrt{\tfrac{8}{N}\ln\tfrac{4\,m_{\mathcal H}(2N)}{\delta}}}_{\text{泛化间隔 }\Omega(N,\,d_{\text{VC}},\,\delta)}.$$</p>
+    <p>用 \(m_{\mathcal H}(2N)\le\sum_{i=0}^{d_{\text{VC}}}\binom{2N}{i}\)（\(d_{\text{VC}}=k-1\)），间隔大致是 \(\Omega\sim\sqrt{\dfrac{d_{\text{VC}}\ln N}{N}}\)：<b>VC 维越大、间隔越宽；样本越多、间隔越窄</b>，但收敛慢得只有 \(\sqrt{\ln N/N}\)。</p>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 交互 · 拨一拨，看这条界什么时候"有用"、什么时候"废话"</p>
+    <p>下面直接按公式算。两个视图：左视图固定 \(\varepsilon\) 看<b>失败概率 \(\delta(N)\)</b>（对数纵轴，跨过红色 \(\delta=1\) 线以下才有意义）；右视图固定 \(\delta\) 看<b>保证的泛化间隔 \(\varepsilon(N)\)</b>。拖动 \(d_{\text{VC}}\) 感受它对"要多少样本"的恐怖放大：</p>
+    <div class="seg cjk" id="vc-seg">
+      <button data-mode="delta" class="on">失败概率 δ(N)</button>
+      <button data-mode="eps">泛化间隔 ε(N)</button>
+    </div>
+    <div class="controls cjk">
+      <div class="ctrl"><label>VC 维 d_VC <span class="val" id="v-vc-dvc">10</span></label><input id="vc-dvc" type="range" min="1" max="80" step="1" value="10"></div>
+      <div class="ctrl" id="vc-eps-ctrl"><label>容忍误差 ε <span class="val" id="v-vc-eps">0.10</span></label><input id="vc-eps" type="range" min="0.02" max="0.30" step="0.01" value="0.10"></div>
+      <div class="ctrl" id="vc-delta-ctrl" style="display:none"><label>置信度参数 δ <span class="val" id="v-vc-delta">0.10</span></label><input id="vc-delta" type="range" min="0.01" max="0.5" step="0.01" value="0.10"></div>
+    </div>
+    <div class="plotwrap"><div id="p-vcbound" class="plot"></div></div>
+    <div class="readout cjk">
+      <span class="rd-note" id="vc-read">在当前设定下读一个点……</span>
+    </div>
+    <div class="readout cjk" style="background:var(--rust-soft);border-color:var(--rust)">
+      <span style="color:var(--rust);font-weight:700">现实震撼</span>
+      <span class="rd-note" id="vc-samplecomp">把 d_VC 拉到 50、ε 设 0.1，看看要多少样本 δ 才肯掉到 1 以下——答案常常是天文数字。</span>
+    </div>
+  </div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 要点 · 决定生死的是"结构"，不是常数</p>
+    <p>看 VC 不等式右边 \(4\,m_{\mathcal H}(2N)\,e^{-\frac18\varepsilon^2N}\)，真正要记住的是它的<b>结构</b>：<b>一个 \(N\) 的多项式（\(m_{\mathcal H}(2N)\)）乘上一个指数衰减（\(e^{-\frac18\varepsilon^2N}\)）</b>。</p>
+    <ul class="ul cjk">
+      <li><b>为什么一定收敛</b>：指数衰减 \(e^{-cN}\) 压低的速度<b>永远快过</b>多项式 \(N^{d}\) 抬高的速度。所以 \(N\to\infty\) 时整个乘积 \(\to 0\)，失败概率 \(\delta\to0\)——可学性就钉死在这。</li>
+      <li><b>前面的常数（\(4\)、\(\tfrac18\)）无关大局</b>：把 \(4\) 换成 \(2\)、把 \(\tfrac18\) 换成别的正数，收敛与否<b>丝毫不变</b>，只是把"需要多少样本"平移一点。这些常数来自证明里一连串放缩（幽灵样本的因子 2、\(\tfrac\varepsilon2\) 平方、两样本方差合并），<b>本就是为了好证取的宽松值</b>。</li>
+      <li><b>所以正确的记忆方式</b>：记<mark>"多项式 × 指数衰减 → 0"</mark>这个结构，而不是背 \(4\) 和 \(\tfrac18\)。下一部分会把这个"别迷信常数"的态度推到极致——因为这条界<b>松</b>得，常数本来就不该被当真。</li>
+    </ul>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 补充 · VC 维 \(d_{\text{VC}}\)：把"断点 −1"扶正成主角（出自 LFD 书 第 2 章）</p>
+    <p>课件把 \(k-1\) 一笔带过，但<b>《Learning from Data》</b>把它立成了核心概念——<b>VC 维</b>：</p>
+    <p>$$d_{\text{VC}}(\mathcal H)\;=\;\text{能被 }\mathcal H\text{ 打散的最大点数}\;=\;(\text{最小断点})-1.$$</p>
+    <p>等价地：\(N\le d_{\text{VC}}\) 时 \(m_{\mathcal H}(N)=2^N\)（还打得散）；\(N>d_{\text{VC}}\) 时 \(m_{\mathcal H}(N)<2^N\)（再也打不散）。把前面那张"断点表"翻成 VC 维：</p>
+    <table class="tab cjk">
+      <thead><tr><th>假设空间</th><th>断点 \(k\)</th><th>VC 维 \(d_{\text{VC}}=k-1\)</th><th>≈ 自由参数个数</th></tr></thead>
+      <tbody>
+        <tr><td>正射线</td><td>2</td><td>1</td><td>1（阈值 \(a\)）</td></tr>
+        <tr><td>正区间</td><td>3</td><td>2</td><td>2（两个端点）</td></tr>
+        <tr><td>2D 感知机</td><td>4</td><td>3</td><td>3（\(w_1,w_2,b\)）</td></tr>
+        <tr><td>\(d\) 维感知机</td><td>\(d+2\)</td><td>\(d+1\)</td><td>\(d+1\)</td></tr>
+        <tr><td>凸集</td><td>\(\infty\)</td><td>\(\infty\)</td><td>无穷</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">书里反复强调的直觉：<b>\(d_{\text{VC}}\approx\) 模型的"有效自由度"</b>（effective number of parameters）。它不等同于"参数个数"（有的模型参数很多而 \(d_{\text{VC}}\) 很小，反之亦然），但这些经典例子里两者恰好相等，便于建立直觉。</p>
+  </div>
+
+  <div class="mod d2 cjk"><p class="mod-label">▤ 图解 · d_VC 就是 m_H 还贴着 2^N 的最后一站</p>
+    <p>拨动 \(d_{\text{VC}}\) 滑块（对应不同家族）：在 \(N\le d_{\text{VC}}\) 之前，\(m_{\mathcal H}(N)\) 与 \(2^N\) <b>完全重合</b>（任意标号都打得出，能打散）；过了 \(d_{\text{VC}}\)，\(m_{\mathcal H}\) 就<b>掉到 \(2^N\) 之下</b>变成多项式（再也打不散）。那个"掉下来的拐点"就是 \(d_{\text{VC}}\)。</p>
+    <div class="controls cjk"><div class="ctrl"><label>d_VC <span class="val" id="v-vcdim-dvc">3</span></label><input id="vcdim-dvc" type="range" min="1" max="6" step="1" value="3"></div></div>
+    <div class="svgfig" id="p-vcdim" style="max-width:760px"></div>
+    <div class="readout cjk"><span class="rd-note" id="vcdim-read">拨动 d_VC 看拐点位置。</span></div>
+  </div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 补充 · 样本复杂度的"经验法则"与这条界的"万能性"（书 第 2 章）</p>
+    <ul class="ul cjk">
+      <li><b>样本复杂度</b>：要让泛化间隔 \(\le\varepsilon\)、置信度 \(1-\delta\)，反解得 \(N\ge\dfrac{8}{\varepsilon^2}\ln\dfrac{4\,m_{\mathcal H}(2N)}{\delta}\)。这是隐式不等式（两边都有 \(N\)），但它说明 \(N\) 大致<b>正比于 \(d_{\text{VC}}\)</b>。书里给了那条著名<b>经验法则</b>：实践中 <mark>\(N\gtrsim 10\,d_{\text{VC}}\)</mark> 通常就够泛化——比理论 VC 界索要的样本量小好几个数量级（上面那个交互正是这反差）。</li>
+      <li><b>万能性（也是它"松"的根源）</b>：这条界<b>对任意 \(\mathcal H\)、任意目标 \(f\)、任意输入分布 \(P(x)\)、任意学习算法都成立</b>——它从不假设你的数据长什么样。这种"放之四海皆准"正是它的力量，也正是它<b>必然很松</b>的原因：为覆盖最坏情况，它对你手上这个具体问题的良性结构一无所知。下一部分会把这点撕开讲。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="part-head cjk">
+  <div class="pk">3</div>
+  <span class="part-kicker">批判层 · Blind Spots & Critical Lens</span>
+  <h2>第三部分：盲点与批判——别被这条漂亮的界骗了</h2>
+  <p>你说过"没有谁百分百对，总有盲点"，也要我直白地批判着讲。那这部分就不再"讲证明"，而是<b>退后一步审判这套理论本身</b>：它到底保证了什么、又悄悄没保证什么；课上有哪几处说法其实站不住（包括 Xander 讲岔的一处，照实纠）；以及一个做<b>因果推断</b>的人为什么尤其不能把这条界当成护身符。三个盲点：① <b>这条界松到常常是废话</b>；② <b>mₕ 量的是假设空间、不是你的数据量</b>（连"断点数的是点还是特征"都被讲混过）；③ <b>整套理论只活在"二分类 + 同分布预测"这个沙盒里</b>。</p>
+</section>
+
+<section id="t-loose" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>承接 §2.5 的"现实震撼"</span>
+    <span class="rel limit"><span class="dot"></span>最坏情况 · 分布无关 · 一致界</span>
+    <span class="rel warn"><span class="dot"></span>深度学习直接打脸朴素读法</span>
+  </div>
+  <h3 class="topic cjk">3.1 盲点一：这条界"松"到什么程度？——松到几乎没法当工程工具</h3>
+  <p class="topic-en">Blind spot 1: the VC bound is so loose it is often practically vacuous</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 先认清它是"哪一种"界</p>
+    <p>VC 不等式的每个形容词都在为"松"埋单。它是一条——</p>
+    <ul class="ul cjk">
+      <li><b>最坏情况界（worst-case）</b>：对 \(\mathcal H\) 里<b>最难的那个假设</b>都成立。你实际选出的 \(g\) 通常远没那么坏。</li>
+      <li><b>分布无关界（distribution-free）</b>：对<b>任意</b>输入分布 \(P\) 都成立。代价是它<b>完全不敢利用</b>"你的数据其实分布得很友好"这件事。</li>
+      <li><b>一致收敛界（uniform）</b>：它罩住的是"\(\mathcal H\) 中<b>存在</b>某个假设翻车"的概率，而不是"你选的那个 \(g\) 翻车"。罩住一整片，当然要付溢价。</li>
+    </ul>
+    <p>三个"对所有……都成立"叠在一起，就是<mark>三层松弛连乘</mark>。它换来的是无与伦比的<b>普适性</b>——但普适的反面就是<b>钝</b>。</p>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 松弛到底来自哪三步</p>
+    <table class="tab cjk">
+      <thead><tr><th>证明步骤</th><th>松弛来源</th><th>有多松</th></tr></thead>
+      <tbody>
+        <tr><td>霍夫丁不等式</td><td>假设方差取最坏（\(p(1{-}p)\le\tfrac14\)），且对尾部一律用指数上界</td><td>实际方差小、分布集中时，高估若干倍</td></tr>
+        <tr><td>增长函数替 M（重叠）</td><td>\(m_{\mathcal H}(2N)\) 仍是"<b>断点为 \(k\) 的最坏假设空间</b>"，且把不同二分组当作<b>互斥</b>联合界相加</td><td>真实重叠更重、相关性更强 → 又高估一大截</td></tr>
+        <tr><td>幽灵样本 + 三角不等式</td><td>\(N\to2N\)、\(\varepsilon\to\tfrac\varepsilon2\)、那个"至少一半概率"的因子 2</td><td>常数项整体再松一档（\(2\to4\)，指数 \(2\to\tfrac18\)）</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">把三层乘起来，得到的"失败概率上界" \(\delta\) 在现实参数下常常 <b>\(\ge1\)</b>——也就是<b>"翻车概率不超过 100%"</b>，一句正确的废话（vacuous bound）。你在 §2.5 那个交互里把 \(d_{\text{VC}}\) 拉到几十、\(\varepsilon\) 设 \(0.1\) 时，亲眼见过 \(\delta\) 赖在 1 上方不肯下来。</p>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 直接打脸 · 深度网络是 VC 朴素读法的活体反例</p>
+    <p>现代深度网络的参数量（也就是 VC 维量级）动辄<b>远超</b>训练样本数 \(N\)，按 \(\Omega\sim\sqrt{d_{\text{VC}}\ln N/N}\) 朴素一算，泛化间隔应该<b>大到爆、根本学不会</b>。可它们偏偏泛化得很好。2017 年那篇著名的实验（同一个网络能把<b>随机标签</b>也背到零训练误差，说明它的"有效 \(d_{\text{VC}}\)"确实巨大）把这个矛盾摆到了明面上。结论很清楚：<mark>VC 维这把尺子，量不准深度学习真正的"有效复杂度"。</mark>它没说错（它是上界，上界永远成立），但它<b>太松，松到失去分辨力</b>。</p>
+  </div>
+
+  <div class="crit cjk"><p class="who">▲ 批判性结论 · 那 VC 还有什么用？</p>
+    <p>别从一个极端（"VC 是泛化圣经"）跳到另一个极端（"VC 没用"）。它的真实定位是<b>概念基石，不是工程标尺</b>：</p>
+    <p>① <b>存在性证明</b>：它第一次<b>严格</b>证明了"有限 \(d_{\text{VC}}\) ⟹ 可学习"，把"机器学习凭什么 work"从玄学变成定理。这是不可替代的认识论价值。<br>
+    ② <b>相对比较</b>：同一套松弛<b>对所有模型一视同仁</b>，所以拿来<b>横向比模型复杂度</b>、做模型选择的<b>定性</b>排序仍然管用——这也是经验法则 <b>\(N\gtrsim 10\,d_{\text{VC}}\)</b> 的来历（不是 VC 字面要求的天文数字，而是"间隔降到可接受档位"的工程折中）。<br>
+    ③ <b>它催生了整个后续领域</b>：正因为 VC 太松，才有了 Rademacher 复杂度、间隔界（margin / boosting）、PAC-Bayes、算法稳定性（stability），乃至解释深度网络的"双下降"（double descent）。<mark>知道 VC 松在哪，才看得懂这些新工具各自在补哪一刀。</mark></p>
+  </div>
+
+  <div class="gwn cjk"><p class="who">◆ 接你的计量经济学底子</p>
+    <p>这条 VC 界，本质就是统计学习里的<b>一致收敛 / 经验过程（empirical process）</b>结果——和你熟悉的 <b>Glivenko–Cantelli 定理</b>（经验分布一致收敛到真分布）、Donsker 类是同一家人。"分布无关 + 对整个函数类一致"正是<b>经验过程要付的普适性溢价</b>，对应你在计量里见过的"uniform laws of large numbers"。区别在：计量里你常常<b>愿意加分布假设</b>（正态、矩条件）来换更紧的渐近，而 VC 故意一个假设都不加，所以钝。把 \(d_{\text{VC}}\) 类比成"<b>最坏情况下的自由度</b>"会很顺手——但记住它是 worst-case 的自由度，不是你 OLS 里那个老实的 \(p\)。</p>
+  </div>
+</section>
+
+<section id="t-measures-h" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>呼应 §0.3 的"点 vs 特征"</span>
+    <span class="rel warn"><span class="dot"></span>mₕ 是 H 的属性，不是数据量</span>
+    <span class="rel limit"><span class="dot"></span>它对 P 和 f 一无所知</span>
+  </div>
+  <h3 class="topic cjk">3.2 盲点二：mₕ 量的是"假设空间的容量"，不是"你有多少数据"</h3>
+  <p class="topic-en">Blind spot 2: the growth function measures the hypothesis space, not the amount of data</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · 飞镖盘比喻：盘子变大，红区比例不能变大</p>
+    <p>课上那个飞镖盘比喻其实点出了最核心的一层混淆。\(m_{\mathcal H}(N)\) 是\(\;\)<b>"\(\mathcal H\) 在 \(N\) 个点上能涂出几种花样"</b>，它是<b>假设空间这台机器的能耐</b>、在"样本量 \(N\)"这个档位上的读数——<mark>它不是"你手上有多少数据"，也不是"世界上有多少种数据集"</mark>。</p>
+    <p>飞镖盘版本的说法：\(N\) 变大＝盘子变大（坏事件能发生的"靶面"变大），但霍夫丁保证<b>红区（坏概率）占比必须维持不变甚至缩小</b>。\(m_{\mathcal H}\) 增长，抵消不了 \(e^{-2\varepsilon^2N}\) 的指数收缩——只要它是多项式。所以"\(m_{\mathcal H}\) 随 \(N\) 涨"<b>不等于</b>"数据越多越危险"，恰恰相反，<b>数据越多越安全</b>，前提是机器容量（\(d_{\text{VC}}\)）有限。</p>
+  </div>
+
+  <div class="mod trap cjk"><p class="mod-label">⚠ 高频误读 · "数据越多 → 二分越多 → 越复杂？"</p>
+    <p>不少人（包括第一次学时的直觉）会把 \(m_{\mathcal H}(N)\) 随 \(N\) 增大，读成"我的数据集变复杂了"。<b>拆开</b>：</p>
+    <ul class="ul cjk">
+      <li>\(m_{\mathcal H}(N)\) 确实随 \(N\) 单调增——但增的是<b>"这台机器最多能区分多少种 \(N\)-点标号"</b>，是<b>机器的潜力</b>，跟你具体那份数据<b>长什么样毫无关系</b>。</li>
+      <li><b>同样大小 \(N\) 的两份数据集，\(m_{\mathcal H}(N)\) 完全相同</b>——无论一份是猫狗图、另一份是股票序列。因为它只数 \(\mathcal H\) 的二分能力，不读数据内容。</li>
+      <li>真正衡量"<b>这台机器有多复杂</b>"的，是那个与 \(N\) 无关的常数 <b>\(d_{\text{VC}}\)</b>（断点 \(-1\)）。\(m_{\mathcal H}(N)\sim N^{d_{\text{VC}}}\) 里，<b>形状由 \(d_{\text{VC}}\) 定，\(N\) 只是自变量</b>。</li>
+    </ul>
+    <p class="muted">再串一遍 §0.3 那条肌肉记忆：<b>断点数的是"点"不是"特征"，\(m_{\mathcal H}\) 量的是"假设空间"不是"数据量"。</b>两个盲点是同一个病根——把<b>"模型类的容量"</b>错当成<b>"数据/特征的某种计数"</b>。</p>
+  </div>
+
+  <div class="crit cjk"><p class="who">▲ 批判性补一刀 · 它对 P 和 f 视而不见，这既是铠甲也是软肋</p>
+    <p>一个常被略过、但对你这种较真的人很关键的事实：\(m_{\mathcal H}(N)\) <b>只依赖 \(\mathcal H\) 和 \(N\)</b>——它<b>不看真实标注函数 \(f\)，也不看输入分布 \(P\)</b>。</p>
+    <p>· <b>铠甲</b>：正因如此，VC 保证是<b>分布无关</b>的，对任何 \(f\)、任何 \(P\) 都成立，无需你对数据生成过程做任何假设。这是它能成为"普适定理"的根。<br>
+    · <b>软肋</b>：也正因如此，当你的 \(P\) 其实很友好（数据集中在低维流形上）、或 \(f\) 其实很简单时，VC <b>一点便宜都不占</b>，照样按最坏情况报间隔——这就是 §3.1 那条松弛的<b>结构性源头</b>。后来的 Rademacher 复杂度、margin 界之所以更紧，关键差别就是<b>它们允许把 \(P\)（数据本身）读进来</b>。<mark>"看不看数据分布"这一刀，划开了经典 VC 与现代泛化理论。</mark></p>
+  </div>
+</section>
+
+<section id="t-binary" class="topic-block">
+  <div class="rels cjk">
+    <span class="rel inherit"><span class="dot"></span>整套理论的地基假设</span>
+    <span class="rel limit"><span class="dot"></span>只活在"二分类 + 同分布"沙盒</span>
+    <span class="rel warn"><span class="dot"></span>对因果/分布漂移完全失声</span>
+  </div>
+  <h3 class="topic cjk">3.3 盲点三：这一切都站在"二分类"这块沙盒上——尤其要对因果的人说</h3>
+  <p class="topic-en">Blind spot 3: the whole theory lives in the binary-classification sandbox — a note especially for causal folks</p>
+
+  <div class="mod idea cjk"><p class="mod-label">◉ 直觉 · Sauer 那套组合，是二分类专属的优雅</p>
+    <p>回头看任务一全部机器——二分、打散、断点、\(B(N,k)\)、帕斯卡——<b>全建立在标号只有 \(\pm1\) 两个值</b>之上。\(2^N\)、\(\binom{N}{i}\) 这些干净的组合数，正来自"每个点二选一"。课上用<b>数字识别</b>举的例子说得很对：多分类可以<b>拆成一串二分类</b>（是不是 0 / 是不是 1 / ……），所以二分类是"通用原语"。</p>
+    <p>但"<b>能拆</b>"不等于"<b>拆得免费</b>"。这套精确的组合学一旦离开二分类，就需要换工具——VC 维不是放之四海皆准的那把尺。</p>
+  </div>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 形式 · 出了二分类沙盒，容量该换哪把尺</p>
+    <table class="tab cjk">
+      <thead><tr><th>问题类型</th><th>对应的容量度量</th><th>Sauer 组合还好用吗</th></tr></thead>
+      <tbody>
+        <tr><td>二分类（0-1 损失）</td><td><b>VC 维 \(d_{\text{VC}}\)</b></td><td>✓ 本节主角，干净紧致</td></tr>
+        <tr><td>多分类（\(M\) 类）</td><td>Natarajan 维 / Graph 维</td><td>需推广，组合更繁</td></tr>
+        <tr><td>实值回归</td><td>胖打散维（fat-shattering）/ 伪维数</td><td>"打散"要带容差 \(\gamma\)，离散组合失效</td></tr>
+        <tr><td>任意有界损失 / 现代模型</td><td>Rademacher 复杂度、covering number</td><td>直接用经验过程，不走 Sauer</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">所以更稳妥的心态：<b>VC 维是"二分类 + 0-1 损失 + 一致收敛"这个具体设定下的答案，不是"模型复杂度"的终极定义。</b>换了损失、换了输出类型，复杂度的尺子就得换——别把 \(d_{\text{VC}}\) 当万能钥匙到处插。</p>
+  </div>
+
+  <div class="mod case cjk"><p class="mod-label">⚖ 案例 · 课上的"99% 就够"与集成那段，其实指向偏差–泛化权衡</p>
+    <p>课上聊到"现实里不必把每个问题都完美解决，数字识别能到 99% 就行"，又扯到神经网络/随机森林用<b>多模型集成</b>降低风险。把它接回本节框架：</p>
+    <ul class="ul cjk">
+      <li><b>"99% 就够"</b>：我们要的是 \(E_{out}\) <b>低</b>，不是 \(E_{in}=0\)。VC 界管的是 \(E_{out}\) 与 \(E_{in}\) 的<b>间隔</b>；一个容量小的模型即便 \(E_{in}\) 略高，间隔也小，\(E_{out}\) 反而可能更低——这正是这套机器量化的<b>逼近 vs 泛化（bias–variance）权衡</b>。</li>
+      <li><b>集成（随机森林 / boosting）</b>：把很多弱模型组合，<b>朴素地</b>看合并后的假设类 VC 维会爆炸，按本节的界应该泛化很差——但实践相反。原因是 boosting 的泛化更该用<b>间隔理论（margin）</b>解释，而非合并类的裸 VC。<mark>又一次印证：VC 是起点，不是终点。</mark></li>
+    </ul>
+  </div>
+
+  <div class="gwn cjk"><p class="who">◆ 专门写给做因果推断 / 计量的你</p>
+    <p>这条提醒，可能是整份讲义对你<b>最该划重点</b>的一句。VC 这套泛化保证，从头到尾架在一个假设上：<b>训练样本与测试样本独立同分布于同一个 \(P\)</b>。也就是说——</p>
+    <p>① 它只保证<b>"在同一分布上做预测"</b>的样本内→样本外迁移。<b>分布一漂移（covariate shift / domain shift），保证立刻失效</b>，\(E_{out}\) 里的那个 \(P\) 已经不是训练时的 \(P\) 了。<br>
+    ② 它对<b>因果 / 反事实泛化彻底失声</b>。一个模型可以有<b>极小的 VC 泛化间隔</b>（预测得又准又稳），却<b>完全学错了因果结构</b>——因为干预 \(do(X)\) 恰恰<b>打破了 iid 这个前提</b>，关联 ≠ 因果。VC 告诉你"你把训练分布上的关联学扎实了"，<b>它从不告诉你这个关联在干预下还成不成立</b>。<br>
+    <mark>别让一条漂亮的泛化界，麻痹了你对"可迁移性 / 可识别性"的警觉。</mark>泛化误差小是你<b>预测子问题</b>做对了的证据，但它和你真正关心的<b>因果识别</b>是<b>两个正交的问题</b>——前者是统计学习的地盘，后者要靠你计量与因果图那套识别假设来扛。把这两件事分得越清，越不容易在论文里把"预测准"误当成"机制对"。</p>
+  </div>
+</section>
+
+<section id="closing" class="topic-block closing-block">
+  <div class="rels cjk">
+    <span class="rel general"><span class="dot"></span>收口：把全节钉成可背的清单</span>
+    <span class="rel tool"><span class="dot"></span>自测三题（点开看解）</span>
+    <span class="rel inherit"><span class="dot"></span>预告：下一节正式登场的 VC 维</span>
+  </div>
+  <h3 class="topic cjk">收尾：考点清单 · 自测 · 下节预告</h3>
+  <p class="topic-en">Cheat-sheet · self-test · what's next</p>
+
+  <div class="mod form cjk"><p class="mod-label">∑ 考点清单 · 闭卷前扫这一遍就够</p>
+    <table class="tab cjk">
+      <thead><tr><th>必背</th><th>一句话版本</th></tr></thead>
+      <tbody>
+        <tr><td>三件套定义</td><td>二分法＝\(N\) 点上的一种 \(\pm\) 标号；增长函数 \(m_{\mathcal H}(N)\)＝\(\mathcal H\) 能产生的不同二分数的最大值（\(\le 2^N\)）；断点 \(k\)＝最小的"打散不了的点数"</td></tr>
+        <tr><td>核心不等式链</td><td>\(m_{\mathcal H}(N)\le B(N,k)\le\sum_{i=0}^{k-1}\binom{N}{i}=O(N^{k-1})\)</td></tr>
+        <tr><td>\(B(N,k)\) 来历</td><td>按"去掉末列后是否成对"拆成 \(\alpha,\beta,\beta\)，\(B=\alpha+2\beta\)；挤出 \(\alpha+\beta\le B(N{-}1,k)\)、\(\beta\le B(N{-}1,k{-}1)\) → 递归 \(B(N,k)\le B(N{-}1,k)+B(N{-}1,k{-}1)\)</td></tr>
+        <tr><td>Sauer 引理</td><td>对 \(N\) 归纳 + 帕斯卡恒等式 \(\binom{N-1}{i}+\binom{N-1}{i-1}=\binom{N}{i}\)，落地成组合数之和</td></tr>
+        <tr><td>三个例子</td><td>正射线 \(k{=}2\Rightarrow N{+}1\)（1 次）；正区间 \(k{=}3\Rightarrow\tfrac12N^2{+}\tfrac12N{+}1\)（2 次）；2D 感知机 \(k{=}4\Rightarrow\tfrac16N^3{+}\tfrac56N{+}1\)（3 次）</td></tr>
+        <tr><td>VC 不等式</td><td>\(P[|E_{in}{-}E_{out}|{>}\varepsilon]\le 4\,m_{\mathcal H}(2N)\,e^{-\frac18\varepsilon^2N}\)；靠幽灵样本 + 三角不等式把 \(E_{out}\) 换成 \(E_{in}'\)，故 \(N\to2N\)、常数变松</td></tr>
+        <tr><td>VC 维</td><td>\(d_{\text{VC}}=\)（断点）\(-1=\) 能打散的最大点数；增长函数 \(\sim N^{d_{\text{VC}}}\)；间隔 \(\Omega\sim\sqrt{d_{\text{VC}}\ln N/N}\)</td></tr>
+        <tr><td>三个盲点</td><td>① 界很松、常常空洞（worst-case + 分布无关 + 一致）；② \(m_{\mathcal H}\) 量 \(\mathcal H\) 不量数据、断点数点不数特征；③ 只活在二分类 + 同分布预测沙盒，对因果/漂移失声</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mod live cjk"><p class="mod-label">✋ 自测 · 三题，先想再点开</p>
+    <details class="qa" style="border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0;background:var(--card)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent)">Q1（计算手感）正区间断点 \(k{=}3\)。不查表，用 Sauer 上界算 \(N{=}5\) 的增长函数上界，并和精确值 16 对比。</summary>
+      <div style="margin-top:10px">\(\sum_{i=0}^{2}\binom 5i=\binom50+\binom51+\binom52=1+5+10=16\)。和精确值 \(\tfrac12{\cdot}25+\tfrac12{\cdot}5+1=16\) <b>完全相等</b>——正区间恰好是 Sauer 上界取到等号的例子。次数 \(=k-1=2\)，正是 \(d_{\text{VC}}=2\)。</div>
+    </details>
+    <details class="qa" style="border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0;background:var(--card)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent)">Q2（概念）有人说："我训练集有 100 万条，所以 \(m_{\mathcal H}(N)\) 很大、模型很复杂。"错在哪？</summary>
+      <div style="margin-top:10px">错在把<b>数据量</b>当成了<b>模型容量</b>。\(m_{\mathcal H}(N)\) 是<b>假设空间 \(\mathcal H\) 的属性</b>，由 \(d_{\text{VC}}\) 决定，<b>与你有多少数据无关</b>——同样 \(N\) 的任意两份数据，\(m_{\mathcal H}(N)\) 一模一样。而且 100 万条数据恰恰让泛化间隔 \(\Omega\sim\sqrt{d_{\text{VC}}\ln N/N}\) <b>更小、更安全</b>，不是更复杂。（参见 §3.2）</div>
+    </details>
+    <details class="qa" style="border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0;background:var(--card)">
+      <summary style="cursor:pointer;font-weight:600;color:var(--accent)">Q3（给因果的你）某模型 VC 泛化间隔极小（界很紧），能据此说它学到了正确的因果关系吗？</summary>
+      <div style="margin-top:10px"><b>不能。</b>VC 只保证<b>同分布</b>下样本内→样本外的<b>预测</b>迁移。它对<b>因果/反事实泛化、分布漂移</b>完全失声——干预 \(do(X)\) 打破了 iid 前提，关联 ≠ 因果。"预测准"是预测子问题做对了的证据，与"机制对"是<b>两个正交问题</b>，后者要靠你的识别假设来扛。（参见 §3.3）</div>
+    </details>
+  </div>
+
+  <div class="xander cjk"><p class="who">◈ 下节预告 · VC 维正式登场（对应 print 7 · The VC Dimension）</p>
+    <p>这一节我们其实已经<b>把 VC 维偷偷用了一路</b>（\(d_{\text{VC}}=\) 断点 \(-1\)），但还没给它正式的身份证。下一节就是它的<b>正片</b>：</p>
+    <ul class="ul cjk">
+      <li><b>正式定义 \(d_{\text{VC}}\)</b>＝\(\mathcal H\) 能打散的最大点数，并把本节的 VC 不等式<b>整个用 \(d_{\text{VC}}\) 改写</b>，得到工程上天天引用的那条泛化间隔公式。</li>
+      <li><b>"\(d_{\text{VC}}\approx\) 有效参数个数"</b>这条直觉的来历与边界——为什么 2D 感知机 \(d_{\text{VC}}=3\) 恰好等于参数数，以及它什么时候<b>不</b>等于参数数。</li>
+      <li>由此引出 <b>逼近–泛化权衡（approximation–generalization）</b>的精确版本，正式接上"<b>偏差–方差</b>"，并为<b>正则化 / 模型选择</b>给出理论依据——这才是把本节那套"为什么能学"真正<b>变成"该选多复杂的模型"</b>的落地一跳。</li>
+    </ul>
+    <p>到那时回头看今天这条松松垮垮的 VC 界，你会更体会它的定位：<b>它不负责把数字算准，它负责告诉你"复杂度"这根轴该往哪个方向拧</b>。今天先把"围捕无穷"的封印盖牢，下节再学怎么用这枚封印做决策。</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ===================== 调色板 / 全局（第三节：石榴主色） ===================== */
+var C = {
+  ink:'#1C1418', inkSoft:'#52464C', inkFaint:'#897C82',
+  accent:'#83304A', accentSoft:'#F1E1E6',
+  teal:'#1F6B66', gold:'#B7892A', violet:'#6A4DB0',
+  green:'#3E7C4E', rust:'#B0442B',
+  line:'#E4D9D5', grid:'#ECE3DF', card:'#FFFCF8', paper:'#FBF6F1'
+};
+var FONT = 'Spectral, Georgia, serif';
+var CONF = {displayModeBar:false, responsive:true};
+
+/* ---- 小工具 ---- */
+function $(id){ return document.getElementById(id); }
+function setTxt(id,t){ var e=$(id); if(e) e.textContent=t; }
+function setHTML(id,t){ var e=$(id); if(e) e.innerHTML=t; }
+function lin(a,b,n){ var o=[],i; if(n<2){return [a];} for(i=0;i<n;i++){o.push(a+(b-a)*i/(n-1));} return o; }
+function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+function fmt(x,d){ d=d==null?2:d; return (Math.round(x*Math.pow(10,d))/Math.pow(10,d)).toFixed(d); }
+function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function randn(rng){ var u=0,v=0; while(u===0){u=rng();} while(v===0){v=rng();} return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+/* ---- 颜色 ---- */
+function hex2rgb(h){ h=h.replace('#',''); if(h.length===3){h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];} return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function rgba(rgb,a){ return 'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+a+')'; }
+function mix(c1,c2,t){ return [Math.round(c1[0]+(c2[0]-c1[0])*t),Math.round(c1[1]+(c2[1]-c1[1])*t),Math.round(c1[2]+(c2[2]-c1[2])*t)]; }
+function scaleColor(stops,t){ t=clamp(t,0,1); var i; for(i=0;i<stops.length-1;i++){ if(t<=stops[i+1][0]){ var lo=stops[i],hi=stops[i+1]; var f=(t-lo[0])/((hi[0]-lo[0])||1); return mix(hex2rgb(lo[1]),hex2rgb(hi[1]),f); } } return hex2rgb(stops[stops.length-1][1]); }
+var GARNET_SCALE=[[0,'#F6E7EC'],[0.5,'#C0738B'],[1,'#6A2038']];
+var VIOLET_SCALE=[[0,'#F0EBFA'],[0.5,'#9C82D6'],[1,'#4E368E']];
+var HEAT_SCALE  =[[0,'#1F6B66'],[0.5,'#ECE3DF'],[1,'#83304A']];
+
+function baseLayout(extra){
+  var lay = {
+    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    font:{family:FONT, size:12, color:C.ink},
+    margin:{l:52,r:18,t:18,b:44},
+    xaxis:{gridcolor:C.grid, zerolinecolor:C.line, linecolor:C.line, tickfont:{size:11}, automargin:true},
+    yaxis:{gridcolor:C.grid, zerolinecolor:C.line, linecolor:C.line, tickfont:{size:11}, automargin:true},
+    showlegend:false, hovermode:false
+  };
+  if(extra){ for(var k in extra){ lay[k]=extra[k]; } }
+  return lay;
+}
+function bindSlider(id, on){ var el=$(id); if(!el) return; var badge=$('v-'+id); function run(){ if(badge) badge.textContent = (+el.value).toFixed( (el.step&&(+el.step)<1)?2:0 ); on(+el.value); } el.addEventListener('input',run); run(); }
+function Plot(id, data, layout){ var el=$(id); if(!el || !window.Plotly) return; try{ Plotly.react(el, data, layout, CONF); }catch(e){ if(window.console) console.error('Plot '+id, e); } }
+
+/* ===================== 组合数学工具 ===================== */
+function comb(n,k){ if(k<0||k>n) return 0; if(k>n-k) k=n-k; var r=1,i; for(i=0;i<k;i++){ r=r*(n-i)/(i+1); } return Math.round(r); }
+function sumComb(n,d){ var s=0,i; for(i=0;i<=d;i++){ s+=comb(n,i); } return s; }   /* = B(N, d+1) 的 Sauer 等号 */
+function BNK(N,k){ if(k<=0) return 0; if(k>N) return Math.pow(2,N); return sumComb(N,k-1); }
+/* 大数走 log 空间，给 VC 界用 */
+var LG_C=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+function lgamma(x){ if(x<0.5){ return Math.log(Math.PI/Math.sin(Math.PI*x)) - lgamma(1-x); } x-=1; var a=LG_C[0], g=7, t=x+g+0.5, i; for(i=1;i<g+2;i++){ a+=LG_C[i]/(x+i); } return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a); }
+function logComb(n,k){ if(k<0||k>n) return -Infinity; return lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1); }
+function logSumExp(arr){ var m=-Infinity,i; for(i=0;i<arr.length;i++){ if(arr[i]>m) m=arr[i]; } if(m===-Infinity) return -Infinity; var s=0; for(i=0;i<arr.length;i++){ s+=Math.exp(arr[i]-m); } return m+Math.log(s); }
+function logSumComb(n,d){ var arr=[],i,dd=Math.min(d,Math.floor(n)); for(i=0;i<=dd;i++){ arr.push(logComb(n,i)); } return logSumExp(arr); }
+/* log m_H(2N) 上界 = log Σ_{i=0}^{dvc} C(2N,i)；log δ = ln4 + that − ε²N/8 */
+function logDelta(N, dvc, eps){ return Math.log(4) + logSumComb(2*N, dvc) - (eps*eps*N/8); }
+
+/* ===================== 纯 Canvas 三维引擎 Scene3D（不使用 WebGL） ===================== */
+function Scene3D(host, opt){
+  opt = opt||{};
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var cv = document.createElement('canvas');
+  cv.style.width='100%'; cv.style.height='100%'; cv.style.display='block'; cv.style.cursor='grab'; cv.style.touchAction='none';
+  host.innerHTML=''; host.appendChild(cv);
+  var ctx = cv.getContext('2d');
+  var W=0,H=0;
+  function resize(){ W=host.clientWidth||600; H=host.clientHeight||420; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); draw(); }
+  var st = { yaw: opt.yaw!=null?opt.yaw:-0.72, pitch: opt.pitch!=null?opt.pitch:0.52, zoom: opt.zoom||1 };
+  var spec = null;
+  function nrm(x,r){ return 2*(x-r[0])/((r[1]-r[0])||1)-1; }
+  function rot(p){ var cy=Math.cos(st.yaw), sy=Math.sin(st.yaw); var x=p[0]*cy - p[1]*sy, y=p[0]*sy + p[1]*cy, z=p[2]; var cp=Math.cos(st.pitch), sp=Math.sin(st.pitch); var y2=y*cp - z*sp, z2=y*sp + z*cp; return {x:x, y:y2, z:z2}; }
+  function proj(r){ var s=Math.min(W,H)*0.36*st.zoom; return {sx:W/2 + r.x*s, sy:H/2 - r.z*s + H*0.04, d:r.y}; }
+  function P(p){ return proj(rot(p)); }
+  function drawBox(){
+    var e=[[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]];
+    var v=[[-1,-1,-1],[1,-1,-1],[-1,1,-1],[1,1,-1],[-1,-1,1],[1,-1,1],[-1,1,1],[1,1,1]];
+    var pj=v.map(P);
+    ctx.lineWidth=1; ctx.strokeStyle=rgba(hex2rgb(C.line),0.85);
+    for(var i=0;i<e.length;i++){ var a=pj[e[i][0]],b=pj[e[i][1]]; ctx.beginPath(); ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy); ctx.stroke(); }
+    ctx.strokeStyle=rgba(hex2rgb(C.line),0.35); ctx.lineWidth=0.8;
+    var g=6,k;
+    for(k=0;k<=g;k++){ var t=-1+2*k/g;
+      var a1=P([t,-1,-1]),b1=P([t,1,-1]); ctx.beginPath(); ctx.moveTo(a1.sx,a1.sy); ctx.lineTo(b1.sx,b1.sy); ctx.stroke();
+      var a2=P([-1,t,-1]),b2=P([1,t,-1]); ctx.beginPath(); ctx.moveTo(a2.sx,a2.sy); ctx.lineTo(b2.sx,b2.sy); ctx.stroke();
+    }
+    ctx.fillStyle=C.inkSoft; ctx.font='600 12px Spectral, serif'; ctx.textAlign='center';
+    if(spec.xlab){ var lx=P([0,-1.18,-1]); ctx.fillText(spec.xlab, lx.sx, lx.sy); }
+    if(spec.ylab){ var ly=P([1.18,0,-1]); ctx.fillText(spec.ylab, ly.sx, ly.sy); }
+    if(spec.zlab){ var lz=P([-1.15,-1.15,0]); ctx.fillText(spec.zlab, lz.sx, lz.sy); }
+  }
+  function build(){
+    var prims=[]; if(!spec) return prims; var o,i,j;
+    for(var oi=0; oi<spec.objs.length; oi++){
+      o=spec.objs[oi];
+      if(o.type==='surface'){
+        var nx=o.xs.length, ny=o.ys.length;
+        for(j=0;j<ny-1;j++){ for(i=0;i<nx-1;i++){
+          var corners=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]];
+          var pts=corners.map(function(c){ return [nrm(o.xs[c[0]],spec.xr), nrm(o.ys[c[1]],spec.yr), nrm(o.zs[c[1]][c[0]],spec.zr)]; });
+          var zc=(o.zs[j][i]+o.zs[j][i+1]+o.zs[j+1][i+1]+o.zs[j+1][i])/4;
+          var t=(zc-spec.zr[0])/((spec.zr[1]-spec.zr[0])||1);
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale||GARNET_SCALE,t);
+          var rp=pts.map(P); var d=(rp[0].d+rp[1].d+rp[2].d+rp[3].d)/4;
+          prims.push({d:d, kind:'quad', rp:rp, col:col, alpha:o.alpha==null?0.92:o.alpha, wire:o.wire});
+        }}
+      } else if(o.type==='line'){
+        for(i=0;i<o.xs.length-1;i++){
+          var pa=[nrm(o.xs[i],spec.xr),nrm(o.ys[i],spec.yr),nrm(o.zs[i],spec.zr)];
+          var pb=[nrm(o.xs[i+1],spec.xr),nrm(o.ys[i+1],spec.yr),nrm(o.zs[i+1],spec.zr)];
+          var ra=P(pa),rb=P(pb);
+          prims.push({d:(ra.d+rb.d)/2, kind:'seg', a:ra, b:rb, col:hex2rgb(o.color||C.rust), w:o.width||2.5});
+        }
+      } else if(o.type==='dots'){
+        for(i=0;i<o.dots.length;i++){ var dt=o.dots[i]; var rp2=P([nrm(dt.p[0],spec.xr),nrm(dt.p[1],spec.yr),nrm(dt.p[2],spec.zr)]);
+          prims.push({d:rp2.d, kind:'dot', p:rp2, r:(dt.r||4), col:hex2rgb(dt.color||C.accent), ring:dt.ring});
+        }
+      }
+    }
+    return prims;
+  }
+  function draw(){
+    if(!ctx) return; ctx.clearRect(0,0,W,H); if(!spec){ return; }
+    drawBox();
+    var prims=build();
+    prims.sort(function(a,b){ return b.d - a.d; });
+    for(var i=0;i<prims.length;i++){ var pr=prims[i];
+      if(pr.kind==='quad'){
+        ctx.beginPath(); ctx.moveTo(pr.rp[0].sx,pr.rp[0].sy);
+        for(var k=1;k<4;k++){ ctx.lineTo(pr.rp[k].sx,pr.rp[k].sy); } ctx.closePath();
+        ctx.fillStyle=rgba(pr.col,pr.alpha); ctx.fill();
+        ctx.strokeStyle=rgba(pr.col, Math.min(1,pr.alpha+0.06)); ctx.lineWidth=0.6; ctx.stroke();
+        if(pr.wire){ ctx.strokeStyle=rgba([255,255,255],0.25); ctx.lineWidth=0.5; ctx.stroke(); }
+      } else if(pr.kind==='seg'){
+        ctx.beginPath(); ctx.moveTo(pr.a.sx,pr.a.sy); ctx.lineTo(pr.b.sx,pr.b.sy);
+        ctx.strokeStyle=rgba(pr.col,0.95); ctx.lineWidth=pr.w; ctx.lineCap='round'; ctx.stroke();
+      } else if(pr.kind==='dot'){
+        ctx.beginPath(); ctx.arc(pr.p.sx,pr.p.sy,pr.r,0,2*Math.PI);
+        ctx.fillStyle=rgba(pr.col,0.96); ctx.fill();
+        if(pr.ring){ ctx.strokeStyle=rgba([255,255,255],0.9); ctx.lineWidth=1.4; ctx.stroke(); }
+      }
+    }
+  }
+  var drag=false, px=0, py=0;
+  cv.addEventListener('pointerdown',function(e){ drag=true; px=e.clientX; py=e.clientY; cv.style.cursor='grabbing'; try{cv.setPointerCapture(e.pointerId);}catch(_){} });
+  cv.addEventListener('pointermove',function(e){ if(!drag) return; st.yaw += (e.clientX-px)*0.01; st.pitch = clamp(st.pitch + (e.clientY-py)*0.01, -1.45, 1.45); px=e.clientX; py=e.clientY; draw(); });
+  function up(){ drag=false; cv.style.cursor='grab'; }
+  cv.addEventListener('pointerup',up); cv.addEventListener('pointerleave',up); cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',function(e){ e.preventDefault(); st.zoom=clamp(st.zoom*Math.exp(-e.deltaY*0.0012),0.55,3); draw(); },{passive:false});
+  window.addEventListener('resize',resize);
+  return { setObjects:function(s){ spec=s; resize(); }, redraw:draw };
+}
+
+/* ===================== 概念地图 buildMap（两条主线：数二分 / 接 Eout） ===================== */
+function buildMap(){
+  var svg=$('conceptmap'); if(!svg) return;
+  var NS='http://www.w3.org/2000/svg';
+  var gE=$('edges'), gN=$('nodes');
+  var col={recap:C.green, t1:C.teal, t2:C.violet, climax:C.gold, blind:C.rust};
+  var nodes=[
+    /* —— 任务一：把 m_H 关进多项式 —— */
+    {id:'recap', x:40,  y:40,  t:'回顾 · m_H(N)', s:'上节的增长函数', href:'#t-recap-m',     c:col.recap},
+    {id:'trio',  x:40,  y:150, t:'三个增长函数',  s:'射线/区间/感知机', href:'#t-recap-trio', c:col.recap},
+    {id:'puzzle',x:240, y:95,  t:'拼图小测',      s:'亲手找断点 k',    href:'#t-puzzle',     c:col.t1},
+    {id:'bnk',   x:440, y:40,  t:'上界 B(N,k)',   s:'最大二分数',      href:'#t-bnk',        c:col.t1},
+    {id:'decomp',x:440, y:150, t:'拆分 α + 2β',   s:'按末位分组',      href:'#t-decomp',     c:col.t1},
+    {id:'recur', x:640, y:95,  t:'递推不等式',    s:'B ≤ B + B',       href:'#t-recur',      c:col.t1},
+    {id:'sauer', x:840, y:40,  t:'Sauer 引理',    s:'帕斯卡解开',      href:'#t-sauer',      c:col.t1},
+    {id:'poly',  x:840, y:150, t:'多项式 N^{k−1}', s:'指数被驯服',     href:'#t-poly',       c:col.t2},
+    /* —— 任务二：把 E_in 接到 E_out —— */
+    {id:'goal',  x:40,  y:300, t:'想要的不等式',  s:'P[|Ein−Eout|>ε]', href:'#t-goal',       c:col.t2},
+    {id:'paint', x:240, y:300, t:'油漆 / 重叠',   s:'坏事件会重叠',    href:'#t-paint',      c:col.t1},
+    {id:'eout',  x:440, y:300, t:'Eout 不可观测', s:'整片墙摸不到',    href:'#t-eout',       c:col.t2},
+    {id:'ghost', x:640, y:300, t:'幽灵样本',      s:'再抽一份影子',    href:'#t-ghost',      c:col.t1},
+    {id:'vc',    x:840, y:300, t:'VC 不等式',     s:'封印完成',        href:'#t-vc',         c:col.climax},
+    /* —— 三个盲点 —— */
+    {id:'loose',  x:230, y:470, t:'① 界很松',     s:'最坏 + 无分布',   href:'#t-loose',      c:col.blind},
+    {id:'measure',x:470, y:470, t:'② 量的是 H',   s:'与数据 P,f 无关', href:'#t-measures-h', c:col.blind},
+    {id:'binary', x:710, y:470, t:'③ 二分类沙盒', s:'回归/因果在界外',  href:'#t-binary',     c:col.blind}
+  ];
+  var idx={}; nodes.forEach(function(n){ idx[n.id]=n; });
+  var edges=[
+    ['recap','trio',''], ['recap','bnk','m_H ≤ B'], ['trio','puzzle','找断点'],
+    ['puzzle','bnk','断点 k'], ['bnk','decomp','拆开'], ['decomp','recur',''],
+    ['recur','sauer','归纳'], ['sauer','poly','Σ C(N,i)'],
+    ['goal','paint','M 太大?'], ['paint','eout','换 m_H'], ['eout','ghost','造影子'],
+    ['ghost','vc','代回'], ['poly','vc','喂入 m_H'],
+    ['vc','loose','但是…'], ['vc','measure',''], ['vc','binary','']
+  ];
+  var W=150,H=46;
+  edges.forEach(function(e){ var a=idx[e[0]],b=idx[e[1]]; if(!a||!b) return;
+    var x1=a.x+W/2, y1=a.y+H/2, x2=b.x+W/2, y2=b.y+H/2;
+    var dx=x2-x1, dy=y2-y1, L=Math.sqrt(dx*dx+dy*dy)||1; var ux=dx/L, uy=dy/L;
+    var sx=x1+ux*(W/2-4), sy=y1+uy*(H/2-2), ex=x2-ux*(W/2+6), ey=y2-uy*(H/2+2);
+    var ln=document.createElementNS(NS,'line'); ln.setAttribute('x1',sx); ln.setAttribute('y1',sy); ln.setAttribute('x2',ex); ln.setAttribute('y2',ey);
+    ln.setAttribute('stroke',C.accent); ln.setAttribute('stroke-width','1.4'); ln.setAttribute('opacity','0.32'); gE.appendChild(ln);
+    var ah=document.createElementNS(NS,'polygon'); var aw=4.5;
+    var p2x=ex-ux*9-uy*aw, p2y=ey-uy*9+ux*aw, p3x=ex-ux*9+uy*aw, p3y=ey-uy*9-ux*aw;
+    ah.setAttribute('points',ex+','+ey+' '+p2x+','+p2y+' '+p3x+','+p3y); ah.setAttribute('fill',C.accent); ah.setAttribute('opacity','0.4'); gE.appendChild(ah);
+    if(e[2]){ var mx=(sx+ex)/2, my=(sy+ey)/2; var tw=e[2].length*11+10;
+      var tb=document.createElementNS(NS,'rect'); tb.setAttribute('x',mx-tw/2); tb.setAttribute('y',my-9); tb.setAttribute('width',tw); tb.setAttribute('height',16); tb.setAttribute('rx',4); tb.setAttribute('fill',C.paper); tb.setAttribute('opacity','0.92'); gE.appendChild(tb);
+      var tx=document.createElementNS(NS,'text'); tx.setAttribute('x',mx); tx.setAttribute('y',my+3); tx.setAttribute('text-anchor','middle'); tx.setAttribute('font-size','10.5'); tx.setAttribute('fill',C.inkSoft); tx.setAttribute('font-family','Spectral, serif'); tx.textContent=e[2]; gE.appendChild(tx); }
+  });
+  nodes.forEach(function(n){
+    var a=document.createElementNS(NS,'a'); a.setAttributeNS('http://www.w3.org/1999/xlink','href',n.href); a.setAttribute('href',n.href);
+    var r=document.createElementNS(NS,'rect'); r.setAttribute('x',n.x); r.setAttribute('y',n.y); r.setAttribute('width',W); r.setAttribute('height',H); r.setAttribute('rx',10);
+    r.setAttribute('fill',C.card); r.setAttribute('stroke',n.c); r.setAttribute('stroke-width','1.6'); a.appendChild(r);
+    var bar=document.createElementNS(NS,'rect'); bar.setAttribute('x',n.x); bar.setAttribute('y',n.y); bar.setAttribute('width','5'); bar.setAttribute('height',H); bar.setAttribute('rx',2.5); bar.setAttribute('fill',n.c); a.appendChild(bar);
+    var t1=document.createElementNS(NS,'text'); t1.setAttribute('x',n.x+15); t1.setAttribute('y',n.y+20); t1.setAttribute('font-size','13.5'); t1.setAttribute('font-weight','600'); t1.setAttribute('fill',C.ink); t1.setAttribute('font-family','Spectral, serif'); t1.textContent=n.t; a.appendChild(t1);
+    var t2=document.createElementNS(NS,'text'); t2.setAttribute('x',n.x+15); t2.setAttribute('y',n.y+36); t2.setAttribute('font-size','10.5'); t2.setAttribute('fill',C.inkFaint); t2.setAttribute('font-family','Spectral, serif'); t2.textContent=n.s; a.appendChild(t2);
+    a.style.cursor='pointer'; gN.appendChild(a);
+  });
+}
+
+/* ===================== §0.1 无穷条线 → 有限二分 figTwoLines ===================== */
+var TL_PTS=[[1.5,1.25],[3.45,2.65],[2.05,3.75],[4.35,1.45],[3.05,0.8]];
+function figTwoLines(){
+  if(!$('p-twolines')) return;
+  var MINUS='\u2212', seen={}, nSeen=0;
+  var XR=[0,5.3], YR=[0,4.6];
+  function sgn(v){ return v? '+':MINUS; }
+  function render(shift, angDeg){
+    var th=angDeg*Math.PI/180, nx=Math.cos(th), ny=Math.sin(th);
+    var projs=TL_PTS.map(function(p){ return p[0]*nx+p[1]*ny; });
+    var lo=Math.min.apply(null,projs), hi=Math.max.apply(null,projs);
+    var tau=(lo-0.5)+((hi+0.5)-(lo-0.5))*shift;
+    var labs=projs.map(function(pr){ return pr>=tau; });
+    /* 点分两组 */
+    var px=[[],[]], py=[[]], gx=[[],[]];
+    var posx=[],posy=[],negx=[],negy=[];
+    TL_PTS.forEach(function(p,i){ if(labs[i]){posx.push(p[0]);posy.push(p[1]);} else {negx.push(p[0]);negy.push(p[1]);} });
+    /* 分隔线：过 p0=tau*n，方向 dir=(-sinθ,cosθ) */
+    var p0x=tau*nx, p0y=tau*ny, dx=-ny, dy=nx, Lext=14;
+    var lineX=[p0x-Lext*dx, p0x+Lext*dx], lineY=[p0y-Lext*dy, p0y+Lext*dy];
+    var data=[
+      {x:lineX,y:lineY,mode:'lines',line:{color:C.ink,width:2.4},hoverinfo:'skip'},
+      {x:posx,y:posy,mode:'markers',marker:{size:15,color:C.accent,line:{color:'#fff',width:1.6}},hoverinfo:'skip'},
+      {x:negx,y:negy,mode:'markers',marker:{size:15,color:C.teal,symbol:'square',line:{color:'#fff',width:1.6}},hoverinfo:'skip'}
+    ];
+    var lay=baseLayout({xaxis:{range:XR,gridcolor:C.grid,zerolinecolor:C.line,linecolor:C.line,tickfont:{size:11},fixedrange:true},
+                        yaxis:{range:YR,gridcolor:C.grid,zerolinecolor:C.line,linecolor:C.line,tickfont:{size:11},fixedrange:true,scaleanchor:'x',scaleratio:1}});
+    Plot('p-twolines',data,lay);
+    /* 当前二分字符串 */
+    var key=labs.map(sgn).join('');
+    setHTML('rd-dich','当前二分： <b style="letter-spacing:3px;color:'+C.accent+'">'+key+'</b>');
+    if(!seen[key]){ seen[key]=1; nSeen++; }
+    setHTML('rd-dcount','已见过的不同二分：<b style="color:'+C.accent+'">'+nSeen+'</b> / 上限 2⁵ = 32');
+    var note;
+    if(nSeen<22) note='继续拖、继续转——你还在解锁新图案。';
+    else note='已经卡住了：线性可分的二分最多 '+'22'+' 种（远小于 32）。剩下的 10 种，任何一条直线都画不出来——这就是"无穷条线、有限种二分"。';
+    setHTML('rd-dnote',note);
+  }
+  var sShift=0.5, sAng=0;
+  bindSlider('line-shift', function(v){ sShift=v; render(sShift,sAng); });
+  bindSlider('line-angle', function(v){ sAng=v; setTxt('v-line-angle', (v>0?'+':'')+v+'\u00B0'); render(sShift,sAng); });
+  var rb=$('btn-reset-dich'); if(rb) rb.addEventListener('click',function(){ seen={}; nSeen=0; render(sShift,sAng); });
+  render(sShift,sAng);
+}
+
+/* ===================== §0.3 打散拼图 figPuzzle ===================== */
+function figPuzzle(){
+  if(!$('puz-targets')) return;
+  var P='+', M='\u2212';
+  /* 3 点的全部 8 种标号（用 + / − 字符串） */
+  var all=[]; for(var b=0;b<8;b++){ all.push(((b&4)?P:M)+((b&2)?P:M)+((b&1)?P:M)); }
+  var valid={}; ['---','+--','-+-','--+'].forEach(function(s){ valid[s.replace(/-/g,M)]=1; });
+  var validList=Object.keys(valid);
+  /* (a) 目标格子：8 种标号，标 ✓/✗ */
+  var html='';
+  all.forEach(function(s){ var ok=valid[s];
+    html+='<span class="tchip" style="cursor:default;'+(ok?'border-color:var(--green);color:var(--green)':'border-color:var(--rust);color:var(--rust);opacity:.7')+'">'+s+'&nbsp;'+(ok?'✓':'✗')+'</span>';
+  });
+  setHTML('puz-targets',html);
+  /* (b) 子集芯片 */
+  var subs=[{k:'{x₁}',idx:[0]},{k:'{x₂}',idx:[1]},{k:'{x₃}',idx:[2]},
+            {k:'{x₁,x₂}',idx:[0,1]},{k:'{x₁,x₃}',idx:[0,2]},{k:'{x₂,x₃}',idx:[1,2]},
+            {k:'{x₁,x₂,x₃}',idx:[0,1,2]}];
+  var sh='';
+  subs.forEach(function(s,i){ sh+='<span class="tchip puz-sub" data-i="'+i+'">'+s.k+'</span>'; });
+  setHTML('puz-subsets',sh);
+  function pick(i){
+    var s=subs[i];
+    /* 把 4 个 valid 投影到子集位置，去重 */
+    var realized={};
+    validList.forEach(function(v){ var proj=s.idx.map(function(ix){ return v[ix]; }).join(''); realized[proj]=1; });
+    var keys=Object.keys(realized);
+    var need=Math.pow(2,s.idx.length), have=keys.length;
+    var shat=(have===need);
+    setHTML('puz-realized','投影出的图案：'+keys.map(function(k){ return '<b style="letter-spacing:2px">'+k+'</b>'; }).join('、 '));
+    setHTML('puz-need','需要凑齐：2^'+s.idx.length+' = <b>'+need+'</b> 种');
+    setHTML('puz-have','实际能凑出：<b style="color:'+(shat?'var(--green)':'var(--rust)')+'">'+have+'</b> 种');
+    setHTML('puz-verdict', shat
+      ? '<b style="color:var(--green)">✓ 这个子集被打散了</b>（'+s.k+' 全部图案都能实现）'
+      : '<b style="color:var(--rust)">✗ 没被打散</b>——缺了 <b>'+P+P+'</b>（"两个都 +1" 违反了"至多一个 +1"）。既然 2 个点就打不散，<b>断点 k = 2</b>，于是 d<sub>VC</sub> = k−1 = <b>1</b>。');
+    /* 高亮选中 */
+    var cs=document.querySelectorAll('.puz-sub'); for(var j=0;j<cs.length;j++){ cs[j].classList.toggle('on', (+cs[j].getAttribute('data-i'))===i); }
+  }
+  var cs=document.querySelectorAll('.puz-sub');
+  for(var j=0;j<cs.length;j++){ (function(el){ el.addEventListener('click',function(){ pick(+el.getAttribute('data-i')); }); })(cs[j]); }
+  pick(3); /* 默认选 {x1,x2}，直接看到"打不散" */
+}
+
+/* ===================== §1.2 B(N,k)=α+2β 的拆分 figBdecomp ===================== */
+function figBdecomp(){
+  if(!$('p-bdecomp')) return;
+  var MINUS='\u2212';
+  var data=[
+    {g:'S₁',sub:'S1',pre:'--+',xn:'+'},{g:'S₁',sub:'S1',pre:'---',xn:'-'},
+    {g:'S₂⁺',sub:'S2p',pre:'+++',xn:'+'},{g:'S₂⁺',sub:'S2p',pre:'+--',xn:'+'},{g:'S₂⁺',sub:'S2p',pre:'-+-',xn:'+'},
+    {g:'S₂⁻',sub:'S2m',pre:'+++',xn:'-'},{g:'S₂⁻',sub:'S2m',pre:'+--',xn:'-'},{g:'S₂⁻',sub:'S2m',pre:'-+-',xn:'-'}
+  ];
+  function cc(ch,big){ var c=ch==='+'?C.accent:C.inkFaint; return '<span style="color:'+c+';font-weight:'+(big?'700':'600')+'">'+(ch==='+'?'+':MINUS)+'</span>'; }
+  var gcol={S1:C.green,S2p:C.accent,S2m:C.teal};
+  var xnTint={'+':rgba(hex2rgb(C.accent),0.10),'-':rgba(hex2rgb(C.teal),0.10)};
+  var div='2.5px solid '+C.inkSoft;
+  var thead='<tr><th style="text-align:left">组</th><th>#</th><th>x₁</th><th>x₂</th><th>x₃ … x<sub>N−1</sub></th>'
+    +'<th style="border-left:'+div+'">x<sub>N</sub></th></tr>';
+  var body='';
+  data.forEach(function(r,idx){
+    var showGL=(idx===0)||(data[idx-1].sub!==r.sub);
+    var grpCount=data.filter(function(d){return d.sub===r.sub;}).length;
+    var cntLabel=(r.sub==='S1'?'α':'β');
+    body+='<tr data-sub="'+r.sub+'" data-pre="'+r.pre+'" data-xn="'+r.xn+'">'
+      +(showGL?('<td class="bd-g" rowspan="'+grpCount+'" style="color:'+gcol[r.sub]+';font-weight:700;border-top:1.5px solid '+C.line+'">'+r.g+'</td>'
+                +'<td rowspan="'+grpCount+'" style="font-weight:700;color:'+gcol[r.sub]+'">'+cntLabel+'</td>'):'')
+      +'<td>'+cc(r.pre[0])+'</td><td>'+cc(r.pre[1])+'</td><td>'+cc(r.pre[2])+'</td>'
+      +'<td class="bd-xn" style="border-left:'+div+';background:'+xnTint[r.xn]+'">'+cc(r.xn,true)+'</td></tr>';
+  });
+  var brace='<tr><td></td><td style="color:'+C.violet+';font-weight:700;font-size:12px">S₂ = S₂⁺∪S₂⁻</td>'
+    +'<td colspan="3" class="muted" style="text-align:left;font-size:12px">↑ S₂⁺ 与 S₂⁻ 的前 N−1 列<b>完全相同</b>，只有 x<sub>N</sub> 相反（成对）</td>'
+    +'<td style="border-left:'+div+'"></td></tr>';
+  $('p-bdecomp').innerHTML='<table class="tab" id="bdecomp-tbl" style="text-align:center"><thead>'+thead+'</thead><tbody>'+body+brace+'</tbody></table>';
+  var ctrl=$('bdecomp-ctrl');
+  if(ctrl){
+    ctrl.innerHTML='<span class="tchip on" data-m="all">全部 8 行</span>'
+      +'<span class="tchip" data-m="S1">S₁ 落单 (α)</span>'
+      +'<span class="tchip" data-m="S2">S₂⁺/S₂⁻ 成对 (2β)</span>'
+      +'<span class="tchip" data-m="pair">配对：同前缀↔x_N相反</span>'
+      +'<span class="tchip" data-m="proj">投影到前 N−1 列 (α+β)</span>';
+    var TINT={S1:rgba(hex2rgb(C.green),0.13),S2:rgba(hex2rgb(C.violet),0.11),proj:rgba(hex2rgb(C.gold),0.14)};
+    function apply(mode){
+      var trs=$('bdecomp-tbl').querySelectorAll('tbody tr[data-sub]');
+      for(var i=0;i<trs.length;i++){ var tr=trs[i], sub=tr.getAttribute('data-sub');
+        var tds=tr.querySelectorAll('td'); for(var j=0;j<tds.length;j++){ if(!tds[j].classList.contains('bd-xn')) tds[j].style.background=''; tds[j].style.outline=''; }
+        if(mode==='S1'&&sub==='S1'){ for(var a=0;a<tds.length;a++) if(!tds[a].classList.contains('bd-xn')) tds[a].style.background=TINT.S1; }
+        else if(mode==='S2'&&(sub==='S2p'||sub==='S2m')){ for(var b=0;b<tds.length;b++) if(!tds[b].classList.contains('bd-xn')) tds[b].style.background=TINT.S2; }
+        else if(mode==='proj'){ for(var c=0;c<tds.length;c++) if(!tds[c].classList.contains('bd-xn')) tds[c].style.background=TINT.proj;
+          if(sub==='S2m'){ tr.style.opacity='0.35'; } else { tr.style.opacity='1'; } }
+        if(mode!=='proj') tr.style.opacity='1';
+        if(mode==='pair'&&(sub==='S2p'||sub==='S2m')){ var pre=tr.getAttribute('data-pre');
+          var hue=(pre==='+++')?C.accent:(pre==='+--')?C.teal:C.violet;
+          for(var d=0;d<tds.length;d++){ tds[d].style.outline='2px solid '+rgba(hex2rgb(hue),0.55); tds[d].style.outlineOffset='-2px'; } }
+      }
+      var chips=ctrl.querySelectorAll('.tchip'); for(var z=0;z<chips.length;z++) chips[z].classList.toggle('on',chips[z].getAttribute('data-m')===mode);
+      var rd;
+      if(mode==='S1') rd='S₁＝前 N−1 列图案<b>只出现一次</b>（落单），它的 x<sub>N</sub> 是被唯一确定的。这里 <b>α = 2</b> 行。';
+      else if(mode==='S2') rd='S₂＝同一前缀<b>配成一对</b>：S₂⁺（x<sub>N</sub>=+1，红）和 S₂⁻（x<sub>N</sub>=−1，青）各 <b>β = 3</b> 行 → 合计 <b>2β = 6</b> 行。';
+      else if(mode==='pair') rd='看同色描边：每个前缀（+++ / +−− / −+−）都<b>同时</b>出现 x<sub>N</sub>=+1 和 x<sub>N</sub>=−1 两行——这就是"成对"。正因成对，加回 x<sub>N</sub> 等于白送一个维度。';
+      else if(mode==='proj') rd='投影到前 N−1 列（删掉 x<sub>N</sub>）：S₁ 的 2 个 + S₂ 每对塌成 1 个（S₂⁻ 已淡掉）= <b>α+β = 5</b> 个不同图案 ≤ B(N−1, k)。';
+      else rd='总数 B(N,k) = α + 2β = 2 + 2·3 = <b>8</b>。点上面按钮，逐堆看清。';
+      setHTML('bdecomp-read', rd);
+    }
+    var chips=ctrl.querySelectorAll('.tchip');
+    for(var c=0;c<chips.length;c++){ (function(el){ el.addEventListener('click',function(){ apply(el.getAttribute('data-m')); }); })(chips[c]); }
+    apply('all');
+  }
+}
+
+/* ===================== §1.4 帕斯卡式递推三角 figBtriangle ===================== */
+function figBtriangle(){
+  if(!$('p-btriangle')) return;
+  var Nmax=8, Kmax=7;
+  var head='<tr><th>N＼k</th>'; for(var k=1;k<=Kmax;k++){ head+='<th>k='+k+'</th>'; } head+='</tr>';
+  var body='';
+  for(var N=1;N<=Nmax;N++){ body+='<tr><td class="lbl" style="text-align:center">N='+N+'</td>';
+    for(var k2=1;k2<=Kmax;k2++){ var v=BNK(N,k2); var inter=(N>=2&&k2>=2);
+      body+='<td id="btc-'+N+'-'+k2+'" data-n="'+N+'" data-k="'+k2+'"'+(inter?' style="cursor:pointer"':'')+'>'+v+'</td>';
+    } body+='</tr>'; }
+  $('p-btriangle').innerHTML='<table class="tab" id="btri-tbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+  function clearHL(){ var tds=$('btri-tbl').querySelectorAll('td'); for(var i=0;i<tds.length;i++){ tds[i].style.background=''; tds[i].style.color=''; } }
+  function pick(N,k){
+    clearHL();
+    var self=$('btc-'+N+'-'+k), up=$('btc-'+(N-1)+'-'+k), ul=$('btc-'+(N-1)+'-'+(k-1));
+    if(self){ self.style.background='rgba(131,48,74,0.18)'; self.style.color=C.accent; }
+    if(up){ up.style.background='rgba(31,107,102,0.16)'; }
+    if(ul){ ul.style.background='rgba(183,137,42,0.18)'; }
+    var vs=BNK(N,k), a=BNK(N-1,k), b=BNK(N-1,k-1);
+    var sumStr=''; for(var i=0;i<=k-1;i++){ sumStr+=(i?'+':'')+comb(N,i); }
+    setHTML('btri-read','<b>B('+N+','+k+') = '+vs+'</b>　=　B('+(N-1)+','+k+') + B('+(N-1)+','+(k-1)+')　=　'+a+' + '+b+
+      '　<span class="rd-note">也＝Σ₍ᵢ₌₀₎^'+(k-1)+' C('+N+',i) = '+sumStr+' = '+vs+'</span>');
+  }
+  var tds=$('btri-tbl').querySelectorAll('td[data-n]');
+  for(var i=0;i<tds.length;i++){ (function(el){ var N=+el.getAttribute('data-n'), k=+el.getAttribute('data-k'); if(N>=2&&k>=2){ el.addEventListener('click',function(){ pick(N,k); }); } })(tds[i]); }
+  pick(4,3);
+}
+
+/* ===================== §1.6 多项式 vs 指数 figPolyVsExp ===================== */
+function figPolyVsExp(){
+  if(!$('p-polyexp')) return;
+  var Ngrow=lin(1,36,36).map(function(x){ return Math.round(x); });
+  function ray(N){ return N+1; }
+  function intv(N){ return 0.5*N*N+0.5*N+1; }
+  function perc(N){ return N*N*N/6+5*N/6+1; }
+  function expo(N){ return Math.pow(2,N); }
+  var seg=$('polyexp-seg'), ctrls=$('polyexp-ctrls');
+  var mode='grow', eps=0.30;
+  function drawGrow(){
+    var data=[
+      {x:Ngrow,y:Ngrow.map(ray), mode:'lines',line:{color:C.teal,width:2.2},name:'射线 N+1'},
+      {x:Ngrow,y:Ngrow.map(intv),mode:'lines',line:{color:C.gold,width:2.2},name:'区间 ½N²+½N+1'},
+      {x:Ngrow,y:Ngrow.map(perc),mode:'lines',line:{color:C.violet,width:2.2},name:'感知机 ⅙N³+…'},
+      {x:Ngrow,y:Ngrow.map(expo),mode:'lines',line:{color:C.accent,width:3,dash:'solid'},name:'2ᴺ （没有断点）'}
+    ];
+    var lay=baseLayout({yaxis:{type:'log',title:{text:'m_H(N)（对数轴）',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        xaxis:{title:{text:'N',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        showlegend:true, legend:{font:{size:10},x:0.02,y:0.98,bgcolor:'rgba(255,252,248,0.7)'}});
+    Plot('p-polyexp',data,lay);
+    setHTML('polyexp-read','对数轴上，三条多项式都是"压扁的"曲线，而 <b style="color:'+C.accent+'">2ᴺ 是一条直线往上冲</b>。只要有断点，m_H 就掉进多项式那一档——这正是下一步能翻盘的全部本钱。');
+  }
+  function drawBound(){
+    var Nb=lin(1,80,80).map(function(x){ return Math.round(x); });
+    var decay=function(N,m){ return m*Math.exp(-2*eps*eps*N); };
+    var yPoly=Nb.map(function(N){ return Math.max(decay(N,perc(N)),1e-12); });
+    var yExp =Nb.map(function(N){ return Math.max(decay(N,expo(N)),1e-12); });
+    var data=[
+      {x:[1,80],y:[1,1],mode:'lines',line:{color:C.inkFaint,width:1.4,dash:'dot'},name:'概率上限 1'},
+      {x:Nb,y:yPoly,mode:'lines',line:{color:C.violet,width:2.6},name:'多项式 · e^(−2ε²N)'},
+      {x:Nb,y:yExp, mode:'lines',line:{color:C.accent,width:2.6},name:'2ᴺ · e^(−2ε²N)'}
+    ];
+    var lay=baseLayout({yaxis:{type:'log',range:[-9,12],title:{text:'界的大小（对数轴）',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        xaxis:{title:{text:'N',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        showlegend:true, legend:{font:{size:10},x:0.02,y:0.02,bgcolor:'rgba(255,252,248,0.7)'}});
+    Plot('p-polyexp',data,lay);
+    var crit=Math.sqrt(Math.log(2)/2);
+    var explode=(eps<crit);
+    setHTML('polyexp-read','乘上同一个 e^(−2ε²N)：<b style="color:'+C.violet+'">多项式那条一定塌到 0</b>（界有用）。'+
+      '而 2ᴺ 这条，'+(explode
+        ? '当前 ε='+fmt(eps,2)+' < '+fmt(crit,3)+'，<b style="color:'+C.accent+'">指数项压不住，界冲破 1 → 完全废话</b>。'
+        : '此时 ε='+fmt(eps,2)+' ≥ '+fmt(crit,3)+'，恰好能压住——但现实里 ε 通常很小，于是 2ᴺ 基本都是废话。')+
+      '　<span class="rd-note">临界 ε* = √(ln2 / 2) ≈ '+fmt(crit,3)+'</span>');
+  }
+  function refresh(){ if(mode==='grow'){ if(ctrls) ctrls.style.display='none'; drawGrow(); } else { if(ctrls) ctrls.style.display=''; drawBound(); } }
+  if(seg){ var bs=seg.querySelectorAll('button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click',function(){ mode=b.getAttribute('data-mode'); for(var j=0;j<bs.length;j++){ bs[j].classList.toggle('on',bs[j]===b); } refresh(); }); })(bs[i]); } }
+  bindSlider('pe-eps', function(v){ eps=v; if(mode==='bound') drawBound(); });
+  refresh();
+}
+
+/* ===================== §1.6 三维：log₂ B(N,k) 的墙与坡 figBsurface ===================== */
+function figBsurface(){
+  var host=$('p-bsurface'); if(!host) return;
+  var xs=[],ys=[],i;
+  for(i=1;i<=12;i++) xs.push(i);          /* N */
+  for(i=1;i<=10;i++) ys.push(i);          /* k */
+  var zs=[];
+  for(var j=0;j<ys.length;j++){ var row=[]; for(var ii=0;ii<xs.length;ii++){ var v=BNK(xs[ii],ys[j]); row.push(Math.log(v)/Math.log(2)); } zs.push(row); }
+  /* k=4（感知机断点）的坡，单独描一条线，凸显"坡远低于墙" */
+  var lx=[],ly=[],lz=[]; for(i=0;i<xs.length;i++){ lx.push(xs[i]); ly.push(4); lz.push(Math.log(BNK(xs[i],4))/Math.log(2)); }
+  var sc=Scene3D(host,{yaw:-0.82,pitch:0.46,zoom:1.02});
+  sc.setObjects({
+    xr:[1,12], yr:[1,10], zr:[0,12],
+    xlab:'N（点数）', ylab:'k（断点）', zlab:'log₂ B(N,k)',
+    objs:[
+      {type:'surface', xs:xs, ys:ys, zs:zs, scale:GARNET_SCALE, alpha:0.9, wire:true},
+      {type:'line', xs:lx, ys:ly, zs:lz, color:C.teal, width:3.2}
+    ]
+  });
+}
+
+/* ===================== §2.2 油漆桶：Hoeffding / Union / VC figPaint ===================== */
+function figPaint(){
+  var host=$('p-paint'); if(!host) return;
+  var seg=$('paint-seg');
+  var W=380,H=250, a0=0.012;                 /* 每个坏事件 ≈ 占整片空间 1.2% 概率 */
+  var bx=8,by=8,bw=W-16,bh=150;              /* "所有数据集"方框 */
+  var mode='hoeff', M=12;
+  function distinct(m){ return Math.min(m, Math.max(1, Math.round(6*Math.log(m+1)))); }
+  function blobs(){
+    var r=Math.sqrt(a0*bw*bh/Math.PI);
+    var out='', rng=mulberry(99+M*7+(mode==='vc'?1000:0)), i;
+    if(mode==='hoeff'){
+      out+='<circle cx="'+(bx+bw*0.5)+'" cy="'+(by+bh*0.5)+'" r="'+r+'" fill="'+C.accent+'" fill-opacity="0.5"/>';
+    } else if(mode==='union'){
+      var cols=Math.max(1,Math.floor(bw/(2*r))), step=2*r;
+      for(i=0;i<M;i++){ var cxp=bx+r+(i%cols)*step+step*0.4, cyp=by+r+Math.floor(i/cols)*step+step*0.1;
+        out+='<circle cx="'+cxp.toFixed(1)+'" cy="'+cyp.toFixed(1)+'" r="'+r+'" fill="'+C.accent+'" fill-opacity="0.42"/>'; }
+    } else {
+      var d=distinct(M), centers=[];
+      for(i=0;i<d;i++){ centers.push([bx+50+rng()*(bw-100), by+40+rng()*(bh-80)]); }
+      for(i=0;i<M;i++){ var c=centers[i%d]; out+='<circle cx="'+(c[0]+(rng()-0.5)*r*0.7).toFixed(1)+'" cy="'+(c[1]+(rng()-0.5)*r*0.7).toFixed(1)+'" r="'+r+'" fill="'+C.teal+'" fill-opacity="0.34"/>'; }
+    }
+    return out;
+  }
+  function meter(unionFrac, actualFrac){
+    var mx=bx, my=by+bh+30, tw=bw, th=15, gap=24;
+    var s='';
+    /* 标尺轨道 + 100% 标线 */
+    s+='<text x="'+mx+'" y="'+(my-8)+'" font-size="10.5" fill="'+C.inkFaint+'" font-family="Spectral,serif">概率预算（轨道满 = 100%）</text>';
+    s+='<line x1="'+(mx+tw)+'" y1="'+(my-4)+'" x2="'+(mx+tw)+'" y2="'+(my+2*th+gap-10)+'" stroke="'+C.inkFaint+'" stroke-width="1" stroke-dasharray="2 2"/>';
+    s+='<text x="'+(mx+tw)+'" y="'+(my-8)+'" text-anchor="end" font-size="10" fill="'+C.inkFaint+'" font-family="Spectral,serif">100%</text>';
+    /* 朴素相加（联合界）条 */
+    var uW=Math.min(unionFrac,1)*tw, uOver=unionFrac>1;
+    s+='<rect x="'+mx+'" y="'+my+'" width="'+tw+'" height="'+th+'" rx="4" fill="'+C.paper+'" stroke="'+C.line+'"/>';
+    s+='<rect x="'+mx+'" y="'+my+'" width="'+uW.toFixed(1)+'" height="'+th+'" rx="4" fill="'+(uOver?C.rust:C.accent)+'" fill-opacity="0.85"/>';
+    if(uOver){ var ax=mx+tw; s+='<polygon points="'+ax+','+(my+th/2-5)+' '+(ax+9)+','+(my+th/2)+' '+ax+','+(my+th/2+5)+'" fill="'+C.rust+'"/>'+
+      '<text x="'+(ax+12)+'" y="'+(my+th-3)+'" font-size="10" font-weight="700" fill="'+C.rust+'" font-family="Spectral,serif">溢出</text>'; }
+    s+='<text x="'+mx+'" y="'+(my-2)+'" font-size="0"></text>';
+    s+='<text x="'+(mx+4)+'" y="'+(my+th-3)+'" font-size="10" fill="#fff" font-family="Spectral,serif">朴素相加（联合界）</text>';
+    /* 真实覆盖条 */
+    var ay2=my+th+gap, aW=Math.min(actualFrac,1)*tw;
+    s+='<rect x="'+mx+'" y="'+ay2+'" width="'+tw+'" height="'+th+'" rx="4" fill="'+C.paper+'" stroke="'+C.line+'"/>';
+    s+='<rect x="'+mx+'" y="'+ay2+'" width="'+aW.toFixed(1)+'" height="'+th+'" rx="4" fill="'+C.green+'" fill-opacity="0.85"/>';
+    s+='<text x="'+(mx+4)+'" y="'+(ay2+th-3)+'" font-size="10" fill="#fff" font-family="Spectral,serif">真正染色（去重后）</text>';
+    return s;
+  }
+  function render(){
+    var unionFrac=(mode==='hoeff'?a0:M*a0);
+    var actualFrac=(mode==='hoeff')?a0:(mode==='vc')?distinct(M)*a0:(1-Math.pow(1-a0,M));
+    var s='<svg viewBox="0 0 '+W+' '+H+'">';
+    s+='<defs><clipPath id="paintbox"><rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" rx="10"/></clipPath></defs>';
+    s+='<rect x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+bh+'" rx="10" fill="'+C.paper+'" stroke="'+C.line+'" stroke-width="1.5"/>';
+    s+='<g clip-path="url(#paintbox)">'+blobs()+'</g>';
+    s+='<text x="'+(bx+8)+'" y="'+(by+bh-8)+'" font-size="10.5" fill="'+C.inkFaint+'" font-family="Spectral,serif">整片 = 所有可能数据集</text>';
+    s+=meter(unionFrac,actualFrac)+'</svg>';
+    host.innerHTML=s;
+    var uOver=(mode!=='hoeff'&&unionFrac>1);
+    setHTML('paint-union','朴素相加 (联合界)：'+(mode==='hoeff'?'1':'M='+M)+' × 1.2% = <b class="'+(uOver?'warnval':'')+'">'+fmt(unionFrac*100,1)+'%</b>'+(uOver?'（已 > 100% = 废话）':''));
+    setHTML('paint-actual','真正盖住的面积：<b class="okval">'+fmt(actualFrac*100,1)+'%</b>');
+    var read;
+    if(mode==='hoeff') read='单个假设：坏事件就一块，Hoeffding 保证它 ≤ 2e^(−2ε²N)。这一块小而可控。';
+    else if(mode==='union') read='M 个假设，联合界把每块当作<b>互不重叠直接相加</b>。块一多，朴素总和这条<b style="color:'+C.accent+'">直接撑爆轨道</b>（>100%、毫无意义）——这正是 M=∞ 时界爆炸的根源。可真实重叠后只染了下面那条（'+fmt(actualFrac*100,1)+'%）。';
+    else read='关键真相：很多假设在<b>这 N 个点上给出相同的二分</b> → 坏事件<b>是同一块</b>，疯狂重叠。M 个圆挤进约 '+distinct(M)+' 个簇，真正覆盖只有 '+fmt(actualFrac*100,1)+'%。于是"有效块数"不是 M、而是 <b style="color:'+C.teal+'">m_H(N)</b>——这就是用增长函数换掉 M 的几何直觉。';
+    setHTML('paint-read',read);
+    var bs=seg?seg.querySelectorAll('button'):[]; for(var b=0;b<bs.length;b++){ bs[b].classList.toggle('on',bs[b].getAttribute('data-mode')===mode); }
+  }
+  if(seg){ var bs=seg.querySelectorAll('button'); for(var i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click',function(){ mode=b.getAttribute('data-mode'); render(); }); })(bs[i]); } }
+  bindSlider('paint-m', function(v){ M=Math.round(v); render(); });
+  render();
+}
+
+/* ===================== §2.4 幽灵样本蒙特卡洛 figGhost ===================== */
+function figGhost(){
+  var host=$('p-ghost'); if(!host) return;
+  var EOUT=0.30, eps=0.15, N=60, showEout=true, runSeed=1;
+  var lastIn=EOUT, lastGhost=EOUT, hist=null, pIn=0, pRight=0;
+  var tg=$('gh-toggle'); if(tg && typeof tg.checked==='boolean') showEout=tg.checked!==false;
+  function binom(n,p,rng){ var s=0,i; for(i=0;i<n;i++){ if(rng()<p) s++; } return s/n; }
+  function run(){
+    var trials=5000, rng=mulberry(20260615+runSeed*131), A=0,B=0;
+    var nb=28, lo=0, hi=0.7, bins=new Array(nb); for(var q=0;q<nb;q++) bins[q]=0;
+    for(var t=0;t<trials;t++){
+      var ein=binom(N,EOUT,rng), eg=binom(N,EOUT,rng);
+      if(Math.abs(ein-EOUT)>eps) A++;
+      if(Math.abs(ein-eg)>eps/2) B++;
+      var bi=Math.floor((ein-lo)/(hi-lo)*nb); if(bi>=0&&bi<nb) bins[bi]++;
+      lastIn=ein; lastGhost=eg;
+    }
+    pIn=A/trials; pRight=2*(B/trials); hist={bins:bins,nb:nb,lo:lo,hi:hi,max:Math.max.apply(null,bins)};
+    render();
+  }
+  function render(){
+    var W=380,Ht=190, mL=14,mR=14, x0=mL, x1=W-mR, axisY=Ht-40, lo=0,hi=0.7;
+    function X(v){ return x0+(v-lo)/(hi-lo)*(x1-x0); }
+    var svg='<svg viewBox="0 0 '+W+' '+Ht+'">';
+    /* 直方图 */
+    if(hist){ var bw=(x1-x0)/hist.nb; for(var i=0;i<hist.nb;i++){ var h=hist.max?(bins_h(i)/hist.max)*70:0; var bx=x0+i*bw;
+        svg+='<rect x="'+bx.toFixed(1)+'" y="'+(axisY-h).toFixed(1)+'" width="'+(bw-1).toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+C.inkFaint+'" fill-opacity="0.28"/>'; } }
+    /* 安全带 [Eout−ε, Eout+ε] */
+    if(showEout){
+      svg+='<rect x="'+X(EOUT-eps).toFixed(1)+'" y="20" width="'+(X(EOUT+eps)-X(EOUT-eps)).toFixed(1)+'" height="'+(axisY-20).toFixed(1)+'" fill="'+C.green+'" fill-opacity="0.10"/>';
+      svg+='<line x1="'+X(EOUT)+'" y1="16" x2="'+X(EOUT)+'" y2="'+axisY+'" stroke="'+C.green+'" stroke-width="2" stroke-dasharray="4 3"/>';
+      svg+='<text x="'+X(EOUT)+'" y="13" text-anchor="middle" font-size="10.5" fill="'+C.green+'" font-family="Spectral,serif">E_out = 0.30</text>';
+    } else {
+      svg+='<text x="'+(W/2)+'" y="13" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'" font-family="Spectral,serif">（E_out 隐藏：现实里你看不见这条线）</text>';
+    }
+    /* 坐标轴 */
+    svg+='<line x1="'+x0+'" y1="'+axisY+'" x2="'+x1+'" y2="'+axisY+'" stroke="'+C.line+'" stroke-width="1.4"/>';
+    for(var g=0;g<=7;g++){ var vv=lo+(hi-lo)*g/7; svg+='<line x1="'+X(vv)+'" y1="'+axisY+'" x2="'+X(vv)+'" y2="'+(axisY+4)+'" stroke="'+C.line+'"/>'+
+        '<text x="'+X(vv)+'" y="'+(axisY+15)+'" text-anchor="middle" font-size="9" fill="'+C.inkFaint+'" font-family="Spectral,serif">'+fmt(vv,1)+'</text>'; }
+    /* 最近一次抽样的两个点 + 连线 */
+    var yIn=axisY-90, yG=axisY-66;
+    svg+='<line x1="'+X(lastIn)+'" y1="'+yIn+'" x2="'+X(lastGhost)+'" y2="'+yG+'" stroke="'+C.inkSoft+'" stroke-width="1" stroke-dasharray="2 2"/>';
+    svg+='<circle cx="'+X(lastIn)+'" cy="'+yIn+'" r="6" fill="'+C.accent+'"/><text x="'+(X(lastIn)+9)+'" y="'+(yIn+4)+'" font-size="10" fill="'+C.accent+'" font-family="Spectral,serif">E_in</text>';
+    svg+='<circle cx="'+X(lastGhost)+'" cy="'+yG+'" r="6" fill="'+C.teal+'"/><text x="'+(X(lastGhost)+9)+'" y="'+(yG+4)+'" font-size="10" fill="'+C.teal+'" font-family="Spectral,serif">E\u2032_in（幽灵）</text>';
+    svg+='</svg>';
+    host.innerHTML=svg;
+    if(hist){
+      setHTML('gh-pin','左：P[|E_in − E_out| > ε] ≈ <b>'+fmt(pIn*100,1)+'%</b>');
+      setHTML('gh-pgap','右：2 × P[|E_in − E\u2032_in| > ε/2] ≈ <b>'+fmt(pRight*100,1)+'%</b>');
+      var ok=pRight+1e-9>=pIn;
+      setHTML('gh-note','幽灵不等式断言 <b>右 ≥ 左</b>：本次 '+(ok?'<b style="color:var(--green)">成立 ✓</b>':'<b style="color:var(--rust)">这次反了（小概率涨落，多抽几次）</b>')+'。意义：E_out 摸不到，但"<b>再抽一份同样大小的影子样本</b>"是摸得到的；用两份样本的差，就把不可观测的真误差<b>框住</b>了——代价只是 ε 减半、概率翻倍。');
+    } else {
+      setHTML('gh-note','点"开抽 5000 次"：每次抽一份真样本 E_in 和一份幽灵样本 E′_in，看右项能不能盖住左项。');
+    }
+  }
+  function bins_h(i){ return hist?hist.bins[i]:0; }
+  bindSlider('gh-n', function(v){ N=Math.round(v); if(hist) run(); else render(); });
+  bindSlider('gh-eps', function(v){ eps=v; if(hist) run(); else render(); });
+  if(tg){ tg.addEventListener('click',function(){ showEout=(typeof tg.checked==='boolean')?tg.checked:!showEout; render(); }); tg.addEventListener('change',function(){ showEout=(typeof tg.checked==='boolean')?tg.checked:!showEout; render(); }); }
+  var rb=$('gh-run'); if(rb) rb.addEventListener('click',function(){ runSeed++; run(); });
+  render();
+}
+
+/* ===================== §2.5 VC 不等式：δ(N) 与 ε(N) figVCbound ===================== */
+function figVCbound(){
+  if(!$('p-vcbound')) return;
+  var seg=$('vc-seg'), ecl=$('vc-eps-ctrl'), dcl=$('vc-delta-ctrl');
+  var dvc=10, eps=0.10, delta=0.10, mode='delta', TGT=0.05;
+  /* 对数采样 N ∈ [1, 2e5] */
+  var Ns=[]; var nlo=0, nhi=Math.log(2e5)/Math.LN10, NP=150, i;
+  for(i=0;i<NP;i++){ Ns.push(Math.max(1,Math.round(Math.pow(10, nlo+(nhi-nlo)*i/(NP-1))))); }
+  function findN(target){ var N=1, lnt=Math.log(target), guard=0; while(N<2e9 && guard<4000){ if(logDelta(N,dvc,eps)<lnt) return N; N=Math.ceil(N*1.04)+1; guard++; } return null; }
+  function drawDelta(){
+    var y=Ns.map(function(N){ var d=Math.exp(logDelta(N,dvc,eps)); return d; });
+    var data=[
+      {x:[Ns[0],Ns[Ns.length-1]],y:[1,1],mode:'lines',line:{color:C.rust,width:1.6,dash:'dot'},name:'δ=1（完全空洞）'},
+      {x:[Ns[0],Ns[Ns.length-1]],y:[TGT,TGT],mode:'lines',line:{color:C.green,width:1.4,dash:'dash'},name:'δ=5%（够用）'},
+      {x:Ns,y:y,mode:'lines',line:{color:C.accent,width:3},name:'δ(N)=4·m_H(2N)·e^(−ε²N/8)'}
+    ];
+    var lay=baseLayout({xaxis:{type:'log',title:{text:'N（对数轴）',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        yaxis:{type:'log',range:[-6,8],title:{text:'失败概率上界 δ',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        showlegend:true, legend:{font:{size:9.5},x:0.55,y:0.98,bgcolor:'rgba(255,252,248,0.72)'}});
+    Plot('p-vcbound',data,lay);
+    var N1=findN(1), Nt=findN(TGT), rule=10*dvc;
+    setHTML('vc-read','在 N ≈ <b>'+(N1?N1.toLocaleString():'极大')+'</b> 之前，δ(N) <b style="color:'+C.rust+'">大于 1</b>——界在说"失败概率 ≤ 200%"，<b>等于没说</b>。要压到 5% 以下，理论上要 N ≈ <b>'+(Nt?Nt.toLocaleString():'极大')+'</b>。');
+    var ratio=(Nt&&rule)?Math.round(Nt/rule):null;
+    setHTML('vc-samplecomp','<span class="rd-note">震撼对比：经验法则只要 N ≳ 10·d_VC = '+rule+' 就够；VC 定理却索要 ≈ '+(Nt?Nt.toLocaleString():'极大')+'（约 '+(ratio?ratio+' 倍':'天文数字')+'）。界是对的，但松到不能当数字用——它的价值在"存在保证"和"模型间相对比较"。</span>');
+  }
+  function drawEps(){
+    var y=Ns.map(function(N){ var arg=(8/N)*(Math.log(4)+logSumComb(2*N,dvc)-Math.log(delta)); return Math.sqrt(Math.max(arg,0)); });
+    var data=[ {x:Ns,y:y,mode:'lines',line:{color:C.violet,width:3},name:'ε(N)'} ];
+    var lay=baseLayout({xaxis:{type:'log',title:{text:'N（对数轴）',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        yaxis:{range:[0,1.6],title:{text:'泛化间隔 ε（置信度 1−δ）',font:{size:11}},gridcolor:C.grid,linecolor:C.line,tickfont:{size:10}},
+                        showlegend:false});
+    Plot('p-vcbound',data,lay);
+    function epsAt(N){ return Math.sqrt(Math.max((8/N)*(Math.log(4)+logSumComb(2*N,dvc)-Math.log(delta)),0)); }
+    setHTML('vc-read','固定置信度 1−δ = '+fmt((1-delta)*100,0)+'%：N=10⁴ 时 ε ≈ <b>'+fmt(epsAt(1e4),3)+'</b>；N=10⁵ 时 ε ≈ <b>'+fmt(epsAt(1e5),3)+'</b>。间隔按 <b>√(d_VC·ln N / N)</b> 收缩。');
+    setHTML('vc-samplecomp','<span class="rd-note">注意这条 √ 形：要把误差砍半，样本得翻 4 倍还多。维度 d_VC 越高，曲线整体抬升——这就是"复杂模型要更多数据"的定量版本。</span>');
+  }
+  function refresh(){ if(mode==='delta'){ if(ecl) ecl.style.display=''; if(dcl) dcl.style.display='none'; drawDelta(); }
+                      else { if(ecl) ecl.style.display='none'; if(dcl) dcl.style.display=''; drawEps(); } }
+  if(seg){ var bs=seg.querySelectorAll('button'); for(i=0;i<bs.length;i++){ (function(b){ b.addEventListener('click',function(){ mode=b.getAttribute('data-mode'); for(var j=0;j<bs.length;j++){ bs[j].classList.toggle('on',bs[j]===b); } refresh(); }); })(bs[i]); } }
+  bindSlider('vc-dvc', function(v){ dvc=Math.round(v); refresh(); });
+  bindSlider('vc-eps', function(v){ eps=v; if(mode==='delta') drawDelta(); });
+  bindSlider('vc-delta', function(v){ delta=v; if(mode==='eps') drawEps(); });
+  refresh();
+}
+
+/* ===================== §0.2 感知机 8→14 figPerc814 ===================== */
+function figPerc814(){
+  var host=$('p-perc814'); if(!host) return;
+  var W=380,H=300;
+  var SQ=[[110,92],[270,92],[270,232],[110,232]];   /* 0左上 1右上 2右下 3左下 */
+  var TRI=[[190,82],[108,226],[272,226]];
+  var mode4=true, labels=[true,false,false,false], seen={}, nSeen=0;
+  function P(){ return mode4?SQ:TRI; }
+  function clipHP(poly,nx,ny,c,keepG){
+    var out=[],L=poly.length;
+    for(var i=0;i<L;i++){ var a=poly[i],b=poly[(i+1)%L];
+      var da=a[0]*nx+a[1]*ny-c, db=b[0]*nx+b[1]*ny-c;
+      var ina=keepG?da>=0:da<=0, inb=keepG?db>=0:db<=0;
+      if(ina) out.push(a);
+      if(ina!==inb){ var t=da/(da-db); out.push([a[0]+t*(b[0]-a[0]), a[1]+t*(b[1]-a[1])]); }
+    }
+    return out;
+  }
+  function sep(pp,labs){
+    var n=pp.length, best=null, bestGap=-1;
+    for(var deg=0;deg<180;deg++){
+      var th=deg*Math.PI/180, nx=Math.cos(th), ny=Math.sin(th);
+      var maxP=-1e9,minP=1e9,maxN=-1e9,minN=1e9,aP=false,aN=false;
+      for(var i=0;i<n;i++){ var pr=pp[i][0]*nx+pp[i][1]*ny;
+        if(labs[i]){aP=true; if(pr>maxP)maxP=pr; if(pr<minP)minP=pr;}
+        else{aN=true; if(pr>maxN)maxN=pr; if(pr<minN)minN=pr;} }
+      if(!aP||!aN) return {ok:true,trivial:true,allplus:aP};
+      var g1=minP-maxN, g2=minN-maxP;
+      if(g1>bestGap&&g1>0){ bestGap=g1; best={nx:nx,ny:ny,tau:(minP+maxN)/2,pg:true}; }
+      if(g2>bestGap&&g2>0){ bestGap=g2; best={nx:nx,ny:ny,tau:(minN+maxP)/2,pg:false}; }
+    }
+    if(best){ best.ok=true; return best; }
+    return {ok:false};
+  }
+  function render(){
+    var pp=P(), n=pp.length;
+    if(labels.length!==n){ labels=[]; for(var z=0;z<n;z++) labels.push(z===0); }
+    var R=[[6,6],[W-6,6],[W-6,H-6],[6,H-6]];
+    var s=sep(pp,labels);
+    var g='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+    g+='<rect x="6" y="6" width="'+(W-12)+'" height="'+(H-12)+'" rx="10" fill="'+C.paper+'" stroke="'+C.line+'"/>';
+    if(s.ok&&s.trivial){
+      g+='<rect x="6" y="6" width="'+(W-12)+'" height="'+(H-12)+'" rx="10" fill="'+(s.allplus?C.accent:C.teal)+'" fill-opacity="0.10"/>';
+    } else if(s.ok){
+      g+='<polygon points="'+_poly(clipHP(R,s.nx,s.ny,s.tau,s.pg))+'" fill="'+C.accent+'" fill-opacity="0.11"/>';
+      g+='<polygon points="'+_poly(clipHP(R,s.nx,s.ny,s.tau,!s.pg))+'" fill="'+C.teal+'" fill-opacity="0.11"/>';
+      var dx=-s.ny,dy=s.nx,x0=s.tau*s.nx,y0=s.tau*s.ny,LL=620;
+      g+='<line x1="'+(x0-LL*dx).toFixed(1)+'" y1="'+(y0-LL*dy).toFixed(1)+'" x2="'+(x0+LL*dx).toFixed(1)+'" y2="'+(y0+LL*dy).toFixed(1)+'" stroke="'+C.ink+'" stroke-width="2" stroke-dasharray="7 4"/>';
+    } else {
+      g+='<rect x="6" y="6" width="'+(W-12)+'" height="'+(H-12)+'" rx="10" fill="'+C.rust+'" fill-opacity="0.07"/>';
+      g+='<text x="'+(W/2)+'" y="26" text-anchor="middle" font-size="12.5" font-weight="700" fill="'+C.rust+'">直线分不开（XOR）</text>';
+    }
+    for(var i=0;i<n;i++){ var p=pp[i], col=labels[i]?C.accent:C.teal, sym=labels[i]?'+':'\u2212';
+      g+='<circle class="p814" data-i="'+i+'" cx="'+p[0]+'" cy="'+p[1]+'" r="18" fill="'+col+'" stroke="#fff" stroke-width="3" style="cursor:pointer"/>';
+      g+='<text x="'+p[0]+'" y="'+(p[1]+7)+'" text-anchor="middle" font-size="20" font-weight="700" fill="#fff" style="pointer-events:none">'+sym+'</text>'; }
+    g+='</svg>';
+    host.innerHTML=g;
+    var cs=host.querySelectorAll('.p814');
+    for(var j=0;j<cs.length;j++){ (function(el){ el.addEventListener('click',function(){ var k=+el.getAttribute('data-i'); labels[k]=!labels[k]; render(); }); })(cs[j]); }
+    var key=labels.map(function(b){return b?'1':'0';}).join('');
+    if(s.ok&&!seen[key]){ seen[key]=1; nSeen++; }
+    var total=mode4?16:8;
+    var lt=labels.map(function(b,ii){return (ii+1)+(b?'＋':'−');}).join(' ');
+    setHTML('perc-status','当前标号 ('+lt+')：'+(s.ok?'<b style="color:'+C.green+'">一条直线分得开 ✓</b>':'<b style="color:'+C.rust+'">直线分不开 ✗</b>'));
+    var why;
+    if(s.ok&&s.trivial) why='全部同色 → 平凡可分，整片都判同一类。';
+    else if(s.ok) why='那条<b>虚线</b>就是感知机的决策边界：<b style="color:'+C.accent+'">淡红一侧判 ＋</b>、<b style="color:'+C.teal+'">淡青一侧判 −</b>，每个点都落在与自己同色的那侧。';
+    else why='无论虚线怎么转、怎么平移，总有一个 ＋ 和一个 − 被迫同侧——这就是 2D 感知机<b>做不到</b>的标号。';
+    setHTML('perc-count','已实现的<b>可分</b>标号：<b>'+nSeen+'</b> / '+total+'　（'+(mode4?'4 点最多 14 种可分':'3 点 8 种全可分')+'）');
+    var done=(mode4&&nSeen>=14)?' ✅ 集齐 14 种！剩下 2 种正是"对角同色"的 XOR，永远分不开 → <b>m_H(4)=14 而非 16</b>，4 点没被打散 → 断点 k=4。':((!mode4&&nSeen>=8)?' ✅ 8 种全可分 → 3 点被<b>打散</b>，m_H(3)=2³=8。':'');
+    setHTML('perc-note', why+done);
+  }
+  var seg=$('perc-seg');
+  if(seg){ var bs=seg.querySelectorAll('button'); for(var b=0;b<bs.length;b++){ (function(btn){ btn.addEventListener('click',function(){ mode4=(btn.getAttribute('data-mode')==='4'); for(var q=0;q<bs.length;q++) bs[q].classList.toggle('on',bs[q]===btn); seen={};nSeen=0;labels=[]; render(); }); })(bs[b]); } }
+  var rb=$('perc-reset'); if(rb) rb.addEventListener('click',function(){ seen={};nSeen=0;labels=[]; render(); });
+  var xb=$('perc-xor'); if(xb) xb.addEventListener('click',function(){ if(mode4){labels=[true,false,true,false];} else {labels=[true,false,false];} render(); });
+  render();
+}
+
+/* ===================== §1.6 凸集打散 figConvex ===================== */
+function figConvex(){
+  var host=$('p-convex'); if(!host) return;
+  var W=380,H=300, cx=190, cy=152, R=112, N=8, labels=[];
+  function pos(i){ var a=-Math.PI/2 + 2*Math.PI*i/N; return [cx+R*Math.cos(a), cy+R*Math.sin(a)]; }
+  function reset(n){ N=n; labels=[]; for(var i=0;i<N;i++) labels.push(i%2===0); }
+  function render(){
+    var plus=[]; for(var i=0;i<N;i++) if(labels[i]) plus.push(i);
+    var s='<svg viewBox="0 0 '+W+' '+H+'">';
+    s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="'+C.line+'" stroke-width="1" stroke-dasharray="3 5"/>';
+    if(plus.length>=3){
+      var poly=plus.slice().sort(function(a,b){return a-b;}).map(function(k){var p=pos(k);return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+      s+='<polygon points="'+poly+'" fill="'+C.accent+'" fill-opacity="0.13" stroke="'+C.accent+'" stroke-width="2"/>';
+    } else if(plus.length===2){ var a=pos(plus[0]),b=pos(plus[1]);
+      s+='<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="'+C.accent+'" stroke-width="2"/>'; }
+    for(i=0;i<N;i++){ var p=pos(i), col=labels[i]?C.accent:C.teal, sym=labels[i]?'+':'\u2212';
+      s+='<circle class="cvx" data-i="'+i+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="13" fill="'+col+'" stroke="#fff" stroke-width="2" style="cursor:pointer"/>';
+      s+='<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+4).toFixed(1)+'" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" style="pointer-events:none">'+sym+'</text>'; }
+    s+='</svg>';
+    host.innerHTML=s;
+    var cs=host.querySelectorAll('.cvx');
+    for(var j=0;j<cs.length;j++){ (function(el){ el.addEventListener('click',function(){ var k=+el.getAttribute('data-i'); labels[k]=!labels[k]; render(); }); })(cs[j]); }
+    setHTML('cvx-read','当前 + 点数：<b>'+plus.length+'</b>。它们的凸包（红色区域）恰好<b>只圈住 + 点</b>、把所有 − 点留在外面 → 这个标号<b style="color:'+C.green+'">实现得了 ✓</b>。');
+    setHTML('cvx-note','圆周上的点处于<b>凸位置</b>：任取子集，其凸包是内接多边形，圆上其余点必在外。于是<b>全部 2<sup>'+N+'</sup> 种标号都能实现</b> → 凸集<b>打散</b>了这 '+N+' 个点 → <mark>无论 N 多大都没有断点，m<sub>H</sub>(N)=2<sup>N</sup></mark>，正是"指数、不可学"那一类。');
+  }
+  reset(8); render();
+  bindSlider('cvx-n', function(v){ reset(Math.round(v)); render(); });
+  var rb=$('cvx-rand'); if(rb) rb.addEventListener('click',function(){ for(var i=0;i<N;i++) labels[i]=Math.random()<0.5; render(); });
+}
+
+/* CJK font stack for in-SVG Chinese labels */
+var CJK="-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif";
+
+function _poly(p){ return p.map(function(q){return q[0].toFixed(1)+','+q[1].toFixed(1);}).join(' '); }
+
+function figFamilies(){
+  var host=$('p-families'); if(!host) return;
+  var W=760,H=250, pw=240, gap=20;
+  function panel(ox,title,formula,drawFn){
+    var g='<g>';
+    g+='<rect x="'+ox+'" y="36" width="'+pw+'" height="150" rx="10" fill="'+C.paper+'" stroke="'+C.line+'"/>';
+    g+='<text x="'+(ox+pw/2)+'" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="'+C.ink+'">'+title+'</text>';
+    g+=drawFn(ox);
+    g+='<text x="'+(ox+pw/2)+'" y="208" text-anchor="middle" font-size="13" fill="'+C.accent+'" font-family="Spectral,serif">'+formula+'</text>';
+    g+='<text x="'+(ox+pw/2)+'" y="228" text-anchor="middle" font-size="11" fill="'+C.inkFaint+'">'+(title.indexOf('凸')>=0?'断点 ∞':'断点 '+(title.indexOf('射线')>=0?'2':title.indexOf('区间')>=0?'3':'4'))+'</text>';
+    return g+'</g>';
+  }
+  function dot(x,y,plus){ return '<circle cx="'+x+'" cy="'+y+'" r="7.5" fill="'+(plus?C.accent:C.teal)+'" stroke="#fff" stroke-width="1.5"/>'
+    +'<text x="'+x+'" y="'+(y+3.5)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">'+(plus?'+':'\u2212')+'</text>'; }
+  /* 射线: 数轴 + 阈值 a, x>a 为 + */
+  function rays(ox){ var y=120, x0=ox+24, x1=ox+pw-24, a=ox+pw*0.56;
+    var g='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    g+='<line x1="'+a+'" y1="'+(y-30)+'" x2="'+a+'" y2="'+(y+18)+'" stroke="'+C.gold+'" stroke-width="2.5"/>';
+    g+='<text x="'+a+'" y="'+(y-36)+'" text-anchor="middle" font-size="12" fill="'+C.gold+'" font-family="Spectral,serif">a</text>';
+    var xs=[0.12,0.28,0.44,0.7,0.86];
+    for(var i=0;i<xs.length;i++){ var px=ox+24+(pw-48)*xs[i]; g+=dot(px,y,px>a); }
+    g+='<text x="'+(ox+pw/2)+'" y="78" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">h(x)=sign(x−a)·阈值左右</text>';
+    return g; }
+  /* 区间: [a,b] 内为 + */
+  function ints(ox){ var y=120, x0=ox+24, x1=ox+pw-24, a=ox+pw*0.36, b=ox+pw*0.7;
+    var g='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    g+='<rect x="'+a+'" y="'+(y-16)+'" width="'+(b-a)+'" height="32" fill="'+rgba(hex2rgb(C.accent),0.10)+'" stroke="'+C.gold+'" stroke-width="2"/>';
+    g+='<text x="'+a+'" y="'+(y-22)+'" text-anchor="middle" font-size="11" fill="'+C.gold+'" font-family="Spectral,serif">a</text>';
+    g+='<text x="'+b+'" y="'+(y-22)+'" text-anchor="middle" font-size="11" fill="'+C.gold+'" font-family="Spectral,serif">b</text>';
+    var xs=[0.14,0.46,0.6,0.82];
+    for(var i=0;i<xs.length;i++){ var px=ox+24+(pw-48)*xs[i]; g+=dot(px,y, px>a&&px<b); }
+    g+='<text x="'+(ox+pw/2)+'" y="78" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">落在区间 [a,b] 内 = +</text>';
+    return g; }
+  /* 感知机: 平面 + 直线 */
+  function perc(ox){ var cx=ox+pw/2, cy=118;
+    var g='<line x1="'+(ox+30)+'" y1="'+(cy+38)+'" x2="'+(ox+pw-30)+'" y2="'+(cy-42)+'" stroke="'+C.ink+'" stroke-width="2" stroke-dasharray="6 3"/>';
+    g+='<text x="'+(ox+pw/2)+'" y="78" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">一条直线把平面切两半</text>';
+    g+=dot(ox+70,cy-20,true)+dot(ox+110,cy+8,true)+dot(ox+165,cy-30,false)+dot(ox+185,cy+30,false);
+    return g; }
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+  svg+=panel(0,'① 正射线 rays','m_H(N)=N+1',rays);
+  svg+=panel(pw+gap,'② 正区间 intervals','m_H(N)=½N²+½N+1',ints);
+  svg+=panel(2*(pw+gap),'③ 2D 感知机 perceptron','m_H(N)≤⅙N³+⅚N+1',perc);
+  svg+='</svg>';
+  host.innerHTML=svg;
+}
+
+function figBNKconcept(){
+  var host=$('p-bnk'); if(!host) return;
+  var W=760,H=300;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+  /* 左：你的具体 H */
+  s+='<rect x="20" y="60" width="180" height="120" rx="12" fill="'+C.paper+'" stroke="'+C.line+'"/>';
+  s+='<text x="110" y="46" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">你手上的具体 H</text>';
+  s+='<text x="110" y="118" text-anchor="middle" font-size="14" fill="'+C.accent+'" font-family="Spectral,serif">m_H(N)</text>';
+  s+='<text x="110" y="150" text-anchor="middle" font-size="11" fill="'+C.inkFaint+'">闭式可能很难算</text>';
+  /* 箭头 放宽 */
+  s+='<line x1="205" y1="120" x2="300" y2="120" stroke="'+C.violet+'" stroke-width="2.5" marker-end="url(#bnkArrow)"/>';
+  s+='<defs><marker id="bnkArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="'+C.violet+'"/></marker></defs>';
+  s+='<text x="252" y="110" text-anchor="middle" font-size="11.5" font-weight="700" fill="'+C.violet+'">放宽</text>';
+  s+='<text x="252" y="138" text-anchor="middle" font-size="10" fill="'+C.inkFaint+'">只保留"断点=k"</text>';
+  /* 右：所有断点=k 的 H */
+  s+='<rect x="305" y="40" width="230" height="170" rx="12" fill="'+rgba(hex2rgb(C.violet),0.06)+'" stroke="'+C.violet+'" stroke-dasharray="4 3"/>';
+  s+='<text x="420" y="30" text-anchor="middle" font-size="12.5" font-weight="700" fill="'+C.violet+'">所有"断点=k"的假设集</text>';
+  /* scatter small H tokens */
+  var pts=[[350,80],[400,70],[470,95],[510,75],[360,130],[420,120],[490,150],[455,175],[380,165]];
+  for(var i=0;i<pts.length;i++){ var big=(i===3); s+='<circle cx="'+pts[i][0]+'" cy="'+pts[i][1]+'" r="'+(big?11:6)+'" fill="'+(big?C.accent:rgba(hex2rgb(C.violet),0.5))+'" stroke="#fff" stroke-width="1.5"/>'; }
+  s+='<text x="510" y="79" font-size="10" fill="'+C.accent+'" font-weight="700">最大的那个</text>';
+  s+='<text x="420" y="200" text-anchor="middle" font-size="13" fill="'+C.accent+'" font-family="Spectral,serif">B(N,k) = 取最大 = 天花板</text>';
+  /* 关键不等式 */
+  s+='<text x="640" y="70" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">关键性质</text>';
+  s+='<text x="640" y="100" text-anchor="middle" font-size="15" fill="'+C.accent+'" font-family="Spectral,serif">m_H(N) ≤ B(N,k)</text>';
+  s+='<text x="640" y="128" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">所以 B 是多项式</text>';
+  s+='<text x="640" y="144" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">⟹ 你的 H 也可学</text>';
+  /* 小例 N=3,k=2 -> B=4 (= 至多一个+) */
+  s+='<text x="640" y="178" text-anchor="middle" font-size="12" font-weight="700" fill="'+C.green+'">小例 N=3,k=2</text>';
+  var rows=[['-','-','-'],['+','-','-'],['-','+','-'],['-','-','+']];
+  var bx=585,by=190,cw=20,rh=18;
+  for(var r=0;r<4;r++){ for(var c=0;c<3;c++){ var ch=rows[r][c];
+    s+='<text x="'+(bx+c*cw)+'" y="'+(by+r*rh+12)+'" text-anchor="middle" font-size="12" font-weight="700" fill="'+(ch==='+'?C.accent:C.inkFaint)+'" font-family="Spectral,serif">'+(ch==='+'?'+':'\u2212')+'</text>'; } }
+  s+='<text x="'+(bx+90)+'" y="'+(by+24)+'" font-size="11" fill="'+C.green+'">B(3,2)=4</text>';
+  s+='<text x="'+(bx+90)+'" y="'+(by+42)+'" font-size="10" fill="'+C.inkFaint+'">("至多一个 +"</text>';
+  s+='<text x="'+(bx+90)+'" y="'+(by+56)+'" font-size="10" fill="'+C.inkFaint+'">＝0.3 谜题)</text>';
+  s+='</svg>';
+  host.innerHTML=s;
+}
+
+function figFocus(){
+  var host=$('p-focus'); if(!host) return;
+  var W=760,H=300, MINUS='\u2212';
+  function mini(ox,oy,highlightCols,highlightRows,title,note,col){
+    var rows=[['+','+','+','+'],['-','+','+','-'],['+','-','+','+'],['+','-','+','-'],['-','-','-','+'],['-','-','-','-']];
+    var subs=['S1','S1','S2','S2','S2','S2'];
+    var cw=26,rh=20,tx=ox+70,ty=oy+30;
+    var g='<text x="'+(ox+150)+'" y="'+(oy+12)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="'+col+'">'+title+'</text>';
+    /* header */
+    var heads=['x₁','x₂','x₃','x₄'];
+    for(var c=0;c<4;c++){ var hot=highlightCols.indexOf(c)>=0;
+      g+='<text x="'+(tx+c*cw)+'" y="'+ty+'" text-anchor="middle" font-size="11" font-weight="'+(hot?'700':'400')+'" fill="'+(hot?col:C.inkFaint)+'">'+heads[c]+'</text>'; }
+    for(var r=0;r<6;r++){ var ry=ty+10+r*rh;
+      var rowHot=(highlightRows==='all')||(highlightRows==='S2'&&subs[r]==='S2');
+      if(rowHot){ g+='<rect x="'+(tx-16)+'" y="'+(ry-2)+'" width="'+(4*cw)+'" height="'+rh+'" fill="'+rgba(hex2rgb(col),0.10)+'"/>'; }
+      for(var c2=0;c2<4;c2++){ var ch=rows[r][c2]; var dim=(highlightCols.indexOf(c2)<0);
+        g+='<text x="'+(tx+c2*cw)+'" y="'+(ry+12)+'" text-anchor="middle" font-size="12" font-weight="600" fill="'+(dim?'#C9BEB9':(ch==='+'?C.accent:C.inkSoft))+'" font-family="Spectral,serif">'+(ch==='+'?'+':MINUS)+'</text>'; }
+    }
+    g+='<text x="'+(ox+150)+'" y="'+(oy+170)+'" text-anchor="middle" font-size="12.5" fill="'+col+'" font-family="Spectral,serif">'+note+'</text>';
+    return g;
+  }
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+  s+=mini(20,30,[0,1,2],'all','聚焦① 只看前 N−1 列（删 x_N）','α+β ≤ B(N−1, k)',C.gold);
+  s+='<line x1="385" y1="50" x2="385" y2="240" stroke="'+C.line+'" stroke-width="1.5"/>';
+  s+=mini(400,30,[0,1,2],'S2','聚焦② 只看 S₂ 那些行','β ≤ B(N−1, k−1)',C.violet);
+  s+='<text x="380" y="285" text-anchor="middle" font-size="11.5" fill="'+C.inkFaint+'">左：投影后行数被压（断点仍 ≤ k）　|　右：只剩成对的 S₂，断点降一档 ⟹ k−1</text>';
+  s+='</svg>';
+  host.innerHTML=s;
+}
+
+function figChain(){
+  var host=$('p-chain'); if(!host) return;
+  var N=10,k=4;
+  function draw(){
+    var dvc=k-1;
+    var mh=sumComb(N,dvc), B=sumComb(N,dvc), sauer=sumComb(N,dvc), exp=Math.pow(2,N);
+    /* mh and B and sauer equal here (tight examples); show 2^N tower vs them on log scale */
+    var W=760,H=300, x0=70, x1=W-30, yb=H-54, yt=40;
+    var vals=[['m_H(N)',mh,C.teal],['B(N,k)',B,C.violet],['Σ C(N,i)',sauer,C.gold],['2^N',exp,C.rust]];
+    var maxL=Math.log(exp+1);
+    var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+    s+='<text x="'+(W/2)+'" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">在 N='+N+', 断点 k='+k+'（d_VC='+dvc+'）处，把四个量摆上对数高度</text>';
+    var bw=120, gap=( (x1-x0) - vals.length*bw )/(vals.length+1);
+    for(var i=0;i<vals.length;i++){ var bx=x0+gap+i*(bw+gap);
+      var h=(Math.log(vals[i][1]+1)/maxL)*(yb-yt);
+      s+='<rect x="'+bx+'" y="'+(yb-h)+'" width="'+bw+'" height="'+h+'" rx="5" fill="'+vals[i][2]+'" fill-opacity="0.82"/>';
+      s+='<text x="'+(bx+bw/2)+'" y="'+(yb-h-8)+'" text-anchor="middle" font-size="13" font-weight="700" fill="'+vals[i][2]+'" font-family="Spectral,serif">'+Math.round(vals[i][1]).toLocaleString()+'</text>';
+      s+='<text x="'+(bx+bw/2)+'" y="'+(yb+18)+'" text-anchor="middle" font-size="12" fill="'+C.ink+'" font-family="Spectral,serif">'+vals[i][0]+'</text>';
+    }
+    s+='<line x1="'+x0+'" y1="'+yb+'" x2="'+x1+'" y2="'+yb+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    s+='<text x="'+x0+'" y="'+(yt-4)+'" font-size="10.5" fill="'+C.inkFaint+'">对数高度（log）</text>';
+    s+='<text x="'+(W/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11.5" fill="'+C.inkFaint+'">前三根挨着、被第四根 2^N 远远甩开 —— 这就是"多项式 ≤ … ≤ … ≪ 指数"那条链</text>';
+    s+='</svg>';
+    host.innerHTML=s;
+    setHTML('chain-read','此处三个多项式量恰好相等（这些例子是紧的）：m_H = B = ΣC(N,i) = <b>'+Math.round(mh).toLocaleString()+'</b>，而 2^N = <b>'+exp.toLocaleString()+'</b>。N 越大，差距越悬殊。');
+  }
+  bindSlider('chain-n', function(v){ N=Math.round(v); draw(); });
+  bindSlider('chain-k', function(v){ k=Math.round(v); draw(); });
+  draw();
+}
+
+function figGroupEout(){
+  var host=$('p-groupeout'); if(!host) return;
+  var W=760,H=280;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+  var x0=60,x1=W-40,y=150;
+  /* full input space line */
+  s+='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+  s+='<text x="'+x0+'" y="'+(y+40)+'" font-size="11" fill="'+C.inkFaint+'">整个输入空间 X（无穷多点）</text>';
+  /* sample points (N=6) */
+  var samp=[0.12,0.24,0.37,0.55,0.72,0.88];
+  for(var i=0;i<samp.length;i++){ var px=x0+(x1-x0)*samp[i];
+    s+='<line x1="'+px+'" y1="'+(y-6)+'" x2="'+px+'" y2="'+(y+6)+'" stroke="'+C.ink+'" stroke-width="2.5"/>'; }
+  s+='<text x="'+(x0+(x1-x0)*0.5)+'" y="'+(y+24)+'" text-anchor="middle" font-size="11" fill="'+C.ink+'">↑ 6 个样本点（这上面 h₁、h₂ 标号完全相同 → E_in 相同）</text>';
+  /* h1 solid curve (a step/region) and h2 dashed: agree on samples, differ between */
+  function curve(yy,dash,col,label,off){
+    /* a wiggly boundary: same value at sample x, but differ off-sample */
+    var g='<path d="M '+x0+' '+yy;
+    var pts=[[x0,yy],[x0+90,yy-(off?0:0)],[x0+150,yy-26*(off?-1:1)],[x0+230,yy],[x0+300,yy-30*(off?1:-1)],[x0+380,yy],[x0+470,yy-24*(off?-1:1)],[x0+560,yy],[x1,yy]];
+    for(var i=1;i<pts.length;i++){ g+=' L '+pts[i][0]+' '+pts[i][1]; }
+    g+='" fill="none" stroke="'+col+'" stroke-width="2.5"'+(dash?' stroke-dasharray="7 4"':'')+'/>';
+    g+='<text x="'+(x1+4)+'" y="'+(yy+4)+'" font-size="12" fill="'+col+'" font-family="Spectral,serif">'+label+'</text>';
+    return g;
+  }
+  s+=curve(78,false,C.accent,'h₁',false);
+  s+=curve(78,true,C.teal,'h₂',true);
+  s+='<text x="'+(W/2)+'" y="34" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">两个假设：样本上一模一样，样本之外却分道扬镳</text>';
+  /* annotate divergence */
+  s+='<text x="'+(x0+150)+'" y="220" text-anchor="middle" font-size="11" fill="'+C.rust+'">样本之间，h₁≠h₂</text>';
+  s+='<text x="'+(x0+150)+'" y="236" text-anchor="middle" font-size="11" fill="'+C.rust+'">→ E_out(h₁) ≠ E_out(h₂)</text>';
+  s+='<text x="'+(W-180)+'" y="220" text-anchor="middle" font-size="11.5" fill="'+C.ink+'">所以"同二分"只能合并 E_in，</text>';
+  s+='<text x="'+(W-180)+'" y="236" text-anchor="middle" font-size="11.5" fill="'+C.ink+'">合并不了 E_out → 分组这刀砍不到它</text>';
+  s+='</svg>';
+  host.innerHTML=s;
+}
+
+function figTriangle(){
+  var host=$('p-triangle'); if(!host) return;
+  var Eout=0.30, Ein=0.52, eps=0.15;
+  function draw(){
+    var W=760,H=230, x0=70,x1=W-50, y=120;
+    function X(v){ return x0+(x1-x0)*v; }
+    var Einp=X(Ein), Eoutp=X(Eout);
+    /* ghost E'_in: place it near Eout (within eps/2) on the opposite side for illustration */
+    var Eg=Eout-eps*0.30; var Egp=X(Eg);
+    var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+    s+='<text x="'+(W/2)+'" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">三角不等式：|E_in − E_out| > ε  ⟹  |E_in − E_in′| > ε/2</text>';
+    s+='<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    for(var t=0;t<=10;t++){ var xx=x0+(x1-x0)*t/10; s+='<line x1="'+xx+'" y1="'+(y-4)+'" x2="'+xx+'" y2="'+(y+4)+'" stroke="'+C.line+'" stroke-width="1"/>'; }
+    s+='<text x="'+x0+'" y="'+(y+30)+'" font-size="10" fill="'+C.inkFaint+'">误差 0</text><text x="'+x1+'" y="'+(y+30)+'" text-anchor="end" font-size="10" fill="'+C.inkFaint+'">1</text>';
+    /* eps band around Eout */
+    s+='<rect x="'+X(Eout-eps)+'" y="'+(y-30)+'" width="'+(X(Eout+eps)-X(Eout-eps))+'" height="60" fill="'+rgba(hex2rgb(C.gold),0.08)+'"/>';
+    s+='<rect x="'+X(Eout-eps/2)+'" y="'+(y-22)+'" width="'+(X(Eout+eps/2)-X(Eout-eps/2))+'" height="44" fill="'+rgba(hex2rgb(C.green),0.12)+'"/>';
+    /* markers */
+    function mark(px,col,lab,up){ var ly=up?y-44:y+50;
+      return '<line x1="'+px+'" y1="'+(y-12)+'" x2="'+px+'" y2="'+(y+12)+'" stroke="'+col+'" stroke-width="3"/>'
+        +'<circle cx="'+px+'" cy="'+y+'" r="5" fill="'+col+'"/>'
+        +'<text x="'+px+'" y="'+ly+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="'+col+'" font-family="Spectral,serif">'+lab+'</text>'; }
+    s+=mark(Eoutp,C.gold,'E_out',true);
+    s+=mark(Egp,C.green,"E_in′",false);
+    s+=mark(Einp,C.accent,'E_in',true);
+    /* distance braces */
+    var far=Math.abs(Ein-Eout)>eps, gap=Math.abs(Ein-Eg)>eps/2;
+    s+='<line x1="'+Eoutp+'" y1="'+(y-32)+'" x2="'+Einp+'" y2="'+(y-32)+'" stroke="'+C.accent+'" stroke-width="1.5"/>';
+    s+='<text x="'+((Eoutp+Einp)/2)+'" y="'+(y-36)+'" text-anchor="middle" font-size="10.5" fill="'+C.accent+'">|E_in−E_out|'+(far?' > ε ✓':' ≤ ε')+'</text>';
+    s+='<line x1="'+Egp+'" y1="'+(y+38)+'" x2="'+Einp+'" y2="'+(y+38)+'" stroke="'+C.violet+'" stroke-width="1.5"/>';
+    s+='<text x="'+((Egp+Einp)/2)+'" y="'+(y+52)+'" text-anchor="middle" font-size="10.5" fill="'+C.violet+'">|E_in−E_in′|'+(gap?' > ε/2 ✓':'')+'</text>';
+    s+='<text x="'+X(Eout)+'" y="'+(y-58)+'" text-anchor="middle" font-size="9.5" fill="'+C.gold+'">±ε</text>';
+    s+='<text x="'+X(Eout+eps/2+0.01)+'" y="'+(y+22)+'" font-size="9.5" fill="'+C.green+'">E_in′ 大概率落这绿带(±ε/2)</text>';
+    s+='</svg>';
+    host.innerHTML=s;
+    setHTML('tri-read', far
+      ? 'E_in 离真值 E_out 超过 ε（红）。E_in′ 作为另一份样本，大概率落在 E_out 的 ±ε/2 绿带里 → 于是 E_in 和 E_in′ 必然相差 > ε/2（紫）。<b>看不见的 E_out 被两份看得见的样本之差罩住了。</b>'
+      : '现在 E_in 离 E_out 不到 ε（坏事件没发生）。拖动滑块把 E_in 拉到 ε 之外，看右边的"差 > ε/2"如何被触发。');
+  }
+  bindSlider('tri-ein', function(v){ Ein=v; draw(); });
+  bindSlider('tri-eps', function(v){ eps=v; draw(); });
+  draw();
+}
+
+function figVCdim(){
+  var host=$('p-vcdim'); if(!host) return;
+  var dvc=3;
+  function draw(){
+    var W=760,H=300, x0=64, x1=W-30, yb=H-50, yt=44, Nmax=10;
+    function X(n){ return x0+(x1-x0)*n/Nmax; }
+    var maxL=Math.log(Math.pow(2,Nmax)+1);
+    function Y(v){ return yb-(Math.log(v+1)/maxL)*(yb-yt); }
+    var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+    s+='<text x="'+(W/2)+'" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.ink+'">VC 维 = m_H(N) 还能贴住 2^N 的最大 N（之后就掉下来）</text>';
+    /* axes */
+    s+='<line x1="'+x0+'" y1="'+yb+'" x2="'+x1+'" y2="'+yb+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    s+='<line x1="'+x0+'" y1="'+yt+'" x2="'+x0+'" y2="'+yb+'" stroke="'+C.inkSoft+'" stroke-width="1.5"/>';
+    s+='<text x="'+x1+'" y="'+(yb+20)+'" text-anchor="end" font-size="10.5" fill="'+C.inkFaint+'">N（点数）</text>';
+    s+='<text x="'+(x0-6)+'" y="'+(yt-6)+'" text-anchor="end" font-size="10.5" fill="'+C.inkFaint+'">log 计数</text>';
+    /* 2^N curve */
+    var d1='', d2='';
+    for(var n=1;n<=Nmax;n++){ d1+=(n===1?'M':'L')+' '+X(n)+' '+Y(Math.pow(2,n))+' '; }
+    s+='<path d="'+d1+'" fill="none" stroke="'+C.rust+'" stroke-width="2.5"/>';
+    s+='<text x="'+X(Nmax)+'" y="'+(Y(Math.pow(2,Nmax))-6)+'" text-anchor="end" font-size="12" fill="'+C.rust+'" font-family="Spectral,serif">2^N（全打散）</text>';
+    /* m_H curve: = 2^N for N<=dvc, then sum_{i=0}^{dvc} C(N,i) */
+    for(var n2=1;n2<=Nmax;n2++){ var v=(n2<=dvc)?Math.pow(2,n2):sumComb(n2,dvc); d2+=(n2===1?'M':'L')+' '+X(n2)+' '+Y(v)+' '; }
+    s+='<path d="'+d2+'" fill="none" stroke="'+C.teal+'" stroke-width="2.5" stroke-dasharray="6 3"/>';
+    var vEnd=sumComb(Nmax,dvc);
+    s+='<text x="'+X(Nmax)+'" y="'+(Y(vEnd)+16)+'" text-anchor="end" font-size="12" fill="'+C.teal+'" font-family="Spectral,serif">m_H(N)（多项式）</text>';
+    /* d_VC marker */
+    var xd=X(dvc);
+    s+='<line x1="'+xd+'" y1="'+yt+'" x2="'+xd+'" y2="'+yb+'" stroke="'+C.violet+'" stroke-width="2" stroke-dasharray="4 3"/>';
+    s+='<circle cx="'+xd+'" cy="'+Y(Math.pow(2,dvc))+'" r="6" fill="'+C.violet+'"/>';
+    s+='<text x="'+xd+'" y="'+(yb+20)+'" text-anchor="middle" font-size="12.5" font-weight="700" fill="'+C.violet+'">d_VC='+dvc+'</text>';
+    s+='<text x="'+(xd+8)+'" y="'+(yt+14)+'" font-size="10.5" fill="'+C.violet+'">← 这里之前两线重合（能打散）</text>';
+    s+='<text x="'+(xd+8)+'" y="'+(yt+30)+'" font-size="10.5" fill="'+C.violet+'">→ 这里之后 m_H 掉到 2^N 之下（打不散）</text>';
+    s+='</svg>';
+    host.innerHTML=s;
+    var fam=(dvc===1?'≈ 正射线':dvc===2?'≈ 正区间':dvc===3?'≈ 2D 感知机':dvc+' 维感知机大致如此');
+    setHTML('vcdim-read','d_VC = <b>'+dvc+'</b>（'+fam+'）：N ≤ '+dvc+' 时 m_H(N)=2^N（红青重合，任意标号都打得出）；N > '+dvc+' 时 m_H(N) < 2^N（青线掉下来，再也打不散）。所以 <b>d_VC 就是"还能打散的最大点数" = 最小断点 − 1</b>。');
+  }
+  bindSlider('vcdim-dvc', function(v){ dvc=Math.round(v); draw(); });
+  draw();
+}
+
+/* ===================== §0.3 谜题原图·可点复刻 figPuzzleSlide ===================== */
+function figPuzzleSlide(){
+  var host=$('p-puzzleslide'); if(!host) return;
+  var pats=[[1,0,0],[0,0,0],[0,0,1],[0,1,0]];        /* ●○○ / ○○○ / ○○● / ○●○ */
+  var names=['(＋,−,−)','(−,−,−)','(−,−,＋)','(−,＋,−)'];
+  var sel=0, user=[0,0,0];
+  function circ(cx,cy,filled,r,cls,data){
+    var f=filled?C.accent:'#FFFFFF', st=filled?C.accent:C.inkSoft;
+    return '<circle '+(cls?('class="'+cls+'" '+data+' '):'')+'cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+f+'" stroke="'+st+'" stroke-width="2.5"'+(cls?' style="cursor:pointer"':'')+'/>';
+  }
+  function render(){
+    var W=380,H=322, xs=[152,212,272], r=15, rowY=[70,108,146,184];
+    var s='<svg viewBox="0 0 '+W+' '+H+'" style="font-family:'+CJK+'">';
+    s+='<text x="'+(W/2)+'" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="'+C.violet+'" font-family="Spectral,serif">Puzzle</text>';
+    for(var c=0;c<3;c++){ s+='<text x="'+xs[c]+'" y="50" text-anchor="middle" font-size="13" font-weight="700" fill="'+C.violet+'" font-family="Spectral,serif">x'+(c+1)+'</text>'; }
+    s+='<text x="100" y="50" text-anchor="end" font-size="10.5" fill="'+C.inkFaint+'">H 能产生</text>';
+    for(var i=0;i<4;i++){ var yy=rowY[i];
+      if(i===sel){ s+='<rect x="112" y="'+(yy-21)+'" width="200" height="42" rx="8" fill="'+rgba(hex2rgb(C.gold),0.14)+'" stroke="'+C.gold+'"/>'; }
+      for(var c2=0;c2<3;c2++){ s+=circ(xs[c2],yy,pats[i][c2]===1,r,'',''); }
+      s+='<text x="328" y="'+(yy+5)+'" font-size="14" font-weight="700" fill="'+C.green+'">✓</text>';
+      s+='<rect class="puzrow" data-row="'+i+'" x="112" y="'+(yy-21)+'" width="216" height="42" fill="transparent" style="cursor:pointer"/>';
+    }
+    s+='<line x1="44" y1="210" x2="336" y2="210" stroke="'+C.line+'" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    s+='<text x="100" y="252" text-anchor="end" font-size="12" font-weight="700" fill="'+C.accent+'">你来标 →</text>';
+    var uy=248;
+    for(var c3=0;c3<3;c3++){ s+=circ(xs[c3],uy,user[c3]===1,r,'puzuc','data-uc="'+c3+'"'); }
+    var cnt=user[0]+user[1]+user[2], ok=(cnt<=1);
+    s+='<text x="328" y="'+(uy+5)+'" font-size="16" font-weight="700" fill="'+(ok?C.green:C.rust)+'">'+(ok?'✓':'✗')+'</text>';
+    s+='<text x="'+(W/2)+'" y="300" text-anchor="middle" font-size="10.5" fill="'+C.inkFaint+'">点 4 行看解释 · 点圆圈切换 ●/○（●=＋1, ○=−1）</text>';
+    s+='</svg>';
+    host.innerHTML=s;
+    var rs=host.querySelectorAll('.puzrow');
+    for(var a=0;a<rs.length;a++){ (function(el){ el.addEventListener('click',function(){ sel=+el.getAttribute('data-row'); render(); }); })(rs[a]); }
+    var us=host.querySelectorAll('.puzuc');
+    for(var b=0;b<us.length;b++){ (function(el){ el.addEventListener('click',function(){ var k=+el.getAttribute('data-uc'); user[k]=user[k]?0:1; render(); }); })(us[b]); }
+    var np=pats[sel][0]+pats[sel][1]+pats[sel][2];
+    setHTML('puzslide-read','第 '+(sel+1)+' 行 <b>'+names[sel]+'</b>：只有 '+np+' 个 ●（＋1）→ 满足"<b>至多一个 ＋</b>" → <b style="color:'+C.green+'">H 做得到 ✓</b>。这 4 行就是 H 能产生的<b>全部</b> 4 种二分（8 种里只有这 4 种"至多一个 ＋"）。');
+    var cu=user[0]+user[1]+user[2];
+    setHTML('puzslide-verdict', cu<=1
+      ? '你标了 <b>'+cu+'</b> 个 ＋ → <b style="color:'+C.green+'">H 做得到 ✓</b>（正是上面 4 种之一）。再多标一个试试？'
+      : '你标了 <b>'+cu+'</b> 个 ＋ → <b style="color:'+C.rust+'">H 做不到 ✗</b>。H 只会"至多一个 ＋"，给不出 2 个及以上 ＋ 的标号——所以它在 2 个点上就凑不齐 4 种标号、<b>打散不了 2 个点</b> → 断点 k=2。');
+  }
+  render();
+}
+
+/* ===================== 启动 ===================== */
+function init(){
+  var figs=[buildMap, figTwoLines, figPuzzle, figPuzzleSlide, figPerc814, figBdecomp, figBtriangle, figPolyVsExp, figConvex, figFamilies, figBNKconcept, figFocus, figChain, figGroupEout, figTriangle, figVCdim, figBsurface, figPaint, figGhost, figVCbound];
+  figs.forEach(function(f){ try{ f(); }catch(e){ if(window.console) console.error((f&&f.name)||'fig', e); } });
+
+  /* 滚动高亮目录 */
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var map={}, observed=[];
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); var el=document.getElementById(id); if(el){ map[id]=a; observed.push(el); } });
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ var id=en.target.id;
+        links.forEach(function(x){ x.classList.remove('active'); });
+        if(map[id]) map[id].classList.add('active');
+      } });
+    }, {rootMargin:'-25% 0px -65% 0px', threshold:0});
+    observed.forEach(function(el){ io.observe(el); });
+  }
+
+  /* 移动端抽屉 */
+  var mb=$('menuBtn'), scr=$('scrim');
+  if(mb) mb.addEventListener('click', function(){ document.body.classList.toggle('nav-open'); });
+  if(scr) scr.addEventListener('click', function(){ document.body.classList.remove('nav-open'); });
+  links.forEach(function(a){ a.addEventListener('click', function(){ document.body.classList.remove('nav-open'); }); });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  if(window.renderMathInElement){
+    try{ renderMathInElement(document.body, {delimiters:[
+      {left:'$$', right:'$$', display:true},
+      {left:'\\[', right:'\\]', display:true},
+      {left:'\\(', right:'\\)', display:false}
+    ], throwOnError:false}); }catch(e){}
+  }
+  init();
+});
+})();
+</script>
+</body>
+</html>
