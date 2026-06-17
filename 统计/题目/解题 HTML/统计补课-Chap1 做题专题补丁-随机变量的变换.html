@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>专题补丁 · 随机变量的变换三部曲 —— 一元反函数法 (Thm 1.13)、二元雅可比法 (Thm 1.14)、逆变换采样 (Thm 1.15)：用「概率质量守恒 + 雅可比」一条线串起 Part4-Q3 / Part4-Q4 / Part5-Q2 三题</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- Plotly（仅 2D SVG；3D 全部由内置 Canvas 引擎手绘，绝不调用 WebGL） -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#FBF6EC;
+  --paper-2:#F2EFE6;
+  --card:#FFFDF8;
+  --ink:#1B1A1F;
+  --ink-soft:#4C4A55;
+  --ink-faint:#86838F;
+  --line:#E2DECF;
+  --line-strong:#CFC9B6;
+  --accent:#9C5A2E;        /* 专题补丁主色：古铜（变换的本质是把概率密度「揉拉」成另一形状——雅可比就是局部拉伸率；古铜呼应这种塑形、捏合的手感，并区别于多项靛蓝、样本均值孔雀蓝、limsup 朱红、联合边缘梅紫） */
+  --accent-soft:#F0E6DA;
+  --teal:#1F6B66;          /* 2D */
+  --teal-soft:#DCEDEB;
+  --gold:#B7892A;          /* 案例 */
+  --gold-soft:#F4E9CF;
+  --violet:#574AA6;        /* 3D */
+  --violet-soft:#E5E1F2;
+  --green:#3E7C4E;         /* 推导 / 步骤 */
+  --green-soft:#DFEDE2;
+  --rust:#B0442B;          /* 盲点 / 陷阱 / 批判 */
+  --rust-soft:#F3E0DA;
+  --shadow:0 1px 2px rgba(25,22,40,.05), 0 8px 30px rgba(25,22,40,.06);
+  --shadow-lg:0 10px 50px rgba(25,22,40,.13);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:20px}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 84% -5%, #F0E6DA 0%, rgba(214,232,239,0) 60%),
+    radial-gradient(900px 520px at -8% 8%, #F4E9CF 0%, rgba(244,233,207,0) 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:"Spectral", ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", serif;
+  font-size:17px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+
+/* ---------- layout ---------- */
+.layout{display:flex; align-items:flex-start; max-width:1680px; margin:0 auto}
+.content{flex:1 1 auto; min-width:0; padding:34px clamp(16px,4vw,64px) 56px; max-width:1230px}
+.sidebar{
+  position:sticky; top:0; align-self:flex-start; width:320px; flex:0 0 320px; height:100vh;
+  overflow:auto; padding:26px 14px 60px 22px; border-right:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(255,253,248,.7), rgba(255,253,248,.2));
+  backdrop-filter:blur(4px);
+}
+.sidebar h4{font-family:"Fraunces"; font-weight:600; font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); margin:22px 0 8px}
+.sidebar h4:first-child{margin-top:0}
+.toc a{display:block; color:var(--ink-soft); text-decoration:none; font-size:14px; line-height:1.4;
+  padding:5px 10px; border-radius:8px; border-left:2px solid transparent; transition:.15s}
+.toc a.sub{padding-left:20px; font-size:13.3px}
+.toc a .num{color:var(--ink-faint); font-family:"Fraunces"; font-variant-numeric:tabular-nums; margin-right:7px; font-size:12px}
+.toc a:hover{background:var(--paper-2); color:var(--ink)}
+.toc a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+.brand{font-family:"Fraunces"; font-weight:600; font-size:18px; line-height:1.15; color:var(--ink); text-decoration:none; display:block}
+.brand small{display:block; font-family:"Spectral"; font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:4px; letter-spacing:.02em}
+.toc a.trap-link .num{color:var(--rust)}
+.toc a.star-link .num{color:var(--accent)}
+
+/* mobile drawer */
+.menu-btn{display:none; position:fixed; z-index:60; top:14px; left:14px; background:var(--ink); color:var(--paper);
+  border:none; border-radius:10px; padding:9px 13px; font-family:"Fraunces"; font-size:14px; box-shadow:var(--shadow-lg); cursor:pointer}
+.scrim{display:none}
+@media(max-width:1000px){
+  .menu-btn{display:block}
+  .sidebar{position:fixed; z-index:65; top:0; left:0; transform:translateX(-105%); transition:transform .25s ease;
+    width:320px; background:var(--card); box-shadow:var(--shadow-lg)}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .scrim{display:block; position:fixed; inset:0; z-index:62; background:rgba(15,12,20,.35)}
+  .content{padding-top:64px}
+}
+
+/* ---------- type ---------- */
+.h-eyebrow{font-family:"Fraunces"; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+  font-size:12.5px; color:var(--accent); margin:0 0 10px}
+h1.title{font-family:"Fraunces"; font-weight:600; font-size:clamp(31px,5.6vw,50px); line-height:1.04; letter-spacing:-.01em; margin:.1em 0 .25em}
+.part-head{margin:90px 0 8px; padding-top:18px}
+.part-head .pk{font-family:"Fraunces"; font-size:clamp(56px,12vw,104px); font-weight:600; line-height:.85; color:var(--line-strong)}
+.part-head h2{font-family:"Fraunces"; font-weight:600; font-size:clamp(25px,4.4vw,38px); margin:.05em 0 .15em; letter-spacing:-.01em}
+.part-head p{color:var(--ink-soft); max-width:90ch; margin:.2em 0 0}
+h3.topic{font-family:"Fraunces"; font-weight:600; font-size:clamp(21px,3vw,28px); line-height:1.12; margin:0 0 2px; letter-spacing:-.005em}
+.topic-en{font-family:"Spectral"; font-style:italic; color:var(--ink-faint); font-size:15px; margin:0 0 14px}
+p{margin:0 0 1.05em}
+strong, b{color:var(--ink); font-weight:600}
+.lead{font-size:18.5px; max-width:95ch}
+a.inlink{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-soft)}
+a.inlink:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--ink-soft)}
+mark{background:linear-gradient(180deg, transparent 55%, var(--gold-soft) 55%); color:inherit; padding:0 1px}
+.kw{color:var(--accent); font-weight:600}
+
+/* ---------- topic block ---------- */
+.topic-block{padding:30px 0 6px; border-top:1px solid var(--line); margin-top:30px}
+.topic-block:first-of-type{border-top:none}
+.rels{display:flex; flex-wrap:wrap; gap:7px; margin:0 0 18px}
+.rel{font-family:"Fraunces"; font-size:12px; font-weight:500; padding:3px 10px 3px 8px; border-radius:20px;
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); color:var(--ink-soft); background:var(--card)}
+.rel .dot{width:6px;height:6px;border-radius:50%}
+.rel.inherit .dot{background:var(--green)}
+.rel.general .dot{background:var(--accent)}
+.rel.tool .dot{background:var(--violet)}
+.rel.dual .dot{background:var(--teal)}
+.rel.limit .dot{background:var(--gold)}
+.rel.warn .dot{background:var(--rust)}
+.rel a{color:inherit; text-decoration:none; border-bottom:1px dashed currentColor}
+
+/* modality cards */
+.mod{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:16px 18px; margin:14px 0;
+  box-shadow:var(--shadow); position:relative; overflow:hidden}
+.mod::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px}
+.mod.idea::before{background:var(--ink)}
+.mod.form::before{background:var(--line-strong)}
+.mod.case::before{background:var(--gold)}
+.mod.d2::before{background:var(--teal)}
+.mod.d3::before{background:var(--violet)}
+.mod.live::before{background:var(--accent)}
+.mod.flow::before{background:var(--green)}
+.mod.trap::before{background:var(--rust)}
+.mod-label{display:inline-flex; align-items:center; gap:7px; font-family:"Fraunces"; font-weight:600; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; margin:0 0 8px}
+.mod-label .ic{font-style:normal}
+.mod.idea .mod-label{color:var(--ink)}
+.mod.form .mod-label{color:var(--ink-soft)}
+.mod.case .mod-label{color:var(--gold)}
+.mod.d2 .mod-label{color:var(--teal)}
+.mod.d3 .mod-label{color:var(--violet)}
+.mod.live .mod-label{color:var(--accent)}
+.mod.flow .mod-label{color:var(--green)}
+.mod.trap .mod-label{color:var(--rust)}
+.mod.trap{background:linear-gradient(180deg,#FFFBF8,#FBEDE6)}
+.mod.flow{background:linear-gradient(180deg,#FCFEFB,#EAF3EC)}
+.mod p:last-child{margin-bottom:0}
+.mod .cap{font-size:14px; color:var(--ink-soft); margin-top:10px; line-height:1.55}
+.mod .cap b{color:var(--ink)}
+.form{background:linear-gradient(180deg,#FFFDF7,#F6F2E9)}
+.form .katex-display{margin:.4em 0}
+
+/* step flow */
+.steps{counter-reset:st; margin:6px 0 2px; padding:0; list-style:none}
+.steps li{position:relative; padding:4px 0 16px 40px; border-left:2px solid var(--line-strong); margin-left:10px}
+.steps li:last-child{border-left-color:transparent; padding-bottom:0}
+.steps li::before{counter-increment:st; content:counter(st); position:absolute; left:-15px; top:0;
+  width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:"Fraunces"; font-weight:600;
+  display:flex; align-items:center; justify-content:center; font-size:14px}
+.steps li b{color:var(--ink)}
+.steps.amber li::before{background:var(--accent)}
+
+/* prose bullet list */
+.ul{margin:8px 0 2px; padding-left:0; list-style:none}
+.ul li{position:relative; padding:3px 0 3px 22px; line-height:1.62; color:var(--ink-soft); margin-bottom:6px}
+.ul li::before{content:""; position:absolute; left:4px; top:11px; width:6px; height:6px; border-radius:50%; background:var(--accent)}
+.ul li b{color:var(--ink)}
+
+/* inline caveat strip */
+.warn-inline{margin:8px 0 4px; padding:9px 13px; background:#F5ECE2; border:1px solid #DCC4AC; border-left:3px solid var(--accent);
+  border-radius:8px; font-size:13.5px; color:var(--ink-soft); line-height:1.5}
+.warn-inline b{color:var(--accent)}
+
+/* plot containers */
+.plot{width:100%; height:380px}
+.plot.tall{height:450px}
+.plot.d3{height:520px}
+.plotwrap{margin:6px 0 2px}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-faint);
+  font-family:"Fraunces";font-size:14px;letter-spacing:.05em}
+
+/* controls */
+.controls{display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end; margin:6px 2px 14px;
+  padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px}
+.ctrl{display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1 1 170px}
+.ctrl label{font-family:"Fraunces"; font-size:13px; font-weight:500; color:var(--ink-soft); display:flex; justify-content:space-between; gap:10px}
+.ctrl label .val{color:var(--accent); font-variant-numeric:tabular-nums; font-weight:600}
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:4px;
+  background:linear-gradient(90deg,var(--accent) 0%, var(--accent) var(--p,40%), var(--line-strong) var(--p,40%));
+  outline:none; cursor:pointer}
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--card); border:2px solid var(--accent); box-shadow:var(--shadow); cursor:pointer; margin-top:0}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--card);border:2px solid var(--accent);cursor:pointer}
+.btn{font-family:"Fraunces"; font-weight:600; font-size:13.5px; border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+  border-radius:9px; padding:8px 16px; cursor:pointer; transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line-strong)}
+.btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:9px; overflow:hidden; flex-wrap:wrap}
+.seg button{font-family:"Fraunces"; font-size:13px; background:var(--card); border:none; padding:7px 13px; cursor:pointer; color:var(--ink-soft)}
+.seg button.on{background:var(--accent); color:#fff}
+
+/* callouts */
+.note{border-left:3px solid var(--line-strong); padding:4px 0 4px 16px; margin:14px 0; color:var(--ink-soft); font-size:15.5px}
+.note b{color:var(--ink)}
+.crit{background:#FBEDE6; border:1px solid #E8C4B5; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.crit .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--rust); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.crit p:last-child{margin-bottom:0}
+.xander{background:var(--accent-soft); border:1px solid #D2B79A; border-radius:14px; padding:14px 18px; margin:16px 0; position:relative}
+.xander .who{font-family:"Fraunces"; font-weight:600; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0 0 6px; display:flex; align-items:center; gap:7px}
+.xander p:last-child{margin-bottom:0}
+.rel.reinforce .dot{background:var(--green)}
+.rel.boundary .dot{background:var(--gold)}
+
+/* original problem statement */
+.problem-card{position:relative; margin:22px 0 6px; padding:17px 22px 16px 24px; border:1px solid var(--line-strong);
+  border-left:5px solid var(--accent); border-radius:14px; background:linear-gradient(180deg,#FFFDF8,#F5F2EB); box-shadow:var(--shadow)}
+.problem-card .pc-tag{font-family:"Fraunces"; font-weight:600; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 9px; display:flex; align-items:center; gap:8px}
+.problem-card .pc-tag .qn{display:inline-flex; width:20px; height:20px; border-radius:50%; background:var(--accent); color:#fff;
+  align-items:center; justify-content:center; font-size:12px}
+.problem-card .pc-given{font-family:"Spectral", Georgia, serif; font-size:16px; color:var(--ink); margin:0 0 6px}
+.problem-card ol.pc-parts{margin:6px 0 0; padding-left:0; list-style:none; counter-reset:pcq}
+.problem-card ol.pc-parts li{position:relative; padding:4px 0 4px 30px; font-size:15px; color:var(--ink-soft); line-height:1.55}
+.problem-card ol.pc-parts li::before{counter-increment:pcq; content:"(" counter(pcq, lower-alpha) ")"; position:absolute; left:0; top:4px;
+  font-family:"Fraunces"; font-weight:600; color:var(--accent); font-size:14px}
+.problem-card ol.pc-parts li b{color:var(--ink)}
+
+/* code block */
+pre.code{margin:6px 0 0; padding:12px 14px; background:#2B2620; color:#EDE6DA; border-radius:10px;
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:13px; line-height:1.6; overflow-x:auto;
+  border:1px solid #3A332A; white-space:pre}
+/* comparison table */
+.cmp-wrap{overflow-x:auto; margin:4px 0 2px}
+table.cmp{border-collapse:collapse; width:100%; font-size:13.5px; min-width:640px}
+table.cmp th,table.cmp td{border:1px solid var(--line-strong); padding:9px 12px; text-align:left; vertical-align:top}
+table.cmp thead th{background:var(--accent); color:#fff; font-family:"Fraunces",serif; font-weight:600; font-size:13px}
+table.cmp tbody th{background:var(--accent-soft); color:var(--ink); font-weight:600; white-space:nowrap; width:84px}
+table.cmp tbody tr:nth-child(even) td{background:rgba(156,90,46,0.035)}
+table.cmp td b{color:var(--ink)}
+table.cmp .hl{color:var(--accent); font-weight:600}
+
+/* 课堂还原 (lecture callout) */
+.lecture{margin:14px 0; padding:14px 16px 14px 18px; border-radius:12px;
+  background:linear-gradient(180deg,#FBF1E6,#F7E8D7); border:1px solid #E6CBA8; border-left:4px solid #C77A33}
+.lecture .lec-h{font-family:"Fraunces",serif; font-weight:600; font-size:14px; color:#A85E20; margin:0 0 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.lecture .lec-h .ic{font-size:15px}
+.lecture .ts{font-family:"Fraunces",serif; font-variant-numeric:tabular-nums; font-size:10.5px; color:#fff; background:#C77A33; padding:1px 8px; border-radius:20px; font-weight:600; letter-spacing:.02em}
+.lecture p{margin:7px 0; color:var(--ink-soft); line-height:1.78}
+.lecture p:first-of-type{margin-top:0}
+.lecture p:last-child{margin-bottom:0}
+.lecture b{color:var(--ink)}
+.lecture .said{color:#8A5A22; font-style:italic}
+/* 困惑→解答 (Q&A) */
+.qa{margin:13px 0; border:1px solid var(--line-strong); border-radius:12px; overflow:hidden; background:var(--card)}
+.qa .qa-q{padding:11px 15px; background:rgba(176,68,43,0.055); border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start}
+.qa .qa-q p,.qa .qa-a p{margin:0; line-height:1.74}
+.qa .qa-q p{color:var(--ink); font-weight:500}
+.qa .tag{flex:0 0 auto; font-family:"Fraunces",serif; font-size:11px; font-weight:600; padding:2px 10px; border-radius:20px; margin-top:1px; white-space:nowrap}
+.qa .qa-q .tag{color:#fff; background:var(--rust)}
+.qa .qa-a{padding:11px 15px; display:flex; gap:10px; align-items:flex-start}
+.qa .qa-a .tag{color:var(--accent); background:var(--accent-soft); border:1px solid #DCC4AC}
+.qa .qa-a p+p{margin-top:7px}
+.qa .qa-a b{color:var(--ink)}
+.qa .qa-src{font-size:11.5px; color:var(--ink-faint); font-style:italic; margin-top:7px!important}
+
+/* misc */
+.kbd{font-family:"Fraunces"; font-size:12px; background:var(--paper-2); border:1px solid var(--line-strong); border-radius:6px; padding:1px 7px; color:var(--ink-soft)}
+hr.soft{border:none; border-top:1px dashed var(--line-strong); margin:30px 0}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+@media(max-width:680px){.two-col{grid-template-columns:1fr}}
+table.tab{width:100%; border-collapse:collapse; font-size:14.5px; margin:8px 0}
+table.tab th, table.tab td{border:1px solid var(--line); padding:7px 10px; text-align:center; vertical-align:top}
+table.tab th{background:var(--paper-2); font-family:"Fraunces"; font-weight:600; color:var(--ink-soft)}
+table.tab td.lbl{font-family:"Fraunces"; background:#FFFDF7; font-weight:500; text-align:left}
+.scrollx{overflow-x:auto}
+
+/* reading guide chips */
+.guide{display:grid; grid-template-columns:repeat(8,1fr); gap:10px; margin:18px 0 8px}
+@media(max-width:980px){.guide{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.guide{grid-template-columns:repeat(2,1fr)}}
+.gchip{border:1px solid var(--line); border-radius:13px; padding:12px 12px; background:var(--card); box-shadow:var(--shadow)}
+.gchip .ic{font-size:19px; line-height:1}
+.gchip h5{font-family:"Fraunces"; font-weight:600; margin:7px 0 3px; font-size:14px}
+.gchip p{font-size:12px; color:var(--ink-soft); margin:0; line-height:1.45}
+.gchip.idea{border-top:3px solid var(--ink)}
+.gchip.form{border-top:3px solid var(--line-strong)}
+.gchip.case{border-top:3px solid var(--gold)}
+.gchip.d2{border-top:3px solid var(--teal)}
+.gchip.d3{border-top:3px solid var(--violet)}
+.gchip.live{border-top:3px solid var(--accent)}
+.gchip.flow{border-top:3px solid var(--green)}
+.gchip.trap{border-top:3px solid var(--rust)}
+
+.readout{display:flex; flex-wrap:wrap; align-items:center; gap:7px 20px; margin:8px 0 4px; padding:9px 14px; background:var(--accent-soft); border:1px solid var(--line-strong); border-radius:11px; font-size:13.5px; color:var(--ink-soft)}
+.readout b{color:var(--accent); font-size:15px; font-family:"Fraunces"; font-variant-numeric:tabular-nums}
+.readout .rd-note{font-family:"Spectral",serif; font-variant-numeric:normal; font-style:italic; color:var(--ink-faint); font-weight:400}
+.readout b.warnval{color:var(--rust)}
+.readout b.okval{color:var(--green)}
+
+footer{margin-top:0; border-top:1px solid var(--line); background:linear-gradient(180deg, transparent, rgba(156,90,46,.04))}
+.foot-wrap{max-width:1080px; margin:0 auto; padding:34px 40px 60px; color:var(--ink-faint); font-size:13.5px; line-height:1.6}
+.foot-wrap p{margin:0 0 10px; max-width:90ch}
+.foot-wrap b{color:var(--ink-soft)}
+.foot-title{font-family:"Fraunces"; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:12px !important}
+.foot-fine{font-size:12px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+::selection{background:var(--accent-soft)}
+</style>
+<body>
+
+<button class="menu-btn cjk" id="menuBtn">☰ 目录</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="layout">
+
+<aside class="sidebar">
+  <a href="#top" class="brand">变换三部曲 · 一线贯通<small class="cjk">专题补丁 · Thm 1.13 / 1.14 / 1.15 · 雅可比</small></a>
+  <nav class="toc cjk">
+    <h4>总览</h4>
+    <a href="#t-map"><span class="num">0</span>三道题其实是一条线</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>核心原理</h4>
+    <a href="#t-core"><span class="num">1</span>概率质量守恒 + 雅可比＝拉伸率</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>Part4 · Q3</h4>
+    <a href="#t-q3"><span class="num">2</span>一元变换 · 反函数法（Thm 1.13）</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>Part4 · Q4</h4>
+    <a href="#t-q4" class="star-link"><span class="num">3</span>二元变换 · 雅可比法（Thm 1.14）★</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>Part5 · Q2</h4>
+    <a href="#t-q5"><span class="num">4</span>逆变换采样 · 造分布（Thm 1.15）</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>合一</h4>
+    <a href="#t-unify"><span class="num">5</span>1.13 / 1.14 / 1.15 一张图看穿</a>
+  </nav>
+  <nav class="toc cjk">
+    <h4>别踩坑</h4>
+    <a href="#t-trap" class="trap-link"><span class="num">⚠</span>六个坑 + 三题满分模板</a>
+  </nav>
+</aside>
+
+<main class="content" id="top">
+
+  <p class="h-eyebrow">Subpage Patch · Transformations of Random Variables</p>
+  <h1 class="title">随机变量一变换，<br>分布就跟着变形</h1>
+  <p class="lead muted cjk">你点名的三道题——<b>Part4-Q3</b>（求 $Y=\sqrt{X}$ 的分布）、<b>Part4-Q4</b>（两个指数的和与比）、<b>Part5-Q2</b>（用均匀数造指数）——看着像三套互不相干的技巧。它们其实是<b style="color:var(--ink)">同一件事</b>：<mark>一个分布经过映射后如何变形</mark>。贯穿始终的是一个守恒律 $f_Y(y)\,|dy|=f_X(x)\,|dx|$，以及把它实现出来的<b>雅可比</b>。一元情形雅可比是 $|dx/dy|$（Thm 1.13）；多元情形升级成行列式 $|\det J|$（Thm 1.14）；而 Thm 1.15 是个特例——把均匀噪声塞进 $F^{-1}$，反过来"造"出任意分布。你说"知识点无法连贯使用"，缺的就是这条线。这页把它焊死。</p>
+
+  <div class="problem-card">
+    <div class="pc-tag"><span class="qn">3</span>Part 4 · Q3 · 一元变换（10 points）</div>
+    <p class="pc-given cjk"><b>Transformation of a random variable.</b> 设 $X\sim\text{Exp}(\lambda)$，$\lambda>0$，即 $f_X(x)=\lambda e^{-\lambda x}$（$x>0$）。</p>
+    <ol class="pc-parts cjk">
+      <li>用变换法（严格单调情形）求 $Y=\sqrt{X}$ 的概率密度函数，并写出 $Y$ 的支持集。</li>
+    </ol>
+  </div>
+
+  <div class="problem-card">
+    <div class="pc-tag"><span class="qn">4</span>Part 4 · Q4 · 二元变换（10 points）</div>
+    <p class="pc-given cjk"><b>Bivariate transformation.</b> 设 $X_1,X_2$ 独立、同为速率 $\lambda>0$ 的指数分布，联合 PDF $f_{X_1,X_2}(x_1,x_2)=\lambda^2 e^{-\lambda(x_1+x_2)}$（$x_1>0,\,x_2>0$）。定义 $Y_1=X_1+X_2,\ \ Y_2=\dfrac{X_1}{X_1+X_2}$。</p>
+    <ol class="pc-parts cjk">
+      <li>证明逆变换为 $X_1=Y_1Y_2,\ X_2=Y_1(1-Y_2)$，并求雅可比行列式 $\big|\partial(x_1,x_2)/\partial(y_1,y_2)\big|$。</li>
+      <li>求联合 PDF $f_{Y_1,Y_2}(y_1,y_2)$ 并写出支持集。</li>
+      <li>$Y_1,Y_2$ 是否独立？说明理由。</li>
+    </ol>
+  </div>
+
+  <div class="problem-card">
+    <div class="pc-tag"><span class="qn">2</span>Part 5 · Q2 · 逆变换采样（10 points）</div>
+    <p class="pc-given cjk"><b>Inverse transform method.</b> 概率积分变换（Thm 1.15）：若 $U\sim\text{Uniform}(0,1)$、$F$ 为任意 CDF，则 $X=F^{-1}(U)$ 的 CDF 为 $F$，其中 $F^{-1}(u)=\inf\{x:F(x)\ge u\}$。已知指数分布 CDF $F(x)=1-e^{-\lambda x}$（$x\ge0$）。</p>
+    <ol class="pc-parts cjk">
+      <li>求其分位函数 $F^{-1}(u)$，$u\in(0,1)$。</li>
+      <li>说明如何用只能产出 $\text{Uniform}(0,1)$ 的计算机，生成 1000 个 i.i.d. 的 $\text{Exp}(\lambda=2)$ 随机数。</li>
+      <li>当 $U\sim\text{Uniform}(0,1)$ 时显式推导 $X=F^{-1}(U)$ 的 PDF，确认它就是指数分布。</li>
+    </ol>
+  </div>
+
+  <div class="guide">
+    <div class="gchip idea"><div class="ic">✦</div><h5 class="cjk">直觉</h5><p class="cjk">密度守恒：变换把质量搬家，密度按拉伸率重标。</p></div>
+    <div class="gchip form"><div class="ic">∑</div><h5 class="cjk">公式</h5><p class="cjk">f_Y=f_X·|dx/dy|；多元换成 |det J|。</p></div>
+    <div class="gchip case"><div class="ic">▢</div><h5 class="cjk">案例</h5><p class="cjk">√X、和与比、F⁻¹(U) 三个具体例子全做。</p></div>
+    <div class="gchip d2"><div class="ic">▦</div><h5 class="cjk">2D</h5><p class="cjk">陡的地方铺开＝低密度，平的地方堆积＝高密度。</p></div>
+    <div class="gchip flow"><div class="ic">→</div><h5 class="cjk">流程</h5><p class="cjk">反解→定支持集→算雅可比→代入。</p></div>
+    <div class="gchip d3"><div class="ic">◈</div><h5 class="cjk">3D</h5><p class="cjk">(Y₁,Y₂) 联合密度是沿 y₂ 平移不变的山脊＝独立。</p></div>
+    <div class="gchip live"><div class="ic">⊕</div><h5 class="cjk">交互</h5><p class="cjk">抽样实证：和→Gamma、比→均匀、F⁻¹→指数。</p></div>
+    <div class="gchip trap"><div class="ic">⚠</div><h5 class="cjk">陷阱</h5><p class="cjk">单调性、绝对值、支持集、F⁻¹ 是否有闭式。</p></div>
+  </div>
+
+  <div class="xander">
+    <p class="who cjk"><span>✦</span>一句话定位这三道题</p>
+    <p class="cjk">把它们想成<b>同一台机器的三种用法</b>：机器是"分布 + 一个映射 → 新分布"，核心零件是<b>雅可比</b>（局部把空间拉伸/压缩了多少倍）。<b>Q3</b> 用它处理一维（$|dx/dy|$）；<b>Q4</b> 用它处理二维（$|\det J|$，是一维的直接推广）；<b>Q5</b> 把机器<b>反着用</b>——不是"给我 X 求 g(X)"，而是"给我目标分布 $F$，用 $g=F^{-1}$ 把均匀噪声塞进去造出它"。三题之间不是并列的三个知识点，是<b>一维→多维→反向应用</b>的递进。看懂雅可比这一个零件，三题一起通。</p>
+  </div>
+  <div class="lecture">
+    <p class="lec-h"><span class="ic">▶</span>课堂主线 · 老师反复敲的那句话（这正是你"无法连贯使用"的解药）<span class="ts">录音 28:40 / 43:10</span></p>
+    <p>你在录音里说自己<span class="said">"不管是 inverse，还是多维，做题还是有困难"</span>。老师的回应一针见血：<b>"你没建立起对应关系。"</b>课程（任何课程）都是<b>从特殊到一般、从一元到多元</b>讲的；你要做的，是先认清<b>这套工具是干什么的</b>，再分别记住它在一元、多元下长什么样。</p>
+    <p><b>一句话触发判断（请背下来）：</b><span class="said">"已知一个随机变量的分布，我要求另一个随机变量的分布，只要我知道这两个随机变量之间的函数关系。"</span>——只要题目长这样，就用这台机器：<b>一维用 Thm 1.13，多维用 Thm 1.14</b>。而 Thm 1.15（逆变换）是把这台机器<b>反着用</b>，专门"造随机数"。</p>
+    <p><b>固定三步操作（每道题都一样）：</b>① 先求<b>反函数</b>（把"谁表示谁"对调）；② 求反函数的<b>导数</b>（多维则算雅可比行列式）；③ <b>套公式</b>代入。老师原话：<span class="said">"我第一步先把反函数求出来，第二步求出导数，第三步套这个公式。"</span>下面三道题全是这三步——只是维度和方向不同。</p>
+  </div>
+
+  <!-- ============ §0 MAP ============ -->
+  <section class="topic-block" id="t-map">
+    <h3 class="topic cjk">0　三道题其实是一条线——密度守恒，雅可比重标</h3>
+    <p class="topic-en">One principle behind all three: probability mass is conserved, density rescales by the Jacobian</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span><a href="#t-core">原理 → 守恒 + 雅可比</a></span>
+      <span class="rel inherit"><span class="dot"></span><a href="#t-q3">1D（Thm 1.13）</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-q4">nD（Thm 1.14）</a></span>
+      <span class="rel reinforce"><span class="dot"></span><a href="#t-q5">反向（Thm 1.15）</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">◆</span>一个守恒律，统辖全部</div>
+      <p class="cjk">变换不改变"总概率"，只把质量<b>搬到新坐标</b>。一小块概率 $f_X(x)\,|dx|$ 经映射后还是同一块 $f_Y(y)\,|dy|$。两边除一下：</p>
+      $$f_Y(y)=f_X\big(x(y)\big)\cdot\left|\frac{dx}{dy}\right|\quad\xrightarrow{\ \text{多维}\ }\quad f_Y(\mathbf y)=f_X\big(\mathbf x(\mathbf y)\big)\cdot\big|\det J\big|,\quad J=\frac{\partial(x_1,\dots,x_n)}{\partial(y_1,\dots,y_n)}$$
+      <p class="cjk" style="margin-bottom:0">那个 $|dx/dy|$（多维是 $|\det J|$）就是<b>雅可比</b>——映射在该点把长度（多维是体积）放大的倍数。密度必须按它的<b>倒数</b>缩放才能守恒：在被拉开的地方变稀，被压紧的地方变密。三道题用的全是这一个公式。</p>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>三定理 · 一张族谱</div>
+      <ul class="ul cjk">
+        <li><b>Thm 1.13（一元 · 反函数法）。</b>$X$ 已知，$Y=g(X)$、$g$ 严格单调可导。$f_Y(y)=f_X(g^{-1}(y))\,|(g^{-1})'(y)|$。雅可比是标量 $|(g^{-1})'(y)|=|dx/dy|$。→ <b>Q3</b> 就是它（$g=\sqrt{\cdot}$）。</li>
+        <li><b>Thm 1.14（多元 · 雅可比法）。</b>把上面的标量导数换成<b>行列式</b>：$f_{\mathbf Y}(\mathbf y)=f_{\mathbf X}(\mathbf x(\mathbf y))\,|\det J|$。其余完全一样。→ <b>Q4</b> 就是它（二维，$|\det J|=y_1$）。</li>
+        <li><b>Thm 1.15（逆变换 · 造分布）。</b>不是分析已有的 $X$，而是<b>制造</b>：取 $U\sim\text{Uniform}(0,1)$、$g=F^{-1}$，则 $X=F^{-1}(U)\sim F$。它其实就是 Thm 1.13 的特例——输入是均匀（$f_U\equiv1$），于是雅可比 $|dF^{-1}/du|$ 乘上 1 后<b>恰好等于目标密度本身</b>（§4、§5 会算给你看）。→ <b>Q5</b> 就是它。</li>
+      </ul>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>"分析" vs "制造" —— 这三题的另一条分界</div>
+      <p class="cjk" style="margin-bottom:0"><b>Q3、Q4 是"分析"：</b>给定 $X$ 的分布与映射 $g$，求 $g(X)$ 的分布（正向用机器）。<b>Q5 是"制造"：</b>给定想要的目标分布 $F$，用 $g=F^{-1}$ 把容易生成的均匀噪声变成它（反向用机器）。计算机只会产均匀随机数，能造出指数、Gamma 等任意分布，靠的就是这台机器反着转。把这两类分清，你就不会在考场上把"求 g(X) 的分布"和"造一个分布"的步骤搞混。</p>
+    </div>
+
+    <div class="note cjk"><b>读法建议：</b>§1 先把"守恒 + 雅可比"这台机器讲透（这是你缺的连贯性）；§2/§3/§4 分别是机器的一维、二维、反向三种用法，对应 Q3/Q4/Q5，每节开头的 $\boxed{\ }$ 就是该题答案；§5 把三者并排成一张对照图收口；§6 收六个常见坑并给三题满分模板。</p></div>
+  </section>
+
+  <!-- ============ §1 CORE PRINCIPLE ============ -->
+  <section class="topic-block" id="t-core">
+    <h3 class="topic cjk">1　核心原理——为什么密度要乘 |dx/dy|（雅可比＝拉伸率）</h3>
+    <p class="topic-en">Why density rescales by the Jacobian: equal probability chunks, unequal widths after mapping</p>
+    <div class="rels">
+      <span class="rel general"><span class="dot"></span><a href="#t-map">承 ← 守恒律</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-q3">用于 → Q3/Q4/Q5</a></span>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">◆</span>梳齿picture：等宽的 x 区间，映射后变成不等宽的 y 区间</div>
+      <p class="cjk">想象 $X$ 的取值是一排<b>等间距的梳齿</b>。映射 $y=g(x)$ 把这排梳齿推到 $y$ 轴上。在 $g$ <b>陡峭</b>的地方，一小段 $x$ 被拉成一大段 $y$——梳齿在 $y$ 轴上<b>稀疏</b>，密度低；在 $g$ <b>平缓</b>的地方，一段 $x$ 压成一小段 $y$——梳齿<b>密集</b>，密度高。密度的变化率正好是斜率的倒数 $|dx/dy|$。下面的图把这排梳齿真的推给你看。</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>从 CDF 推一遍（顺便看清绝对值从哪来）</div>
+      <p class="cjk" style="margin-bottom:6px"><b>$g$ 递增时：</b>$F_Y(y)=\mathbb P(g(X)\le y)=\mathbb P(X\le g^{-1}(y))=F_X(g^{-1}(y))$，对 $y$ 求导：</p>
+      $$f_Y(y)=f_X\big(g^{-1}(y)\big)\cdot (g^{-1})'(y),\qquad (g^{-1})'(y)>0$$
+      <p class="cjk" style="margin:6px 0"><b>$g$ 递减时：</b>$\{g(X)\le y\}=\{X\ge g^{-1}(y)\}$，于是 $F_Y(y)=1-F_X(g^{-1}(y))$，求导多一个负号，而此时 $(g^{-1})'(y)&lt;0$，负负得正。两种情形合并，就用绝对值一锅端：</p>
+      $$\boxed{\,f_Y(y)=f_X\big(g^{-1}(y)\big)\cdot\big|(g^{-1})'(y)\big|\,}\qquad(\text{Thm 1.13})$$
+      <p class="cjk" style="margin:6px 0 0">密度非负，而拉伸倍数本身无所谓正负——所以<b>必须取绝对值</b>。这是 §6 会强调的第一个坑。</p>
+    </div>
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>反函数到底是什么——沿 $y=x$ 翻折（你在三道题里这里卡了三次）</div>
+      <p class="cjk">公式 $f_Y(y)=f_X\big(g^{-1}(y)\big)\cdot|(g^{-1})'(y)|$ 里，代进去的自变量是 $g^{-1}(y)$，<b>不是</b> $g$。所以第一步永远是"把反函数翻出来"。但反函数不是新东西——$Y=g(X)$ 和 $X=g^{-1}(Y)$ 是<b>同一条函数关系</b>，只是把"用谁表示谁"对调；在图上，就是把曲线<b>沿对角线 $y=x$ 镜像翻折</b>。拖动下面的点，看 $y=\sqrt x$ 和它的反函数 $x=y^2$（即 $y=x^2$）如何互为镜像。</p>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">沿 $y=\sqrt x$ 取一点 $x_0$ <span class="val" id="inv-x-v">1.00</span></label><input type="range" id="inv-x" min="0.1" max="1.9" step="0.05" value="1"></div>
+      </div>
+      <div class="readout cjk">
+        <span>点 $A=(x_0,\sqrt{x_0})$ 在 $g=\sqrt{\cdot}$ 上</span>
+        <span>镜像 $A'=(\sqrt{x_0},x_0)$ 在 $g^{-1}=(\cdot)^2$ 上</span>
+        <span class="rd-note">两点关于 $y=x$ 对称：横纵坐标对调</span>
+      </div>
+      <div class="plotwrap"><div id="p-inv" class="plot"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>铜线 $y=\sqrt x$（就是 Q3 的 $Y=\sqrt X$），蓝线 $y=x^2$（它的反函数 $x=y^2$），灰色虚线是 $y=x$。两条曲线<b>完全对称</b>地贴在虚线两侧——这就是"求反函数"在几何上的全部含义：拿镜子照一下。点 $A$ 与镜像 $A'$ 横纵坐标对调。<b>你课堂困惑的根源</b>：不是不会翻折，是忘了"公式要的自变量是翻折后的 $g^{-1}$"。记住这张图，Q3 的 $x=y^2$、Q5 的 $u=F(x)$ 就都顺了。</p>
+    </div>
+
+    <div class="mod d2">
+      <div class="mod-label cjk"><span class="ic">▦</span>交互 · 把均匀梳齿推过 $y=x^{p}$，看它在 y 轴上如何疏密</div>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">指数 $p$（$y=x^p$ 的陡缓）<span class="val" id="pr-p-v">2.0</span></label><input type="range" id="pr-p" min="0.4" max="3" step="0.1" value="2"></div>
+      </div>
+      <div class="readout cjk">
+        <span>输出密度 $f_Y(y)=\tfrac1p\,y^{1/p-1}$</span>
+        <span id="pr-desc">p&gt;1：梳齿挤向 y=0（那里密度高）</span>
+        <span class="rd-note">均匀输入（$f_X\equiv1$）经 $x=y^{1/p}$，雅可比 $\tfrac1p y^{1/p-1}$</span>
+      </div>
+      <div class="plotwrap"><div id="p-stretch" class="plot tall"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>底边灰齿是 $x$ 轴上<b>等间距</b>的均匀样本；它们顺着铜色曲线 $y=x^p$ 爬上去、再水平投到<b>左侧 $y$ 轴</b>。看左侧铜色齿的<b>疏密</b>：$p>1$ 时曲线在 0 附近平、在 1 附近陡，于是齿全<b>挤到 y=0 附近</b>（密度高），上端被拉开（密度低）；$p=1$ 是恒等映射，齿仍均匀；$p&lt;1$ 反过来挤向 y=1。这种"等概率块、不等宽度"就是 $f_Y=f_X\,|dx/dy|$ 的全部含义——也是后面三道题的共同底层。</p>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>多维只是把"拉伸率"换成"体积放大率"</div>
+      <p class="cjk" style="margin-bottom:0">一维里 $|dx/dy|$ 是长度的放大倍数；二维里，映射把一个小方块变成一个小平行四边形，<b>面积</b>的放大倍数就是雅可比行列式的绝对值 $|\det J|$（三维是体积，依此类推）。公式的形状一模一样，只是"长度→面积/体积"。Q4 要算的 $|\det J|=y_1$，意思就是：在 $(y_1,y_2)$ 处，逆映射把单位面积放大了 $y_1$ 倍。理解了一维的梳齿，多维只是同一句话的高维版本。</p>
+    </div>
+  </section>
+
+  <!-- ============ §2 Q3 univariate (Thm 1.13) ============ -->
+  <section class="topic-block" id="t-q3">
+    <h3 class="topic cjk">2　Part4-Q3 · 一元变换——$Y=\sqrt{X}$，机器的一维用法（Thm 1.13）</h3>
+    <p class="topic-en">Y=√X with X~Exp(λ): reverse-solve, track support, take |derivative|, plug in</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-core">承 ← f_Y=f_X|dx/dy|</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-q4">推广 → 二维 §3</a></span>
+      <span class="rel boundary"><span class="dot"></span><a href="#t-trap">坑 → 支持集 / 绝对值</a></span>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>固定的四步流程（每道变换题都照这个走）</div>
+      <ul class="ul cjk">
+        <li><b>① 反解。</b>把 $y=g(x)$ 反过来用 $y$ 表示 $x$：$x=g^{-1}(y)$。</li>
+        <li><b>② 定支持集。</b>$x$ 的范围如何映成 $y$ 的范围——<b>这一步最容易漏，却常是扣分点</b>。</li>
+        <li><b>③ 算雅可比。</b>$\big|(g^{-1})'(y)\big|$（一维就是 $|dx/dy|$）。</li>
+        <li><b>④ 代入。</b>$f_Y(y)=f_X(g^{-1}(y))\cdot|(g^{-1})'(y)|$，写在支持集上，外面补 0。</li>
+      </ul>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>对照手写，逐步走一遍</div>
+      <p class="cjk" style="margin-bottom:4px">$g(x)=\sqrt{x}$ 在 $x>0$ 上严格递增，可用 Thm 1.13。</p>
+      <p class="cjk" style="margin:2px 0"><b>① 反解：</b>$y=\sqrt{x}\ \Rightarrow\ x=g^{-1}(y)=y^2$。</p>
+      <p class="cjk" style="margin:2px 0"><b>② 支持集：</b>$X>0\ \Rightarrow\ Y=\sqrt{X}>0$，故 $y>0$。</p>
+      <p class="cjk" style="margin:2px 0"><b>③ 雅可比：</b>$\dfrac{dx}{dy}=\dfrac{d}{dy}y^2=2y$，故 $\left|\dfrac{dx}{dy}\right|=2y$（$y>0$）。</p>
+      <p class="cjk" style="margin:2px 0"><b>④ 代入：</b></p>
+      $$f_Y(y)=f_X(y^2)\cdot|2y|=\lambda e^{-\lambda y^2}\cdot 2y=2\lambda y\,e^{-\lambda y^2}$$
+    </div>
+
+    <div class="mod form" style="background:linear-gradient(180deg,#F7F1E8,#F1E8DA)">
+      <div class="mod-label cjk" style="color:var(--ink)"><span class="ic">✓</span>Q3 · 框起来的答案</div>
+      $$\boxed{\,f_Y(y)=2\lambda y\,e^{-\lambda y^{2}},\quad y>0\ \ (\text{否则 }0)\,}$$
+      <p class="cap cjk" style="margin-top:8px"><b>这是 Rayleigh（瑞利）型分布。</b>自检它积分为 1：令 $u=\lambda y^2,\ du=2\lambda y\,dy$，则 $\int_0^\infty 2\lambda y\,e^{-\lambda y^2}dy=\int_0^\infty e^{-u}du=1$。$\checkmark$</p>
+    </div>
+    <div class="lecture">
+      <p class="lec-h"><span class="ic">▶</span>课堂还原 · 老师怎么讲这道题（每步的来由）<span class="ts">录音 11:02–18:39</span></p>
+      <p><b>这工具是干嘛的（先建立动机）：</b>老师先举了个现实例子——<span class="said">"$X$ 是一个人的收入，它是随机的、有自己的分布；我研究消费，而消费是收入的函数（挣得多花得多，群体上单调递增）。我就能用已知的收入分布 + 已知的函数关系，去推出消费的分布。"</span>这正是 Thm 1.13 解决的问题：<b>已知 $X$ 的分布 + $Y$ 与 $X$ 的函数关系 → 求 $Y$ 的分布</b>。</p>
+      <p><b>为什么能用反函数法（隐含前提）：</b>老师特意点出——<span class="said">"什么样的函数可以用反函数？严格单调递增的。"</span>这里 $Y=\sqrt X$ 在 $X>0$ 上严格递增，反函数存在，才能套 1.13。这个前提是 §6 的坑①。</p>
+      <p><b>三步走：</b>① 反解 $X=Y^2$（即 $g^{-1}(y)=y^2$）；② 求导 $\dfrac{dx}{dy}=2y$；③ 代入 $f_Y(y)=f_X(y^2)\cdot|2y|=\lambda e^{-\lambda y^2}\cdot 2y$。老师还提了一句：<span class="said">"正常你也得验证归一性（积分=1），但其实不用，定理保证它自然成立。"</span></p>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑①</span><p class="cjk">"为什么要反代？为什么你要用 $X=Y^2$ 这种方式去表达？"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">因为 1.13 的公式 $f_Y(y)=f_X\big(\,g^{-1}(y)\,\big)\cdot|(g^{-1})'(y)|$ 里，<b>代进去的自变量就是反函数 $g^{-1}(y)$</b>。$Y=\sqrt X$ 是"用 $X$ 表示 $Y$"，而公式需要"用 $Y$ 表示 $X$"，即 $X=Y^2$——这就是反函数，两者是<b>同一条函数关系的两种写法</b>（见上面那张沿 $y=x$ 翻折的图）。</p>
+        <p class="qa-src cjk">你当时的原话：<span class="said">"Ok，我把 $g^{-1}$ 这个公式给忘记了，把这一块忘了。"</span>——卡点不是不会翻，是忘了公式要的是翻折后的那个。</p>
+      </div></div>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑②</span><p class="cjk">"题目说 specify the support，我怎么会知道 $Y>0$？"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">老师给了两个角度。<b>①因果传递：</b><span class="said">"$X$ 的范围是天然给定的（$X$ 是指数分布，$X>0$）；给定 $Y$ 与 $X$ 的函数关系后，$Y$ 的范围就被确定了。$X$ 是因，$Y$ 是果。"</span><b>②反函数已写出来：</b>左边 $X=Y^2$ 配合 $X>0$，或直接由 $Y=\sqrt X,\ X>0$ 推出 $Y>0$。support（支撑集）就是"密度非零、需要分析的那段取值范围"；算完密度务必补一句它在哪段成立、区外为 0。</p>
+      </div></div>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊕</span>交互 · 看 $\sqrt{\ }$ 怎么把单调下降的指数，重塑成有峰的瑞利</div>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">速率 $\lambda$ <span class="val" id="q3-lam-v">1.0</span></label><input type="range" id="q3-lam" min="0.5" max="3" step="0.1" value="1"></div>
+      </div>
+      <div class="readout cjk">
+        <span>$Y$ 的峰值位置（众数）= <b id="q3-mode">0.71</b></span>
+        <span class="rd-note">$=1/\sqrt{2\lambda}$；指数在 0 处最高，$Y$ 在 0 处却是 0</span>
+      </div>
+      <div class="plotwrap"><div id="p-q3" class="plot"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>蓝线是 $X\sim\text{Exp}(\lambda)$ 的密度 $\lambda e^{-\lambda t}$——在 $t=0$ 最高、单调下降。铜线是 $Y=\sqrt X$ 的密度 $2\lambda t\,e^{-\lambda t^2}$——<b>在 $0$ 处为 0、先升后降、有个峰</b>。为什么 0 处的高密度"消失"了？回到 §1：$\sqrt{\ }$ 在 $x=0$ 附近<b>极陡</b>（导数 $1/(2\sqrt x)\to\infty$），把原本堆在 0 附近的质量<b>大幅拉开</b>，于是小 $y$ 处密度被摊薄到 0。这正是"陡＝铺开＝低密度"的活例。</p>
+    </div>
+  </section>
+
+  <!-- ============ §3 Q4 bivariate (Thm 1.14) — star ============ -->
+  <section class="topic-block" id="t-q4">
+    <h3 class="topic cjk">3　★ Part4-Q4 · 二元变换——和与比，机器的二维用法（Thm 1.14）</h3>
+    <p class="topic-en">Sum and ratio of two i.i.d. exponentials: Jacobian, joint PDF, and a clean independence result</p>
+    <div class="rels">
+      <span class="rel inherit"><span class="dot"></span><a href="#t-q3">承 ← 一维 |dx/dy|</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-core">用 → |det J| 体积放大率</a></span>
+      <span class="rel dual"><span class="dot"></span><a href="#t-unify">合 → §5 对照</a></span>
+    </div>
+
+    <div class="mod flow">
+      <div class="mod-label cjk"><span class="ic">→</span>同样四步，只是"导数→行列式"</div>
+      <ul class="ul cjk">
+        <li><b>① 反解：</b>用 $(y_1,y_2)$ 表示 $(x_1,x_2)$。</li>
+        <li><b>② 支持集：</b>$(x_1,x_2)$ 的范围如何映成 $(y_1,y_2)$ 的范围。</li>
+        <li><b>③ 雅可比行列式：</b>$\big|\det J\big|$，$J=\partial(x_1,x_2)/\partial(y_1,y_2)$。</li>
+        <li><b>④ 代入：</b>$f_{Y_1,Y_2}=f_{X_1,X_2}(x_1(y),x_2(y))\cdot|\det J|$。</li>
+      </ul>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(a) 反解 + 支持集 + 雅可比</div>
+      <p class="cjk" style="margin:2px 0"><b>① 反解：</b>由 $Y_2=\dfrac{X_1}{X_1+X_2}=\dfrac{X_1}{Y_1}$ 得 $X_1=Y_1Y_2$；再由 $X_2=Y_1-X_1$ 得 $X_2=Y_1(1-Y_2)$。</p>
+      <p class="cjk" style="margin:2px 0"><b>② 支持集：</b>$X_1,X_2>0\Rightarrow Y_1=X_1+X_2>0$；而 $Y_2=\dfrac{X_1}{X_1+X_2}$ 是两个正数里 $X_1$ 占的比例，故 $0&lt;Y_2&lt;1$。即支持集 $\{y_1>0,\ 0&lt;y_2&lt;1\}$。</p>
+      <p class="cjk" style="margin:6px 0 2px"><b>③ 雅可比：</b></p>
+      $$J=\frac{\partial(x_1,x_2)}{\partial(y_1,y_2)}=\left(\begin{smallmatrix}\dfrac{\partial x_1}{\partial y_1} & \dfrac{\partial x_1}{\partial y_2}\\[6pt]\dfrac{\partial x_2}{\partial y_1} & \dfrac{\partial x_2}{\partial y_2}\end{smallmatrix}\right)=\left(\begin{smallmatrix}y_2 & y_1\\[3pt]1-y_2 & -y_1\end{smallmatrix}\right)$$
+      $$\det J=y_2\cdot(-y_1)-y_1\cdot(1-y_2)=-y_1y_2-y_1+y_1y_2=-y_1\ \Rightarrow\ |\det J|=y_1$$
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(b) 代入得联合 PDF（注意 $x_1+x_2=y_1$ 的妙处）</div>
+      <p class="cjk" style="margin-bottom:4px">关键化简：$x_1+x_2=y_1y_2+y_1(1-y_2)=y_1$。所以指数项里那一大坨直接塌成 $y_1$：</p>
+      $$f_{Y_1,Y_2}(y_1,y_2)=\lambda^2 e^{-\lambda(x_1+x_2)}\cdot|\det J|=\lambda^2 e^{-\lambda y_1}\cdot y_1=\lambda^2 y_1 e^{-\lambda y_1}$$
+    </div>
+
+    <div class="mod form" style="background:linear-gradient(180deg,#F7F1E8,#F1E8DA)">
+      <div class="mod-label cjk" style="color:var(--ink)"><span class="ic">✓</span>Q4 · (a)(b) 框起来的答案</div>
+      $$\boxed{\,|\det J|=y_1\,}\qquad\boxed{\,f_{Y_1,Y_2}(y_1,y_2)=\lambda^2 y_1\,e^{-\lambda y_1},\quad y_1>0,\ 0&lt;y_2&lt;1\,}$$
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(c) 独立性——联合能否拆成 (只含 y₁) × (只含 y₂)</div>
+      <p class="cjk" style="margin-bottom:4px">求两个边缘（在矩形支持集上各积掉另一变量）：</p>
+      $$f_{Y_1}(y_1)=\int_0^1 \lambda^2 y_1 e^{-\lambda y_1}\,dy_2=\lambda^2 y_1 e^{-\lambda y_1}\quad(\text{Gamma}(2,\lambda),\ y_1>0)$$
+      $$f_{Y_2}(y_2)=\int_0^\infty \lambda^2 y_1 e^{-\lambda y_1}\,dy_1=\lambda^2\cdot\frac{1}{\lambda^2}=1\quad(\text{Uniform}(0,1),\ 0&lt;y_2&lt;1)$$
+      <p class="cjk" style="margin:6px 0 0">两者乘积 $\lambda^2 y_1 e^{-\lambda y_1}\cdot 1$ <b>恰好等于</b>联合密度，且支持集是乘积矩形 $\{y_1>0\}\times\{0&lt;y_2&lt;1\}$，故 $Y_1,Y_2$ <b>独立</b>。</p>
+    </div>
+
+    <div class="mod form" style="background:linear-gradient(180deg,#F7F1E8,#F1E8DA)">
+      <div class="mod-label cjk" style="color:var(--ink)"><span class="ic">✓</span>Q4 · (c) 框起来的答案</div>
+      $$\boxed{\,Y_1,Y_2\ \textbf{独立}\,;\quad Y_1\sim\text{Gamma}(2,\lambda),\quad Y_2\sim\text{Uniform}(0,1)\,}$$
+      <p class="cap cjk" style="margin-top:8px"><b>一个漂亮且值得记住的事实：</b>两个 i.i.d. 指数的<b>和</b>与<b>比</b>是<b>独立</b>的；和服从 Gamma(2)，比服从 Uniform(0,1)——而且<b>比的分布与 $\lambda$ 无关</b>，永远是均匀。这类"和/比解耦"在排队论、Beta-Gamma 关系里反复出现。</p>
+    </div>
+    <div class="lecture">
+      <p class="lec-h"><span class="ic">▶</span>课堂还原 · 二维只是"导数→行列式"<span class="ts">录音 18:39–27:13</span></p>
+      <p><b>同一个触发，升一维：</b>老师说——<span class="said">"二元分布也是做变换，对应课件定理 1.14。它讲二元联合分布做变量替换后会怎样，用的是雅可比行列式（高中学微积分讲过），上面对下面分别求导。"</span></p>
+      <p><b>反解没有技巧，用分离变量：</b><span class="said">"先用 $y_1,y_2$ 表示 $x_1,x_2$。把 $Y_2=X_1/Y_1$ 一变形得 $X_1=Y_1Y_2$，再代回得 $X_2=Y_1-Y_1Y_2$。"</span></p>
+      <p><b>支持集仍跟着 $X$ 走：</b><span class="said">"$x_1,x_2$ 是因，$y_1,y_2$ 是果；先有 $X$ 才有 $Y$，所以 $Y$ 的取值范围跟着 $X$。$X$ 都大于 0，于是 $y_1>0$（和），$y_2$ 在 0 到 1 之间（比例）。"</span></p>
+      <p><b>算行列式 + 代入：</b><span class="said">"$2\times2$ 矩阵，对角相乘相减，算出一个数；代入公式，前面那坨换成 $y$，再乘上行列式的值——指数里 $x_1+x_2$ 正好塌成 $y_1$，最后剩 $\lambda^2 y_1 e^{-\lambda y_1}$。"</span></p>
+      <p><b>独立性：</b><span class="said">"独立当且仅当联合密度 = 各自边缘密度的乘积。有联合求边缘？积分。"</span>对 $y_2$ 积掉得 $Y_1$（Gamma），对 $y_1$ 积掉得 $Y_2$（均匀，$=1$）；乘积正好等于联合（$y_1$ 那项约掉后一致），故独立。</p>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑③</span><p class="cjk">"算到一半——我把'乘雅可比行列式'这一步给忘了！"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">老师：<span class="said">"对，因为行列式算出来是<b>一个数</b>（标量），别怕。"</span>二维变换的密度公式是 $f_{Y}=f_{X}(x(y))\cdot|\det J|$——那个 $|\det J|$ 不是装饰，它是<b>把概率密度按局部体积放大率重新标定</b>的关键。漏了它，密度就不守恒、积分也不为 1。这里 $|\det J|=y_1$。</p>
+      </div></div>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑④ · 最关键</span><p class="cjk">"我在什么样的条件下，脑子一想就会直接想到——我要反代，要用 $X$ 表示 $Y$（或 $Y$ 表示 $X$）？"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">这就是你缺的<b>触发判断</b>。老师的标准答案：<span class="said">"我已知一个随机变量的分布，还要求另一个随机变量的分布，而这两个随机变量之间有一个函数关系——一维就用 1.13，多维就用 1.14。"</span>看到"已知一个分布、求另一个有函数关系的分布"这个<b>信号</b>，就条件反射地走三步：①求反函数 ②求导/雅可比 ③套公式。把这句话刻进去，三道题就连成一条线了。</p>
+      </div></div>
+    </div>
+
+    <div class="mod d3">
+      <div class="mod-label cjk"><span class="ic">◈</span>3D · 联合密度是一道"山脊"，沿 $y_2$ 方向平移不变（这就是独立的样子，$\lambda=1$）</div>
+      <div class="plotwrap"><div id="p-q4-3d" class="plot d3"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>曲面 $z=\lambda^2 y_1 e^{-\lambda y_1}$ 在 $y_1$ 方向是一条先升后降、峰在 $y_1=1/\lambda$ 的脊（这是 $Y_1$ 的 Gamma 形状）；而沿 $y_2$ 方向<b>完全平直</b>——你在任何 $y_2$ 处横切，得到的脊形<b>一模一样</b>。"切片形状与 $y_2$ 无关"正是 $Y_1$ 的分布不被 $Y_2$ 影响，即<b>独立</b>的几何长相。对照 §5：这跟联合密度能拆成 $g(y_1)\,h(y_2)$ 是同一回事。</p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊕</span>交互 · 真的抽 $(X_1,X_2)$ 算 $(Y_1,Y_2)$，验证"和→Gamma、比→均匀、且独立"（$\lambda=1$）</div>
+      <p class="cap cjk" style="margin-top:0">抽 $X_1,X_2\overset{\text{i.i.d.}}{\sim}\text{Exp}(1)$，逐点算 $Y_1=X_1+X_2$、$Y_2=X_1/(X_1+X_2)$。左图散点 $(Y_1,Y_2)$ 看独立性，右图 $Y_1$ 直方对照 Gamma(2,1)。</p>
+      <div class="controls">
+        <div class="ctrl" style="flex:0 0 auto"><button class="btn accent" id="q4-run">↻ 重抽（4000 点）</button></div>
+      </div>
+      <div class="readout cjk">
+        <span>样本相关 $\widehat{\text{corr}}(Y_1,Y_2)$ = <b id="q4-corr">0.00</b></span>
+        <span>$\bar Y_2$（应≈0.5）= <b id="q4-my2">0.50</b></span>
+        <span>$\bar Y_1$（应≈2/λ=2）= <b id="q4-my1">2.00</b></span>
+      </div>
+      <div class="plotwrap"><div id="p-q4-mc" class="plot"><div class="loading cjk">加载中…</div></div></div>
+      <div class="plotwrap"><div id="p-q4-gam" class="plot"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>散点图里 $Y_2$ 在 $(0,1)$ 上<b>均匀铺满</b>，且这种铺满<b>在任何 $Y_1$ 处都一样</b>——竖直方向看不出随 $Y_1$ 变化的趋势，这就是独立（样本相关≈0）。下图 $Y_1$ 的直方紧贴 Gamma(2,1) 曲线 $y_1 e^{-y_1}$，峰在 $y_1=1$。两图合起来，就是把上面纯代数的结论"看见"了。</p>
+    </div>
+  </section>
+
+  <!-- ============ §4 Q5 inverse transform (Thm 1.15) ============ -->
+  <section class="topic-block" id="t-q5">
+    <h3 class="topic cjk">4　Part5-Q2 · 逆变换采样——把机器反着用，造出指数分布（Thm 1.15）</h3>
+    <p class="topic-en">Manufacturing a distribution: feed uniform noise into F⁻¹; the Jacobian becomes the target density</p>
+    <div class="rels">
+      <span class="rel reinforce"><span class="dot"></span><a href="#t-core">是 ← Thm 1.13 的反向特例</a></span>
+      <span class="rel tool"><span class="dot"></span><a href="#t-q3">同一台机器</a></span>
+      <span class="rel warn"><span class="dot"></span><a href="#t-trap">坑 → F⁻¹ 要有闭式</a></span>
+    </div>
+
+    <div class="lecture">
+      <p class="lec-h"><span class="ic">▶</span>课堂还原 · 把机器反着用来"造随机数"<span class="ts">录音 28:40–40:43</span></p>
+      <p><b>先问它解决什么问题：</b>老师强调——<span class="said">"逆变换法是用来生成随机数的：给定任意均匀分布，我可以生成任意分布。一看到这个词，就对应定理 1.15。"</span>步骤：求 CDF → 取逆 → 把均匀随机变量代进去。</p>
+      <p><b>(a) 求逆：</b>$F(x)=1-e^{-\lambda x}=u$，因 $F$ 严格递增连续，逆唯一；取对数解出 $x=-\tfrac1\lambda\ln(1-u)$。</p>
+      <p><b>(b) 生成 1000 个：</b><span class="said">"写个循环，把每个均匀随机数 $u_i$ 代成 $-\tfrac12\ln(1-u_i)$（$\lambda=2$），得到 $X_1,\dots,X_{1000}$，就是 1000 个 i.i.d. 指数。"</span>老师补了应用：<span class="said">"这能生成任意分布的 i.i.d. 样本——比如保险理赔里一个人的损失服从指数，就能拿它做蒙特卡洛模拟。"</span></p>
+      <p><b>计算机为什么要这么绕（知其所以然）：</b><span class="said">"计算机底层生不出指数，没法一步到位；它只能生成（伪）均匀随机数。方法是用一个很大的数除以一个质数、截取小数点后几位；随机种子决定那个质数——这就是为什么同一个种子给同样的结果。"</span></p>
+      <p><b>(c) 验证 PDF：</b>还是 1.13：$X=-\tfrac1\lambda\ln(1-U)$，求反函数 $U=g^{-1}(X)$、求导、乘上 $f_U=1$，得 $\lambda e^{-\lambda x}$。</p>
+    </div>
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(a) 分位函数（解方程即可，因 $F$ 连续严格增）</div>
+      <p class="cjk" style="margin-bottom:4px">令 $u=F(x)=1-e^{-\lambda x}$，解 $x$：$e^{-\lambda x}=1-u\Rightarrow -\lambda x=\ln(1-u)$。</p>
+      $$\boxed{\,F^{-1}(u)=-\frac{\ln(1-u)}{\lambda},\qquad u\in(0,1)\,}$$
+      <p class="cap cjk" style="margin-top:6px">自检方向：$u\to0^+$ 时 $x\to0$，$u\to1^-$ 时 $x\to\infty$，正好覆盖 $[0,\infty)$。$\checkmark$</p>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(b) 生成 1000 个 i.i.d. Exp(λ=2)</div>
+      <p class="cjk" style="margin-bottom:4px">取 $U_1,\dots,U_{1000}\overset{\text{i.i.d.}}{\sim}\text{Uniform}(0,1)$，令</p>
+      $$X_i=F^{-1}(U_i)=-\frac{1}{\lambda}\ln(1-U_i)=-\frac12\ln(1-U_i)\quad(\lambda=2)$$
+      <p class="cjk" style="margin:4px 0">则 $X_1,\dots,X_{1000}$ 独立同分布于 $\text{Exp}(2)$（由 Thm 1.15，每个 $F^{-1}(U_i)$ 的 CDF 都是 $F$；同一确定映射保持独立同分布）。</p>
+      <pre class="code cjk">for i in 1..1000:
+    U = uniform()              # (0,1)
+    X[i] = -0.5 * ln(1 - U)    # λ=2</pre>
+      <div class="note cjk" style="margin-top:8px"><b>可化简但别混淆：</b>因 $U\sim\text{Uniform}(0,1)\Rightarrow 1-U\sim\text{Uniform}(0,1)$，可写成 $X_i=-\tfrac12\ln U_i$。这是<b>分布相同</b>，不是<b>同一个数值</b>。两种写法对"生成 i.i.d. 样本"都对，但工程上要小心边界：$\ln(0)=-\infty$，用 $1-U$ 时危险点在 $U=1$，用 $U$ 时在 $U=0$——取决于你的 RNG 产出 $[0,1)$ 还是 $(0,1)$。</div>
+    </div>
+
+    <div class="mod form">
+      <div class="mod-label cjk"><span class="ic">∑</span>(c) 显式推 PDF · 两种方法（第一种正是把 1.13 反着用）</div>
+      <p class="cjk" style="margin:2px 0"><b>方法一（变量变换 / Thm 1.13）：</b>$X=g(U)=-\tfrac1\lambda\ln(1-U)$，其反函数 $g^{-1}(x)=1-e^{-\lambda x}=F(x)$，故 $\dfrac{d\,g^{-1}}{dx}=F'(x)=\lambda e^{-\lambda x}$。代入（$f_U\equiv1$）：</p>
+      $$f_X(x)=f_U\big(g^{-1}(x)\big)\cdot\left|\frac{d\,g^{-1}}{dx}\right|=1\cdot\lambda e^{-\lambda x}=\lambda e^{-\lambda x},\quad x>0$$
+      <p class="cjk" style="margin:4px 0"><b>方法二（CDF / 等价事件，无需求导）：</b></p>
+      $$\mathbb P(X\le x)=\mathbb P\!\Big(\!-\tfrac1\lambda\ln(1-U)\le x\Big)=\mathbb P\big(1-U\ge e^{-\lambda x}\big)=\mathbb P\big(U\le 1-e^{-\lambda x}\big)=1-e^{-\lambda x}$$
+      <p class="cjk" style="margin:4px 0 0">这就是 $F(x)$，求导得 $\lambda e^{-\lambda x}$。中间 $\{F^{-1}(U)\le x\}\iff\{U\le F(x)\}$ 靠 $F$ 单调，是整个方法的命门。</p>
+    </div>
+    <div class="lecture">
+      <p class="lec-h"><span class="ic">▶</span>课堂金句 · CDF 法的灵魂是"事件等价"<span class="ts">录音 45:53–49:19</span></p>
+      <p>老师说这种 CDF 法<span class="said">"是最正统、跟我们课程最匹配的"</span>（刚讲完 1.13）。它的核心一句话：<span class="said">"随机变量括号里这个东西其实是一个<b>事件</b>；你只要找到它的<b>等价事件</b>，就能用等号把它们串起来。"</span></p>
+      <p>于是 $\{-\tfrac1\lambda\ln(1-U)\le x\}$ 这个事件，等价于 $\{1-U\ge e^{-\lambda x}\}$，再等价于 $\{U\le 1-e^{-\lambda x}\}$。而"均匀随机变量小于某个数的概率就是那个数"：$\mathbb P(U\le 0.7)=0.7$、$\mathbb P(U\le 1-e^{-\lambda x})=1-e^{-\lambda x}$。<span class="said">"一步出，连导都不用求。"</span>（得到的是 CDF；再求一次导就是 PDF $\lambda e^{-\lambda x}$。）你当时的反应：<span class="said">"好作弊，真的好好用！"</span></p>
+    </div>
+
+    <div class="mod form" style="background:linear-gradient(180deg,#F7F1E8,#F1E8DA)">
+      <div class="mod-label cjk" style="color:var(--ink)"><span class="ic">✓</span>Q5 · 框起来的答案 + 最该带走的连结</div>
+      $$\boxed{\,F^{-1}(u)=-\tfrac1\lambda\ln(1-u)\,}\qquad\boxed{\,f_X(x)=\lambda e^{-\lambda x},\ x>0\,}$$
+      <p class="cjk" style="margin-top:8px"><b>punchline：</b>方法一里那个雅可比 $\big|d\,g^{-1}/dx\big|=F'(x)=f(x)$——<b>恰好就是目标密度本身</b>。因为输入是均匀的（$f_U\equiv1$），$f_X=1\cdot f(x)=f(x)$。<b>这就是逆变换采样能"无中生有"造出任意分布的全部机理</b>，也是它与 Thm 1.13 是同一台机器的铁证：1.15 = 1.13 取均匀输入、取 $g=F^{-1}$。</p>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑⑤</span><p class="cjk">"'$U$ 均匀 $\Rightarrow 1-U$ 也均匀'——怎么推出来的？我感觉我没听过这句话。"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">老师给了<b>两种证法</b>：</p>
+        <p class="cjk"><b>① 想象法：</b>$[0,1]$ 上均匀＝每个点被取到的概率都一样；$1-U$ 只是把"取哪个点"重新标号（$0.7\leftrightarrow0.3$），<b>每个点的概率依旧相等</b>，所以仍是均匀。</p>
+        <p class="cjk"><b>② 工具法（用 1.13 验自己）：</b>已知 $U$ 的密度，求 $1-U$ 的密度。$1-U$ 对 $U$ 的导数是 $-1$，取绝对值变 $1$，乘上 $f_U=1$，密度恒为 $1$——还是均匀。这是个漂亮的自指：<b>用变换定理证明了变换里要用的那个事实</b>。</p>
+        <p class="qa-src cjk">正因如此，课件直接把 $1-U$ 换成 $U$ 写 $X=-\tfrac1\lambda\ln U$ 也对（同分布）。</p>
+      </div></div>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑⑥ · 又是反函数</span><p class="cjk">"那一行 $U=g^{-1}(x)=1-e^{-\lambda x}=F(x)$，这个过程到底在干什么？"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">它在<b>求反函数</b>。这里 $X=g(U)=-\tfrac1\lambda\ln(1-U)$ 是"用 $U$ 表示 $X$"；反函数就是"用 $X$ 表示 $U$"：从 $X=-\tfrac1\lambda\ln(1-U)$ 反解，$-\lambda X=\ln(1-U)\Rightarrow 1-U=e^{-\lambda X}\Rightarrow U=1-e^{-\lambda X}$，<b>恰好就是 $F(X)$</b>。所以 $g^{-1}=F$——这也解释了 §4 的 punchline：雅可比 $|d g^{-1}/dx|=F'(x)=f(x)$ 就是目标密度本身。</p>
+        <p class="qa-src cjk">这已经是你<b>第三次</b>在"反函数"上卡住（Q3、困惑①、这里）。所以前面专门给了那张 $y=x$ 翻折图：求反函数 = 把函数关系沿对角线照镜子，谁表示谁对调。</p>
+      </div></div>
+    </div>
+    <div class="qa">
+      <div class="qa-q"><span class="tag">困惑⑦</span><p class="cjk">"你写了循环、得到这 1000 个 $X$……就没了？"</p></div>
+      <div class="qa-a"><span class="tag">解答</span><div>
+        <p class="cjk">就没了——题目问的就是"<b>如何生成</b>"。老师：<span class="said">"这个方法主要解决'生成 i.i.d. 随机变量'，而且能生成任意分布的；后续怎么用是另一回事（蒙特卡洛、保险理赔损失模拟……）。"</span>(b) 问只要你<b>给出可执行的生成办法</b>即可，不需要再算什么。</p>
+      </div></div>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>挑刺 · 你那份 AI 纪要这里写错了一步</div>
+      <p class="cjk" style="margin-bottom:0">AI 纪要把方法二写成"$\mathbb P(U\ge 1-e^{-\lambda x})$，再 $1-(1-e^{-\lambda x})=1-e^{-\lambda x}$"——<b>自相矛盾</b>：$\mathbb P(U\ge 1-e^{-\lambda x})$ 算出来是 $1-(1-e^{-\lambda x})=e^{-\lambda x}$，那是<b>生存函数</b>，不是 CDF。正确的事件方向是：对 $X=-\tfrac1\lambda\ln(1-U)$，应得 $\{U\le 1-e^{-\lambda x}\}$（如上）；只有当你改用简化版 $X=-\tfrac1\lambda\ln U$ 时，才是 $\mathbb P(U\ge e^{-\lambda x})=1-e^{-\lambda x}$。纪要把两套写法的"$1-$"串到了一起；而且转写为证：<b>录音里老师讲的正是 $\mathbb P(U\le 1-e^{-\lambda x})$（正确版本），可见这处错误是 AI 整理纪要时引入的，并非老师讲错</b>。再次印证：<b>AI 整理的笔记不能当权威，等价事件这一步尤其要自己推。</b></p>
+    </div>
+
+    <div class="mod live">
+      <div class="mod-label cjk"><span class="ic">⊕</span>交互 · 把均匀数塞进 $F^{-1}$，看它们"堆"成指数形状</div>
+      <div class="controls">
+        <div class="ctrl"><label class="cjk">速率 $\lambda$ <span class="val" id="q5-lam-v">2.0</span></label><input type="range" id="q5-lam" min="0.5" max="3" step="0.1" value="2"></div>
+        <div class="ctrl" style="flex:0 0 auto"><button class="btn accent" id="q5-run">↻ 重抽（2000 个 U）</button></div>
+      </div>
+      <div class="readout cjk">
+        <span>经验均值 $\bar X$ = <b id="q5-mean">0.50</b></span>
+        <span>理论均值 $1/\lambda$ = <b id="q5-meanth">0.50</b></span>
+        <span class="rd-note">U 均匀，但经 $F^{-1}$ 后堆成 $\lambda e^{-\lambda x}$</span>
+      </div>
+      <div class="plotwrap"><div id="p-q5" class="plot tall"><div class="loading cjk">加载中…</div></div></div>
+      <p class="cap cjk"><b>怎么读：</b>把 2000 个均匀 $U_i$ 各自代入分位函数 $X_i=F^{-1}(U_i)=-\tfrac1\lambda\ln(1-U_i)$，得到的 $X_i$ 画成<b>蓝色直方</b>——它紧贴红线 $\lambda e^{-\lambda x}$，这就把 Thm 1.15"看见"了。机理藏在 $F^{-1}$ 的形状里：它在 $u\to1$ 处<b>陡峭飙升</b>，少数接近 1 的 $U$ 被拉到很大的 $X$，造出指数的<b>长尾</b>；而大量中小 $U$ 挤在小 $X$ 区，堆出靠近 0 的高密度。拖动 $\lambda$，直方与理论曲线一起收紧或摊开，而经验均值 $\bar X$ 始终≈$1/\lambda$。</p>
+    </div>
+  </section>
+
+  <!-- ============ §5 UNIFY ============ -->
+  <section class="topic-block" id="t-unify">
+    <h3 class="topic cjk">5　合一——1.13 / 1.14 / 1.15 并排成一张表</h3>
+    <p class="topic-en">Three theorems, one machine: the Jacobian rescales density; only dimension and direction differ</p>
+    <div class="rels">
+      <span class="rel reinforce"><span class="dot"></span><a href="#t-q3">Q3</a></span>
+      <span class="rel reinforce"><span class="dot"></span><a href="#t-q4">Q4</a></span>
+      <span class="rel reinforce"><span class="dot"></span><a href="#t-q5">Q5</a></span>
+    </div>
+
+    <div class="mod case">
+      <div class="mod-label cjk"><span class="ic">▢</span>一张对照表 · 把三道题（三定理）摆在一起</div>
+      <div class="cmp-wrap">
+        <table class="cmp">
+          <thead><tr><th>　</th><th>Thm 1.13 · 一元（Q3）</th><th>Thm 1.14 · 多元（Q4）</th><th>Thm 1.15 · 逆变换（Q5）</th></tr></thead>
+          <tbody>
+            <tr><th>用途</th><td>分析：已知 $X$ 求 $g(X)$</td><td>分析：已知 $\mathbf X$ 求 $g(\mathbf X)$</td><td class="hl">制造：用均匀造目标 $F$</td></tr>
+            <tr><th>维度</th><td>一维</td><td>多维</td><td>一维（1.13 的特例）</td></tr>
+            <tr><th>输入</th><td>任意 $X$</td><td>任意 $\mathbf X$</td><td class="hl">$U\sim\text{Uniform}(0,1)$</td></tr>
+            <tr><th>映射 $g$</th><td>严格单调可导</td><td>可逆、光滑</td><td>$g=F^{-1}$（分位函数）</td></tr>
+            <tr><th>"雅可比"</th><td>$\big|dx/dy\big|$（标量）</td><td>$\big|\det J\big|$（行列式）</td><td class="hl">$\big|dF^{-1}/du\big|=f(x)$</td></tr>
+            <tr><th>公式</th><td>$f_Y=f_X\,|dx/dy|$</td><td>$f_{\mathbf Y}=f_{\mathbf X}\,|\det J|$</td><td>$f_X=1\cdot f(x)=f(x)$</td></tr>
+            <tr><th>本页题</th><td>$Y=\sqrt X$，得瑞利</td><td>和与比，得 Gamma×均匀、独立</td><td>$F^{-1}(U)$，得指数</td></tr>
+            <tr><th>一句话</th><td>一维长度拉伸</td><td>多维体积放大</td><td class="hl">雅可比 = 目标密度</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mod idea">
+      <div class="mod-label cjk"><span class="ic">◆</span>把整张表压成一句话</div>
+      <p class="cjk"><b>密度在映射下守恒，按雅可比（局部体积放大率）重新标定。</b>1.13 是一维（标量导数），1.14 是多维（行列式），二者是同一公式的不同维度；1.15 把它<b>反过来用</b>——输入均匀、映射取 $F^{-1}$，于是雅可比退化成目标密度本身，从而"造"出任意分布。你之前觉得这三块零散，是因为分别记了三个公式；其实只有一个公式（守恒 + 雅可比），外加"分析 / 制造"两个方向。</p>
+      <p class="cjk" style="margin-bottom:0"><b>还有一条贯穿的验证习惯：</b>求变换后的分布，永远有两条路——<b>密度变换法</b>（套雅可比公式，需求导）和 <b>CDF 等价事件法</b>（$\{g(X)\le y\}$ 翻译成关于 $X$ 的事件，再用已知 CDF，求导一次）。Q5 两法都演了；遇到 $g$ 不单调、或支持集复杂时，CDF 法往往更稳妥，因为它逼你显式写出事件。</p>
+    </div>
+  </section>
+
+  <!-- ============ §6 TRAP ============ -->
+  <section class="topic-block" id="t-trap">
+    <h3 class="topic cjk">⚠　别踩坑——六个常见错 + 三题满分模板</h3>
+    <p class="topic-en">The six pitfalls that cost marks, plus full-marks templates for Q3, Q4, Q5</p>
+    <div class="rels">
+      <span class="rel boundary"><span class="dot"></span><a href="#t-q3">支持集</a></span>
+      <span class="rel warn"><span class="dot"></span><a href="#t-q5">F⁻¹ 闭式</a></span>
+      <span class="rel general"><span class="dot"></span><a href="#t-core">绝对值</a></span>
+    </div>
+
+    <div class="mod trap">
+      <div class="mod-label cjk"><span class="ic">⚠</span>六个坑</div>
+      <ul class="ul cjk">
+        <li><b>坑①：单调性是前提。</b>Thm 1.13/1.14 要 $g$ 可逆（单调）。若 $g$ 非单调（如 $Y=X^2$ 而 $X$ 可正可负），一个 $y$ 对应多个 $x$，必须<b>分支求和</b>：$f_Y(y)=\sum_k f_X(x_k)\,|dx_k/dy|$。本页三题的 $g$ 都单调，但考场上先确认这一点。</li>
+        <li><b>坑②：雅可比要取绝对值。</b>密度非负，拉伸倍数的正负无意义。漏了 $|\cdot|$ 可能算出负密度。</li>
+        <li><b>坑③：支持集必须跟着变（头号失分点）。</b>$X>0\Rightarrow Y=\sqrt X>0$；$(x_1,x_2)\in(0,\infty)^2\Rightarrow y_1>0,\ 0&lt;y_2&lt;1$。算完密度务必问：新变量到底能取哪些值？外面补 0。</li>
+        <li><b>坑④：雅可比的方向别用反。</b>公式里要的是<b>逆映射</b>的雅可比 $\partial(x)/\partial(y)$；若你手头是 $\partial(y)/\partial(x)$，要取倒数 $1/|\det(\partial(y)/\partial(x))|$。两者混用会差一个因子。</li>
+        <li><b>坑⑤：逆变换法要 $F^{-1}$ 有闭式。</b>指数、Logistic、Cauchy、Weibull 的分位函数都能写出来；<b>正态没有闭式 $F^{-1}$</b>，所以正态不用逆变换、改用 Box–Muller 等。把 1.15 当"万能钥匙"是最大误区。</li>
+        <li><b>坑⑥：$1-U$ 与 $U$、以及等价事件方向。</b>$1-U$ 与 $U$ 同为均匀（分布相同，非同值）；做 CDF 法时，$\{-\tfrac1\lambda\ln(1-U)\le x\}$ 等价于 $\{U\le 1-e^{-\lambda x}\}$——方向写反会得到生存函数 $e^{-\lambda x}$ 而非 CDF（你那份 AI 纪要正是这里出错）。</li>
+      </ul>
+    </div>
+
+    <div class="mod form" style="background:linear-gradient(180deg,#FBEDE6,#F7E1D8)">
+      <div class="mod-label cjk" style="color:var(--rust)"><span class="ic">✓</span>三题满分模板</div>
+      <p class="cjk" style="margin:2px 0"><b>Q3（$Y=\sqrt X$，$X\sim\text{Exp}(\lambda)$）：</b>① $x=y^2$；② $X>0\Rightarrow y>0$；③ $|dx/dy|=2y$；④ $f_Y(y)=\lambda e^{-\lambda y^2}\cdot 2y=2\lambda y e^{-\lambda y^2}\ (y>0)$。</p>
+      <p class="cjk" style="margin:2px 0"><b>Q4（和与比）：</b>(a) $x_1=y_1y_2,\ x_2=y_1(1-y_2)$，$\det J=-y_1\Rightarrow|\det J|=y_1$；支持集 $y_1>0,0&lt;y_2&lt;1$。(b) $x_1+x_2=y_1\Rightarrow f_{Y_1,Y_2}=\lambda^2 y_1 e^{-\lambda y_1}$。(c) $f_{Y_1}=\lambda^2 y_1 e^{-\lambda y_1}$ (Gamma 2)，$f_{Y_2}=1$ (均匀)，乘积=联合且支持集为矩形 ⇒ <b>独立</b>。</p>
+      <p class="cjk" style="margin:2px 0 0"><b>Q5（逆变换）：</b>(a) $F^{-1}(u)=-\tfrac1\lambda\ln(1-u)$。(b) $U_i\sim\text{Unif}(0,1)$，$X_i=-\tfrac12\ln(1-U_i)$ 给出 1000 个 Exp(2)。(c) $g^{-1}(x)=F(x)$，$f_X=1\cdot F'(x)=\lambda e^{-\lambda x}$（雅可比即目标密度）；或 CDF 法 $\mathbb P(X\le x)=\mathbb P(U\le 1-e^{-\lambda x})=1-e^{-\lambda x}$。</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="foot-wrap cjk">
+    <p class="foot-title">专题补丁 · 随机变量的变换三部曲（Thm 1.13 / 1.14 / 1.15）</p>
+    <p>本文围绕三道点名题：<b>Part4-Q3</b>（$Y=\sqrt X$，一元反函数法，得瑞利 $2\lambda y e^{-\lambda y^2}$）、<b>Part4-Q4</b>（两个 i.i.d. 指数的和与比，二元雅可比法，得 $Y_1\sim$Gamma(2)、$Y_2\sim$Uniform 且独立）、<b>Part5-Q2</b>（逆变换采样，分位函数 $-\tfrac1\lambda\ln(1-u)$，造出指数）。</p>
+    <p>核心是一条主线：<b>概率质量守恒 + 雅可比重标</b>。一维雅可比是 $|dx/dy|$（1.13），多维是 $|\det J|$（1.14），逆变换是 1.13 取均匀输入、$g=F^{-1}$ 的特例，此时雅可比恰为目标密度（1.15）。三定理并非三个孤立公式，而是"一维→多维→反向应用"的同一台机器。文中以梳齿拉伸、Exp→瑞利重塑、(Y₁,Y₂) 联合山脊（沿 y₂ 平移不变＝独立）、和/比抽样散点、F⁻¹ 把均匀堆成指数等多路交互实证，并标注了 AI 纪要中等价事件方向写反的一处错误。</p>
+    <p>关联：变换/雅可比/逆变换的定义见第一节主讲义（Chapter 1）；独立性判据（联合＝边缘乘积、可分性、乘积支持集）与"联合与边缘分布"专题补丁同源；Gamma 分布 PDF 见相应章节。</p>
+    <p class="foot-fine">交互与 2D 绘图基于 Plotly（仅 SVG），3D 曲面由内置 Canvas 引擎手绘（画家算法 + 面法线打光，不调用 WebGL），公式排版基于 KaTeX。所有模拟在你的浏览器本地实时运行，可反复拖动、重抽。遇到与课本 / 严格定义冲突处，以原始课件（红字手写解答与 Chapter 1 讲解）为准，并欢迎继续质疑这份补丁本身——包括其中对 AI 纪要的纠错。</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+/* ===================== palette & helpers ===================== */
+var C={ink:'#1B1A1F',inkSoft:'#4C4A55',faint:'#86838F',line:'#E2DECF',lineStrong:'#CFC9B6',
+  accent:'#9C5A2E',accentSoft:'#F0E6DA',teal:'#1F6B66',gold:'#B7892A',
+  violet:'#574AA6',green:'#3E7C4E',rust:'#B0442B',paper:'#FBF6EC'};
+var CONF={displayModeBar:false,responsive:true};
+var FONT={family:'Spectral, Georgia, serif',size:13,color:C.inkSoft};
+function baseLayout(extra){
+  var L={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:FONT,
+    margin:{l:56,r:16,t:18,b:46},
+    xaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    yaxis:{gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,tickfont:{size:12}},
+    legend:{orientation:'h',y:1.14,x:0,font:{size:12},bgcolor:'rgba(0,0,0,0)'},
+    hoverlabel:{font:{family:'Spectral, serif',size:12}},showlegend:false};
+  return Object.assign(L,extra||{});
+}
+var BLUE_SCALE=[[0,'#F3ECE2'],[0.5,'#B98A56'],[1,'#4A2E14']];
+function lin(a,b,n){var o=[],i,s=(b-a)/(n-1);for(i=0;i<n;i++)o.push(a+s*i);return o;}
+function mean(a){var s=0,i;for(i=0;i<a.length;i++)s+=a[i];return s/a.length;}
+function sd(a){var m=mean(a),s=0,i;for(i=0;i<a.length;i++)s+=(a[i]-m)*(a[i]-m);return Math.sqrt(s/a.length);}
+function normPdf(x,m,s){m=m||0;s=(s===undefined?1:s);return Math.exp(-0.5*((x-m)/s)*((x-m)/s))/(s*Math.sqrt(2*Math.PI));}
+var _spare=null;
+function randn(){if(_spare!==null){var v=_spare;_spare=null;return v;}var u,w,s;do{u=2*Math.random()-1;w=2*Math.random()-1;s=u*u+w*w;}while(s>=1||s===0);var m=Math.sqrt(-2*Math.log(s)/s);_spare=w*m;return u*m;}
+function clamp(v,lo,hi){return v<lo?lo:(v>hi?hi:v);}
+function setTxt(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function renderMath(){
+  if(typeof renderMathInElement==='undefined')return;
+  renderMathInElement(document.body,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'\\[',right:'\\]',display:true},
+    {left:'\\(',right:'\\)',display:false},{left:'$',right:'$',display:false}],
+    throwOnError:false,strict:false});
+}
+/* ===================== nav + sliders + seg ===================== */
+function rfill(r){if(!r)return;var mn=+r.min,mx=+r.max,p=(+r.value-mn)/((mx-mn)||1)*100;r.style.setProperty('--p',p+'%');}
+function wireSliderFill(){var rs=document.querySelectorAll('input[type=range]'),i;for(i=0;i<rs.length;i++){(function(r){rfill(r);r.addEventListener('input',function(){rfill(r);});})(rs[i]);}}
+function wireNav(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){var h=a.getAttribute('href');return h&&h.charAt(0)==='#'?document.getElementById(h.slice(1)):null;});
+  function onScroll(){var cur=null,best=-1e9,top=window.scrollY+130,i;
+    for(i=0;i<secs.length;i++){if(!secs[i])continue;var y=secs[i].getBoundingClientRect().top+window.scrollY;if(y<=top&&y>best){best=y;cur=links[i];}}
+    links.forEach(function(a){a.classList.remove('active');});if(cur)cur.classList.add('active');}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+}
+function wireMenu(){
+  var btn=document.getElementById('menuBtn'),scrim=document.getElementById('scrim');
+  function close(){document.body.classList.remove('nav-open');}
+  if(btn)btn.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  if(scrim)scrim.addEventListener('click',close);
+  var links=document.querySelectorAll('.toc a'),i;for(i=0;i<links.length;i++)links[i].addEventListener('click',close);
+}
+/* ===================== Canvas 3D engine (NO WebGL) ===================== */
+function hex2rgb(h){h=(''+h).replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function scaleColor(stops,t){
+  if(t<=stops[0][0])return hex2rgb(stops[0][1]);
+  if(t>=stops[stops.length-1][0])return hex2rgb(stops[stops.length-1][1]);
+  for(var i=0;i<stops.length-1;i++){if(t>=stops[i][0]&&t<=stops[i+1][0]){
+    var f=(t-stops[i][0])/((stops[i+1][0]-stops[i][0])||1);var a=hex2rgb(stops[i][1]),b=hex2rgb(stops[i+1][1]);
+    return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,a[2]+(b[2]-a[2])*f];}}
+  return hex2rgb(stops[0][1]);
+}
+function rgba(c,al){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(al==null?1:al)+')';}
+var BOXC=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+var BOXE=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+function Scene3D(div,opt){
+  if(!div)return null;div.innerHTML='';
+  var cv=document.createElement('canvas');
+  cv.style.width='100%';cv.style.height='100%';cv.style.display='block';cv.style.cursor='grab';cv.style.touchAction='none';
+  div.appendChild(cv);
+  var ctx=cv.getContext&&cv.getContext('2d');
+  if(!ctx){div.innerHTML='<div class="loading">此环境无法绘制（Canvas 不可用）</div>';return null;}
+  var st={yaw:(opt.yaw!=null?opt.yaw:-0.72),pitch:(opt.pitch!=null?opt.pitch:0.92),zoom:opt.zoom||1};
+  var xr=opt.xr,yr=opt.yr,zr=opt.zr,objs=[];
+  var xl=opt.xlabel||'x',yl=opt.ylabel||'y',zl=opt.zlabel||'z';
+  function NX(x){return (x-xr[0])/((xr[1]-xr[0])||1)*2-1;}
+  function NY(y){return (y-yr[0])/((yr[1]-yr[0])||1)*2-1;}
+  function NZ(z){return (z-zr[0])/((zr[1]-zr[0])||1)*2-1;}
+  var W,H,scale,cx,cyc;
+  function rot(p){var cw=Math.cos(st.yaw),sw=Math.sin(st.yaw),x1=p[0]*cw-p[1]*sw,y1=p[0]*sw+p[1]*cw,z1=p[2];
+    var cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);return [x1,y1*cp-z1*sp,y1*sp+z1*cp];}
+  function proj(p){var r=rot(p);return {sx:cx+r[0]*scale,sy:cyc-r[2]*scale,d:r[1]};}
+  function prep(){objs.forEach(function(o){
+    if(o.type==='surface'){var ny=o.Y.length,nx=o.X.length,i,j;o._V=[];
+      for(i=0;i<ny;i++){var row=[];for(j=0;j<nx;j++)row.push([NX(o.X[j]),NY(o.Y[i]),NZ(o.Z[i][j])]);o._V.push(row);}}
+    else if(o.type==='line'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}
+    else if(o.type==='dots'){o._V=o.pts.map(function(p){return [NX(p[0]),NY(p[1]),NZ(p[2])];});}});}
+  var LIGHT=(function(){var l=[-0.35,-0.5,0.85],m=Math.sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);return [l[0]/m,l[1]/m,l[2]/m];})();
+  function fmt(v){return (Math.abs(v)>=100||v===0)?(''+Math.round(v)):(Math.abs(v)<1?v.toFixed(2):v.toFixed(1));}
+  function draw(){
+    if(!W)return;ctx.clearRect(0,0,W,H);var prims=[],i,j;
+    objs.forEach(function(o){
+      if(o.type==='surface'){var V=o._V,ny=V.length,nx=V[0].length,P=[];
+        for(i=0;i<ny;i++){var pr=[];for(j=0;j<nx;j++)pr.push(proj(V[i][j]));P.push(pr);}
+        for(i=0;i<ny-1;i++)for(j=0;j<nx-1;j++){
+          var a=V[i][j],b=V[i][j+1],c=V[i+1][j];
+          var e1x=b[0]-a[0],e1y=b[1]-a[1],e1z=b[2]-a[2],e2x=c[0]-a[0],e2y=c[1]-a[1],e2z=c[2]-a[2];
+          var nx2=e1y*e2z-e1z*e2y,nyy=e1z*e2x-e1x*e2z,nz2=e1x*e2y-e1y*e2x;
+          var nm=Math.sqrt(nx2*nx2+nyy*nyy+nz2*nz2)||1;
+          var light=0.58+0.42*Math.abs((nx2*LIGHT[0]+nyy*LIGHT[1]+nz2*LIGHT[2])/nm);
+          var hf=((V[i][j][2]+V[i][j+1][2]+V[i+1][j][2]+V[i+1][j+1][2])/4+1)/2;
+          var col=o.solid?hex2rgb(o.solid):scaleColor(o.scale,hf);
+          var P0=P[i][j],P1=P[i][j+1],P2=P[i+1][j+1],P3=P[i+1][j];
+          prims.push({z:(P0.d+P1.d+P2.d+P3.d)/4,k:0,
+            xs:[P0.sx,P1.sx,P2.sx,P3.sx],ys:[P0.sy,P1.sy,P2.sy,P3.sy],
+            fill:rgba([col[0]*light,col[1]*light,col[2]*light],o.alpha==null?0.95:o.alpha),
+            stroke:o.wire?rgba([col[0]*0.45,col[1]*0.45,col[2]*0.45],0.4):null});
+        }
+      } else if(o.type==='line'){var Vp=o._V.map(proj);
+        for(i=0;i<Vp.length-1;i++)prims.push({z:(Vp[i].d+Vp[i+1].d)/2,k:1,ax:Vp[i].sx,ay:Vp[i].sy,bx:Vp[i+1].sx,by:Vp[i+1].sy,color:o.color,w:o.width||2.5});
+      } else if(o.type==='dots'){o._V.map(proj).forEach(function(q){prims.push({z:q.d,k:2,sx:q.sx,sy:q.sy,r:o.r||3,color:o.color});});}
+    });
+    var BP=BOXC.map(proj);
+    BOXE.forEach(function(e){var A=BP[e[0]],B=BP[e[1]];prims.push({z:(A.d+B.d)/2-0.002,k:1,ax:A.sx,ay:A.sy,bx:B.sx,by:B.sy,color:'rgba(140,133,122,0.30)',w:1});});
+    prims.sort(function(p,q){return q.z-p.z;});
+    for(i=0;i<prims.length;i++){var p=prims[i];
+      if(p.k===0){ctx.beginPath();ctx.moveTo(p.xs[0],p.ys[0]);ctx.lineTo(p.xs[1],p.ys[1]);ctx.lineTo(p.xs[2],p.ys[2]);ctx.lineTo(p.xs[3],p.ys[3]);ctx.closePath();ctx.fillStyle=p.fill;ctx.fill();if(p.stroke){ctx.lineWidth=0.5;ctx.strokeStyle=p.stroke;ctx.stroke();}}
+      else if(p.k===1){ctx.beginPath();ctx.moveTo(p.ax,p.ay);ctx.lineTo(p.bx,p.by);ctx.lineWidth=p.w;ctx.strokeStyle=p.color;ctx.stroke();}
+      else{ctx.beginPath();ctx.arc(p.sx,p.sy,p.r,0,6.2832);ctx.fillStyle=p.color;ctx.fill();}}
+    ctx.fillStyle=C.inkSoft;ctx.font='12px Fraunces, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    function lbl(p,t){var q=proj(p);ctx.fillText(t,q.sx,q.sy);}
+    lbl([0,-1.14,-1.14],xl);lbl([1.16,0,-1.16],yl);
+    var zq=proj([-1.18,-1.18,0]);ctx.save();ctx.translate(zq.sx,zq.sy);ctx.rotate(-Math.PI/2);ctx.fillText(zl,0,0);ctx.restore();
+    ctx.font='10px Spectral, serif';ctx.fillStyle=C.faint;
+    lbl([-1,-1.16,-1.16],fmt(xr[0]));lbl([1,-1.16,-1.16],fmt(xr[1]));
+    lbl([1.18,-1,-1.18],fmt(yr[0]));lbl([1.18,1,-1.18],fmt(yr[1]));
+    ctx.textAlign='left';ctx.fillStyle='rgba(140,133,122,0.7)';ctx.font='11px Fraunces, serif';
+    ctx.fillText('拖动旋转 · 滚轮缩放',8,14);
+  }
+  function resize(){var dpr=window.devicePixelRatio||1;W=div.clientWidth||600;H=div.clientHeight||440;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale=Math.min(W,H)*0.33*st.zoom;cx=W*0.5;cyc=H*0.54;draw();}
+  var drag=false,lx,ly;
+  cv.addEventListener('pointerdown',function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.style.cursor='grabbing';try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+  cv.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;st.yaw-=dx*0.01;st.pitch+=dy*0.01;if(st.pitch<0.06)st.pitch=0.06;if(st.pitch>1.5)st.pitch=1.5;draw();});
+  function edd(){drag=false;cv.style.cursor='grab';}
+  cv.addEventListener('pointerup',edd);cv.addEventListener('pointercancel',edd);cv.addEventListener('pointerleave',edd);
+  cv.addEventListener('wheel',function(e){e.preventDefault();st.zoom*=(e.deltaY<0?1.08:0.927);if(st.zoom<0.45)st.zoom=0.45;if(st.zoom>3.2)st.zoom=3.2;resize();},{passive:false});
+  if(window.ResizeObserver){try{new ResizeObserver(resize).observe(div);}catch(_){}}
+  window.addEventListener('resize',resize);
+  return {setObjects:function(o){objs=o;prep();resize();},redraw:resize};
+}
+
+/* ===================== §1 comb-stretch (density ∝ 1/slope) ===================== */
+function combStretch(){
+  var div=document.getElementById('p-stretch');if(!div)return;
+  var sl=document.getElementById('pr-p');if(!sl)return;
+  function draw(){
+    var p=+sl.value;setTxt('pr-p-v',p.toFixed(1));
+    var desc=document.getElementById('pr-desc');
+    if(desc){desc.textContent=(p>1.05)?'p > 1：梳齿挤向 y=0（那里密度高）':((p<0.95)?'p < 1：梳齿挤向 y=1（那里密度高）':'p = 1：恒等映射，梳齿仍均匀');}
+    var gx=lin(0,1,200),gy=[],i;for(i=0;i<gx.length;i++)gy.push(Math.pow(gx[i],p));
+    var M=15,xc=[],yb=[],cx0=[],cy0=[],projx=[],projy=[];
+    for(i=1;i<=M;i++){var xi=i/(M+1),yi=Math.pow(xi,p);
+      xc.push(xi);yb.push(0);cx0.push(0.012);cy0.push(yi);
+      projx.push(xi,xi,0.012,null);projy.push(0,yi,yi,null);}
+    var traces=[
+      {x:projx,y:projy,mode:'lines',line:{color:'rgba(120,110,95,0.32)',width:1},hoverinfo:'skip',showlegend:false},
+      {x:gx,y:gy,mode:'lines',line:{color:C.accent,width:2.6},showlegend:false},
+      {x:xc,y:yb,mode:'markers',marker:{color:'rgba(90,86,96,0.85)',size:5},showlegend:false},
+      {x:cx0,y:cy0,mode:'markers',marker:{color:C.accent,size:6.5},showlegend:false}
+    ];
+    var lay=baseLayout({margin:{l:52,r:18,t:14,b:46},
+      xaxis:{title:'x（均匀样本，等间距）',range:[-0.02,1.02],constrain:'domain',gridcolor:'rgba(0,0,0,0)',zeroline:false,linecolor:C.lineStrong},
+      yaxis:{title:'y = x^p（看左缘梳齿疏密）',range:[-0.02,1.02],gridcolor:'rgba(0,0,0,0)',zeroline:false,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  sl.addEventListener('input',draw);draw();
+}
+
+/* ===================== §2 Q3  Exp → Rayleigh (Thm 1.13) ===================== */
+function expSqrt(){
+  var div=document.getElementById('p-q3');if(!div)return;
+  var sl=document.getElementById('q3-lam');if(!sl)return;
+  function draw(){
+    var lam=+sl.value;setTxt('q3-lam-v',lam.toFixed(1));setTxt('q3-mode',(1/Math.sqrt(2*lam)).toFixed(2));
+    var t=lin(0.0001,4,240),fx=[],fy=[],i;
+    for(i=0;i<t.length;i++){fx.push(lam*Math.exp(-lam*t[i]));fy.push(2*lam*t[i]*Math.exp(-lam*t[i]*t[i]));}
+    var traces=[
+      {x:t,y:fx,mode:'lines',line:{color:'#2E6FA8',width:2.4},name:'X ~ Exp(λ)：λe^{-λt}',showlegend:true},
+      {x:t,y:fy,mode:'lines',line:{color:C.accent,width:2.8},name:'Y=√X：2λt·e^{-λt²}（瑞利）',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,margin:{l:54,r:16,t:16,b:46},
+      xaxis:{title:'t（取值）',range:[0,4],gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      yaxis:{title:'密度',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,rangemode:'tozero'}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  sl.addEventListener('input',draw);draw();
+}
+
+/* ===================== §3 Q4  joint-density ridge (Thm 1.14, 3D) ===================== */
+function q4ridge(){
+  var div=document.getElementById('p-q4-3d');if(!div)return;
+  var sc=Scene3D(div,{xr:[0,6],yr:[0,1],zr:[0,0.42],xlabel:'y1',ylabel:'y2',zlabel:'f',yaw:-0.78,pitch:0.86});
+  if(!sc)return;
+  var NXp=44,NYp=18,X=lin(0.001,6,NXp),Y=lin(0,1,NYp),Z=[],i,j;
+  for(i=0;i<NYp;i++){var row=[];for(j=0;j<NXp;j++)row.push(X[j]*Math.exp(-X[j]));Z.push(row);} /* λ=1, flat in y2 */
+  sc.setObjects([{type:'surface',X:X,Y:Y,Z:Z,scale:BLUE_SCALE,wire:true,alpha:0.92}]);
+}
+
+/* ===================== §3 Q4  Monte-Carlo: independence + marginals ===================== */
+function q4mc(){
+  var div=document.getElementById('p-q4-mc');if(!div)return;
+  var divg=document.getElementById('p-q4-gam'),btn=document.getElementById('q4-run');
+  function run(){
+    var N=4000,Y1=[],Y2=[],i,u1,u2,x1,x2,s;
+    for(i=0;i<N;i++){u1=Math.random();u2=Math.random();x1=-Math.log(1-u1);x2=-Math.log(1-u2);s=x1+x2;Y1.push(s);Y2.push(x1/s);}
+    var m1=mean(Y1),m2=mean(Y2),c=0,a1=0,a2=0;
+    for(i=0;i<N;i++){c+=(Y1[i]-m1)*(Y2[i]-m2);a1+=(Y1[i]-m1)*(Y1[i]-m1);a2+=(Y2[i]-m2)*(Y2[i]-m2);}
+    setTxt('q4-corr',(c/Math.sqrt(a1*a2)).toFixed(2));setTxt('q4-my2',m2.toFixed(2));setTxt('q4-my1',m1.toFixed(2));
+    var sct=[{x:Y1,y:Y2,mode:'markers',marker:{color:'rgba(46,111,168,0.30)',size:3},showlegend:false}];
+    var lay=baseLayout({margin:{l:52,r:16,t:28,b:46},
+      title:{text:'散点 (Y₁,Y₂)：Y₂ 在任何 Y₁ 处都均匀铺满 ⇒ 独立',font:{size:12.5,color:C.inkSoft},x:0,xanchor:'left'},
+      xaxis:{title:'Y₁ = X₁+X₂',range:[0,10],gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      yaxis:{title:'Y₂ = X₁/(X₁+X₂)',range:[0,1],gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong}});
+    Plotly.react(div,sct,lay,CONF);
+    if(divg){
+      var gx=lin(0.001,10,160),gy=[],k;for(k=0;k<gx.length;k++)gy.push(gx[k]*Math.exp(-gx[k]));
+      var tg=[
+        {x:Y1,type:'histogram',histnorm:'probability density',xbins:{start:0,end:10,size:10/48},marker:{color:'rgba(156,90,46,0.4)',line:{color:'rgba(156,90,46,0.7)',width:0.5}},name:'Y₁ 直方',showlegend:true},
+        {x:gx,y:gy,mode:'lines',line:{color:C.rust,width:3},name:'Gamma(2,1)：y₁e^{-y₁}',showlegend:true}
+      ];
+      var layg=baseLayout({showlegend:true,bargap:0.03,margin:{l:52,r:16,t:28,b:46},
+        title:{text:'Y₁ 的边缘：紧贴 Gamma(2,1)，峰在 y₁=1',font:{size:12.5,color:C.inkSoft},x:0,xanchor:'left'},
+        xaxis:{title:'Y₁',range:[0,10],gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+        yaxis:{title:'密度',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,rangemode:'tozero'}});
+      Plotly.react(divg,tg,layg,CONF);
+    }
+  }
+  if(btn)btn.addEventListener('click',run);run();
+}
+
+/* ===================== §4 Q5  inverse transform: U → Exp (Thm 1.15) ===================== */
+function q5inv(){
+  var div=document.getElementById('p-q5');if(!div)return;
+  var sl=document.getElementById('q5-lam'),btn=document.getElementById('q5-run');
+  var U=[];function gen(){U=[];var i;for(i=0;i<2000;i++)U.push(Math.random());}
+  gen();
+  function draw(){
+    var lam=+sl.value;setTxt('q5-lam-v',lam.toFixed(1));setTxt('q5-meanth',(1/lam).toFixed(2));
+    var X=[],i;for(i=0;i<U.length;i++)X.push(-Math.log(1-U[i])/lam);
+    setTxt('q5-mean',mean(X).toFixed(2));
+    var xmax=6/lam,gx=lin(0.0001,xmax,180),gy=[],k;for(k=0;k<gx.length;k++)gy.push(lam*Math.exp(-lam*gx[k]));
+    var tr=[
+      {x:X,type:'histogram',histnorm:'probability density',xbins:{start:0,end:xmax,size:xmax/44},marker:{color:'rgba(46,111,168,0.4)',line:{color:'rgba(46,111,168,0.7)',width:0.5}},name:'逆变换生成的 X 的直方',showlegend:true},
+      {x:gx,y:gy,mode:'lines',line:{color:C.rust,width:3},name:'理论 λe^{-λx}',showlegend:true}
+    ];
+    var lay=baseLayout({showlegend:true,bargap:0.03,margin:{l:54,r:16,t:16,b:46},
+      xaxis:{title:'x',range:[0,xmax],gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      yaxis:{title:'密度',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong,rangemode:'tozero'}});
+    Plotly.react(div,tr,lay,CONF);
+  }
+  if(sl)sl.addEventListener('input',draw);
+  if(btn)btn.addEventListener('click',function(){gen();draw();});
+  draw();
+}
+
+/* ===================== §1 inverse fn = mirror across y=x ===================== */
+function invMirror(){
+  var div=document.getElementById('p-inv');if(!div)return;
+  var sl=document.getElementById('inv-x');if(!sl)return;
+  function draw(){
+    var x0=+sl.value;setTxt('inv-x-v',x0.toFixed(2));
+    var gx=lin(0,2,160),g=[],i;for(i=0;i<gx.length;i++)g.push(Math.sqrt(gx[i]));
+    var hx=lin(0,Math.sqrt(2),160),h=[];for(i=0;i<hx.length;i++)h.push(hx[i]*hx[i]);
+    var ya=Math.sqrt(x0);
+    var traces=[
+      {x:[0,2],y:[0,2],mode:'lines',line:{color:'rgba(120,114,100,0.6)',width:1.3,dash:'dash'},name:'y = x（镜面）',showlegend:true},
+      {x:gx,y:g,mode:'lines',line:{color:C.accent,width:2.8},name:'y = √x（g）',showlegend:true},
+      {x:hx,y:h,mode:'lines',line:{color:'#2E6FA8',width:2.6},name:'y = x²（反函数 x=y²）',showlegend:true},
+      {x:[x0,ya],y:[ya,x0],mode:'lines',line:{color:'rgba(176,68,43,0.5)',width:1.4,dash:'dot'},showlegend:false,hoverinfo:'skip'},
+      {x:[x0,ya],y:[ya,x0],mode:'markers+text',marker:{color:C.rust,size:9},text:['A','A′'],textposition:'top center',textfont:{size:13,color:C.rust},showlegend:false}
+    ];
+    var lay=baseLayout({showlegend:true,margin:{l:48,r:16,t:16,b:44},
+      xaxis:{title:'x',range:[0,2],constrain:'domain',gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong},
+      yaxis:{title:'y',range:[0,2],scaleanchor:'x',scaleratio:1,gridcolor:C.line,zerolinecolor:C.lineStrong,linecolor:C.lineStrong}});
+    Plotly.react(div,traces,lay,CONF);
+  }
+  sl.addEventListener('input',draw);draw();
+}
+
+/* ===================== init / boot ===================== */
+function safe(name,fn){try{fn();}catch(e){if(window.console&&console.warn)console.warn('[viz '+name+']',e);}}
+function init(){
+  safe('math',renderMath);
+  safe('sliders',wireSliderFill);
+  safe('nav',wireNav);
+  safe('menu',wireMenu);
+  safe('combStretch',combStretch);
+  safe('invMirror',invMirror);
+  safe('expSqrt',expSqrt);
+  safe('q4ridge',q4ridge);
+  safe('q4mc',q4mc);
+  safe('q5inv',q5inv);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>
